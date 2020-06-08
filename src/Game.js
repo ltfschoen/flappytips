@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import P5Wrapper from 'react-p5-wrapper';
 import { ApiPromise, WsProvider } from '@polkadot/api';
+import { bufferToU8a, u8aToBuffer, u8aToString } from '@polkadot/util';
 import sketch from './sketches/sketch';
 import { ENDPOINTS } from './constants';
 import merge from './helpers/merge';
@@ -38,6 +39,20 @@ class Game extends Component {
         api.query.session.validators()
       ]);
       let currentBlockHash = blockHash.toString();
+
+      const [signedBlock] = await Promise.all([
+        api.rpc.chain.getBlock(blockHash)
+      ]);
+      console.log('signedBlock', signedBlock);
+      console.log('signedBlock', signedBlock.block.header.parentHash.toHex());
+
+      // // Hash for each extrinsic in the block
+      // signedBlock.block.extrinsics.forEach((ex, index) => {
+      //   console.log('Hash for extrinsic in the block', index, ex.hash.toHex());
+      //   // FIXME
+      //   console.log('Hash for extrinsic in the block', index, bufferToU8a(ex.data.buffer).toHex());
+      //   // console.log('Hash for extrinsic in the block', index, u8aToString(bufferToU8a(ex.data)));
+      // });
 
       const [currentBlockEvents] = await Promise.all([
         api.query.system.events.at(currentBlockHash) 
