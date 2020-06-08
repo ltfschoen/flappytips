@@ -1,13 +1,16 @@
 {
-  "name": "flappydot",
+  "name": "flappytips",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@polkadot/api": "^1.17.2",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
+    "p5": "^1.0.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
+    "react-p5-wrapper": "^2.0.0",
     "react-scripts": "3.4.1"
   },
   "scripts": {
