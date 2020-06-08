@@ -1,3 +1,21 @@
+## Flappy tips
+
+### Instructions
+
+Clone the repository, install Yarn and Node.js, and then run the following in terminal:
+```
+yarn
+yarn start
+```
+
+Go to http://localhost:3000
+
+Press space bar to make your dot fly and try to navigate through the obstacles.
+
+Additional planned functionality and deployment to production is dependent on whether help is obtained from Riot channels in response to technical support enquiries.
+
+## Additional Notes
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
