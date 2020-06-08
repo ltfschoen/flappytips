@@ -22,7 +22,7 @@ class Game extends Component {
   }
 
   async componentDidMount() {
-    const provider = new WsProvider(ENDPOINTS.kusamaW3F);
+    const provider = new WsProvider(ENDPOINTS.westendW3F);
     const api = await ApiPromise.create({ provider });
     const [chain, nodeName, nodeVersion] = await Promise.all([
       api.rpc.system.chain(),

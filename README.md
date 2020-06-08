@@ -1,6 +1,11 @@
 ## Flappy tips
 
-### Instructions
+### Play
+
+* Go to https://flappytips.herokuapp.com
+* Press space bar to make your dot fly and try to navigate through the obstacles.
+
+### Develop
 
 Clone the repository, install Yarn and Node.js, and then run the following in terminal:
 ```
@@ -8,11 +13,22 @@ yarn
 yarn start
 ```
 
-Go to http://localhost:3000
-
-Press space bar to make your dot fly and try to navigate through the obstacles.
+* Go to http://localhost:3000
+* Press space bar to make your dot fly and try to navigate through the obstacles.
 
 Additional planned functionality and deployment to production is dependent on whether help is obtained from Riot channels in response to technical support enquiries.
+
+### Deploy to Heroku
+
+```
+heroku login
+heroku apps:create flappytips
+git push heroku master
+heroku local web
+heroku ps:scale web=1
+heroku open
+heroku logs --tail
+```
 
 ## Additional Notes
 
