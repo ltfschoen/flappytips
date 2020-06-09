@@ -11,9 +11,11 @@ export default function sketch(p){
   let didChangeBlockNumber = 0;
   let currentBlockHash = '';
   let currentBlockAuthors = [];
+  let gameOver;
+  let isGameOver = 0;
   let parentBlockHash = '';
   let obstacles = [];
-  let pipesCleared;
+  let blocksCleared;
   let obstaclesHit;
   let playQuality;
   let birdColor = 255;
@@ -26,7 +28,7 @@ export default function sketch(p){
   p.setup = () => {
     canvas = p.createCanvas(800, 400);
     p.bird = new Bird(p);
-    pipesCleared = 0;
+    blocksCleared = 0;
     obstaclesHit = 0;
     playQuality = 10;
     // obstacles.push(new Obstacle(p));
@@ -35,7 +37,7 @@ export default function sketch(p){
   p.draw = () => {
     p.clear();
     p.fill(COLOURS.pink);
-    p.textSize(12);
+    p.textSize(14);
     p.textFont("Helvetica");
     // p.text('Date: ' + new Date().toLocaleTimeString(), 20, 20);
     p.text('Game Speed: ' + currentSpeed, 20, 40);
@@ -46,10 +48,25 @@ export default function sketch(p){
     //   p.text('Current Block Authors: ' + currentBlockAuthors.join(', '), 20, 100);
     // }
     // p.text('Parent Block Hash: ' + parentBlockHash, 20, 120);
-    p.text('Blocks Cleared: ' + pipesCleared, 20, 100);
-    p.text('Block Collisions Damage: ' + obstaclesHit, 20, 120);
+    p.text('Blocks Cleared: ' + blocksCleared, 20, 100);
+    // p.text('Block Collisions Damage: ' + obstaclesHit, 20, 120);
     // p.text('Current Block Active Account IDs: ' + JSON.stringify(activeAccountIds), 20, 180)
-    // p.text('Play Quality: ' + String(1 + (pipesCleared / obstaclesHit) || 4).substring(0, 4) + '/5', 20, 140);
+    // p.text('Play Quality: ' + String(1 + (blocksCleared / obstaclesHit) || 4).substring(0, 4) + '/5', 20, 140);
+
+    if (isGameOver) {
+      currentSpeed = 3;
+      blocksCleared = 0;
+      obstacles = [];
+      obstaclesHit = 0;
+      return;
+    }
+    if (obstaclesHit > 0) {
+      console.log('game over');
+      isGameOver = 1;
+      gameOver(blocksCleared);
+      return;
+    }
+
     p.bird.show(birdColor);
     p.bird.update();
     // p.background('#FF0000');
@@ -73,7 +90,7 @@ export default function sketch(p){
 
       if (obstacles[i].offscreen()){
         obstacles.splice(i, 1);
-        pipesCleared++;
+        blocksCleared++;
       }      
     }
   }
@@ -85,6 +102,9 @@ export default function sketch(p){
   }
 
   p.touchStarted = () => {
+    if (isGameOver) {
+      return;
+    }
     if (birdColor === 255) {
       birdColor = COLOURS.pink;
       setTimeout(() => {
@@ -104,25 +124,29 @@ export default function sketch(p){
       chain = newProps.chain;
       if (newProps.currentBlockNumber !== newProps.previousBlockNumber) {
         didChangeBlockNumber = 1;
+        p.changeSpeed();
       }
       currentBlockNumber = newProps.currentBlockNumber;
       currentBlockHash = newProps.currentBlockHash;
       currentBlockAuthors = newProps.currentBlockAuthors;
+      gameOver = newProps.gameOver;
       parentBlockHash = newProps.parentBlockHash;
     }
   }
 
-  // p.getNextSpeed = () => {
-  //   let nextSpeed;
-  //   if (currentSpeed >= 5) {
-  //      nextSpeed = 1;
-  //   } else {
-  //     nextSpeed = currentSpeed + 1;
-  //   }
-  //   return nextSpeed; 
-  // }
+  p.getNextSpeed = () => {
+    let nextSpeed;
+    if (currentSpeed >= 20) {
+      nextSpeed = currentSpeed + 0.125;
+    } else if (currentSpeed >= 10) {
+      nextSpeed = currentSpeed + 0.5;
+    } else {
+      nextSpeed = currentSpeed + 1;
+    }
+    return nextSpeed; 
+  }
   
-  // p.changeSpeed = () => {
-  //   currentSpeed = p.getNextSpeed();
-  // }
+  p.changeSpeed = () => {
+    currentSpeed = p.getNextSpeed();
+  }
 }

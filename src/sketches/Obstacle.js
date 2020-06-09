@@ -4,12 +4,13 @@ function Obstacle(p, currentBlockNumber, currentSpeed, customFont){
   this.x = p.width;
   this.w = 50;
   this.topMin = 20;
-  this.botMin = p.height - 70;
+  this.botMin = p.height - 100;
   this.gapStart = p.random(this.topMin, this.botMin);
   this.gapMax = 200;
   this.gapMin = this.gapMax / p.random(1.5, 4);
-  this.gapLength = this.gapMax - this.gapMin;
-  this.speed = 5;
+  // easier gap when get to higher level (speed) so time to move between gap, but speed obviously faster
+  this.gapLength = currentSpeed > 10 ? this.gapMax : this.gapMax - this.gapMin;
+  this.speed = currentSpeed;
 
   this.show = function(){
       p.fill(0);
@@ -21,7 +22,7 @@ function Obstacle(p, currentBlockNumber, currentSpeed, customFont){
 
       p.fill(COLOURS.pink);
       p.textSize(25);
-      p.text(String(currentBlockNumber), this.x - 15, this.gapStart + (this.gapLength / 2), this.w, this.gapStart);
+      p.text(String(currentBlockNumber), this.x - 15, this.gapStart + (this.gapLength / 2), this.w, this.w);
   }
   this.update = function(){
       this.x -= this.speed;     

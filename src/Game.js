@@ -11,11 +11,13 @@ class Game extends Component {
     super();
     this.state = {
       activeAccountIds: {},
+      blocksCleared: 0,
       chain: '',
       currentBlockNumber: '',
       previousBlockNumber: '',
       currentBlockHash: '',
       currentBlockAuthors: [],
+      isGameOver: false,
       parentBlockHash: '',
       birdColor: 255,
       api: undefined,
@@ -141,17 +143,41 @@ class Game extends Component {
     this.setState({ birdColor: [Math.random()*255, Math.random()*255, Math.random()*255] })
   }
 
+  gameOver = (blocksCleared) => {
+    this.setState({
+      blocksCleared,
+      isGameOver: true
+    })
+  }
+
+  playAgain = () => {
+    window.location.reload();
+  }
+
   render() {
-    const { activeAccountIds, birdColor, chain, currentBlockNumber, currentBlockHash,
-      currentBlockAuthors, parentBlockHash, previousBlockNumber } = this.state;
+    const { activeAccountIds, birdColor, blocksCleared, chain, currentBlockNumber, currentBlockHash,
+      currentBlockAuthors, isGameOver, parentBlockHash, previousBlockNumber } = this.state;
 
     return (
       <div>
         {/* <button onClick={this.randomColor}>Random Color</button> */}
         <div className="brandname">FlappyTips</div>
-        <div className="instructions">Wait for next block, then Tap or press Spacebar to fly DOT through it</div>
+        {!isGameOver
+          ? (
+            currentBlockNumber > 0
+            ? null
+            : <div className={`game-state`}>Wait for next block, then Tap or press Spacebar to fly DOT through it</div>
+          )
+          : (
+            <div>
+              <div className={`game-state red`}>Game over! You cleared {blocksCleared} blocks!</div>
+              <button className="play-again btn btn-outline-dark btn-lg" onTouchStart={() => this.playAgain()} onClick={() => this.playAgain()}>Play Again?</button>
+            </div>
+          )
+        }
         <P5Wrapper
           sketch={sketch}
+          gameOver={(blocksCleared) => this.gameOver(blocksCleared)}
           color={birdColor}
           chain={chain}
           currentBlockNumber={currentBlockNumber}

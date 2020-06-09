@@ -41,7 +41,7 @@
   margin-top: 5%
 }
 
-.instructions {
+.game-state {
   color: #888888;
   font-size: 1.5em;
   position: fixed;
@@ -59,5 +59,21 @@
   position: fixed;
   top: 90%;
   left: 65%;
+  transform: translate(-50%, -50%);
+}
+
+.red {
+  color: #CC0000
+}
+
+.play-again {
+  /* font-family: monospace;
+  font-weight: 900;
+  font-style: italic;
+  color: #000000;
+  font-size: 3em; */
+  position: fixed;
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
 }
