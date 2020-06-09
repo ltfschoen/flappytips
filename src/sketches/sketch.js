@@ -113,7 +113,9 @@ export default function sketch(p){
     }
     p.bird.goUp();
     // prevent default
-    return false;
+    // To prevent any default behavior for this event, add "return false" to the end of the method.
+    // See https://github.com/processing/p5.js/blob/1.0.0/src/events/touch.js#L10
+    // return false;
   }
 
   p.myCustomRedrawAccordingToNewPropsHandler = (newProps) => {

@@ -1,7 +1,11 @@
 import React, { Component } from 'react';
 import P5Wrapper from 'react-p5-wrapper';
-import { ApiPromise, WsProvider } from '@polkadot/api';
-import { bufferToU8a, u8aToBuffer, u8aToString } from '@polkadot/util';
+import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
+import { bufferToU8a, u8aToBuffer, u8aToString, stringToU8a, u8aToHex } from '@polkadot/util';
+import Button from "react-bootstrap/Button";
+// import Input from "react-bootstrap/Input";
+import Modal from "react-bootstrap/Modal";
+import Form from "react-bootstrap/Form";
 import sketch from './sketches/sketch';
 import { ENDPOINTS } from './constants';
 import merge from './helpers/merge';
@@ -14,19 +18,35 @@ class Game extends Component {
       blocksCleared: 0,
       chain: '',
       currentBlockNumber: '',
+      currentEndpoint: '',
       previousBlockNumber: '',
       currentBlockHash: '',
       currentBlockAuthors: [],
-      isGameOver: false,
+      isGameStart: false,
       parentBlockHash: '',
       birdColor: 255,
       api: undefined,
-      provider: undefined
+      provider: undefined,
+      keyring: undefined,
+      showModal: false,
+      showModalChain: false
     };
+
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleSubmitChain = this.handleSubmitChain.bind(this);
   }
 
   async componentDidMount() {
-    const provider = new WsProvider(ENDPOINTS.westendW3F);
+    this.setState({
+      showModalChain: true
+    });
+  }
+
+  setup = async (customEndpoint) => {
+    const currentEndpoint = customEndpoint || ENDPOINTS.kusamaW3F;
+    // Create a keyring instance. https://polkadot.js.org/api/start/keyring.html
+    const keyring = new Keyring({ type: 'sr25519' });
+    const provider = new WsProvider(currentEndpoint);
     const api = await ApiPromise.create({ provider });
     const [chain, nodeName, nodeVersion] = await Promise.all([
       api.rpc.system.chain(),
@@ -122,8 +142,11 @@ class Game extends Component {
 
     this.setState({
       chain: chain.toString(),
+      currentEndpoint,
       api,
-      provider
+      keyring,
+      provider,
+      showModalChain: false
     });
   }
 
@@ -154,9 +177,96 @@ class Game extends Component {
     window.location.reload();
   }
 
+  async handleSubmit(event) {
+    console.log('handleSubmit');
+    const { api, blocksCleared, keyring } = this.state;
+    const twitterHandle = this.refs.twitterHandle.value;
+    const reason = `${twitterHandle} played FlappyTips.herokuapp.com and cleared ${blocksCleared} blocks!`;
+    event.preventDefault();
+
+    // Alice
+    // const mnemonicSeed = 'fitness brass champion rotate offer oak alarm purchase end mixture tattoo toss';
+    const mnemonicSeed = this.refs.mnemonicSeed.value;
+
+    // Add an account to keyring
+    const newPair = keyring.addFromUri(mnemonicSeed);
+    console.log('keyring pairs', keyring.getPairs());
+    // Log some info
+    console.log(`Keypair has address ${newPair.address} with publicKey [${newPair.publicKey}]`);
+
+    // Convert reason to message, sign and then verify
+    const message = stringToU8a(reason);
+    // const signature = newPair.sign(message);
+    // const isValid = newPair.verify(message, signature);
+    // // Log info
+    // console.log(`The signature ${u8aToHex(signature)}, is ${isValid ? '' : 'in'}valid`);
+
+    // let txHash;
+    // Note: Nonce is an optional RPC that needs to be explicitly exposed by the chain,
+    // otherwise do not use it.
+    // // retrieve the nextNonce
+    // const nonce = await api.rpc.account.nextNonce(newPair);
+    // // Sign and send a report awesome from the keyring pair
+
+    // txHash = await api.tx.balances
+    //   .transfer(newPair.address, 0.01)
+    //   .signAndSend(newPair);
+    //   // .signAndSend(newPair, { nonce });
+    // // Show the hash
+    // // Note: If returns error `Invalid Transaction: Payment`, then it is because the user is
+    // // trying to send from an account without sufficient balance
+    // console.log(`Submitted transfer with hash ${txHash.toHex()}`);
+
+    // Sign and send using user account
+    // Note: Check the chain that this is supported by
+    await api.tx.treasury
+      .reportAwesome(u8aToHex(message), newPair.address)
+      .signAndSend(newPair, ({ status, events }) => {
+        console.log('reportAwesome output: ', status, events);
+      });
+    console.log('Submitted reportAwesome');
+  }
+
+  async handleSubmitChain(event) {
+    console.log('handleSubmitChain');
+    this.closeModalChain();
+    const customEndpoint = this.refs.customEndpoint.value;
+    event.preventDefault();
+    this.setState({
+      currentEndpoint: customEndpoint
+    });
+
+    this.setup(customEndpoint);
+  }
+
+
+  closeModal = () => {
+    this.setState({
+      showModal: false,
+    });
+  }
+
+  openModal = () => {
+    this.setState({
+      showModal: true,
+    });
+  }
+
+  closeModalChain = () => {
+    this.setState({
+      showModalChain: false,
+    });
+  }
+
+  openModalChain = () => {
+    this.setState({
+      showModalChain: true,
+    });
+  }
+
   render() {
     const { activeAccountIds, birdColor, blocksCleared, chain, currentBlockNumber, currentBlockHash,
-      currentBlockAuthors, isGameOver, parentBlockHash, previousBlockNumber } = this.state;
+      currentBlockAuthors, currentEndpoint, isGameOver, parentBlockHash, previousBlockNumber } = this.state;
 
     return (
       <div>
@@ -170,8 +280,9 @@ class Game extends Component {
           )
           : (
             <div>
-              <div className={`game-state red`}>Game over! You cleared {blocksCleared} blocks!</div>
-              <button className="play-again btn btn-outline-dark btn-lg" onTouchStart={() => this.playAgain()} onClick={() => this.playAgain()}>Play Again?</button>
+              <div className={`game-state red`}>Game over! You're awesome for clearing {blocksCleared} blocks!</div>
+              <Button variant="dark" className="play-again btn btn-lg" onTouchStart={() => this.playAgain()} onClick={() => this.playAgain()}>Play Again?</Button>
+              <Button variant="success" className="report-awesomeness btn btn-lg" onTouchStart={() => this.openModal()} onClick={() => this.openModal()}>Report your awesomeness?</Button>
             </div>
           )
         }
@@ -187,6 +298,55 @@ class Game extends Component {
           previousBlockNumber={previousBlockNumber}
           activeAccountIds={activeAccountIds}
         ></P5Wrapper>
+        <Modal show={this.state.showModal} onHide={() => this.closeModal()}>
+          <Form onSubmit={this.handleSubmit}>
+            <Modal.Header closeButton>
+              <Modal.Title>Report your awesomeness!</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <Form.Group controlId="formTwitterHandle">
+                <h5>Chain Endpoint: {currentEndpoint}</h5>
+                <Form.Label>Twitter Handle:</Form.Label>
+                <Form.Control type="text" ref="twitterHandle" name="twitterHandle" placeholder="Twitter Handle" />
+                <Form.Text className="text-muted">
+                  Enter your Twitter handle
+                </Form.Text>
+              </Form.Group>
+              <Form.Group controlId="formMnemonicSeed">
+                <Form.Label>Mnemonic Seed:</Form.Label>
+                <Form.Control type="text" ref="mnemonicSeed" name="mnemonicSeed" placeholder="Account Mnemonic Seed" />
+                <Form.Text className="text-muted">
+                  Enter your secret Mnemonic Seed (Private Key) that you created at https://polkadot.js.org/apps/#/accounts for the chain endpoint shown above.
+                </Form.Text>
+              </Form.Group>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button className="btn btn-primary btn-large centerButton" type="submit">Send</Button>
+              <Button onClick={() => this.closeModal()} >Close</Button>
+            </Modal.Footer>
+          </Form>
+        </Modal>
+        <Modal show={this.state.showModalChain} onHide={() => this.closeModalChain()}>
+          <Form onSubmit={this.handleSubmitChain}>
+            <Modal.Header closeButton>
+              <Modal.Title>Choose a blockchain to play!</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+            <Form.Group controlId="customEndpoint">
+              <h5>Chain Endpoint:</h5>
+              <Form.Label>Select a chain endpoint</Form.Label>
+              <Form.Control as="select" ref="customEndpoint" name="customEndpoint">
+                {Object.values(ENDPOINTS).map((value, i) => {
+                  return <option key={i} value={value}>{value}</option>
+                })}
+              </Form.Control>
+            </Form.Group>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button className="btn btn-primary btn-large centerButton" type="submit">Save</Button>
+            </Modal.Footer>
+          </Form>
+        </Modal>
       </div>
     );
   }
