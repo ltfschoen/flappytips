@@ -13,6 +13,7 @@ class Game extends Component {
       activeAccountIds: {},
       chain: '',
       currentBlockNumber: '',
+      previousBlockNumber: '',
       currentBlockHash: '',
       currentBlockAuthors: [],
       parentBlockHash: '',
@@ -125,11 +126,13 @@ class Game extends Component {
   }
 
   handleReceiveNewHead = (currentBlockNumber, currentBlockHash, currentBlockAuthors, parentBlockHash, newActiveAccountIds) => {
+    let previousBlockNumber = this.state.currentBlockNumber;
     this.setState({
       currentBlockNumber,
       currentBlockHash,
       currentBlockAuthors,
       parentBlockHash,
+      previousBlockNumber,
       activeAccountIds: newActiveAccountIds
     });
   }
@@ -139,13 +142,14 @@ class Game extends Component {
   }
 
   render() {
-    const { activeAccountIds, birdColor, chain, currentBlockNumber, currentBlockHash, currentBlockAuthors, parentBlockHash } = this.state;
+    const { activeAccountIds, birdColor, chain, currentBlockNumber, currentBlockHash,
+      currentBlockAuthors, parentBlockHash, previousBlockNumber } = this.state;
 
     return (
       <div>
         {/* <button onClick={this.randomColor}>Random Color</button> */}
         <div className="brandname">FlappyTips</div>
-        <div className="instructions">Tap screen or press Spacebar to fly the DOT through block obstacles</div>
+        <div className="instructions">Wait for next block, then Tap or press Spacebar to fly DOT through it</div>
         <P5Wrapper
           sketch={sketch}
           color={birdColor}
@@ -154,6 +158,7 @@ class Game extends Component {
           currentBlockHash={currentBlockHash}
           currentBlockAuthors={currentBlockAuthors}
           parentBlockHash={parentBlockHash}
+          previousBlockNumber={previousBlockNumber}
           activeAccountIds={activeAccountIds}
         ></P5Wrapper>
       </div>
