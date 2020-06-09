@@ -30,7 +30,7 @@ kill -9 <PROCESS_ID>
 ```
 heroku login
 heroku apps:create flappytips
-git push heroku master
+git push -f heroku master
 heroku local web
 heroku ps:scale web=1
 heroku open
