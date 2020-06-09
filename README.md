@@ -29,6 +29,7 @@ heroku apps:create flappytips
 git push -f heroku master
 heroku local web
 heroku ps:scale web=1:free
+heroku ps
 heroku open
 heroku logs --tail
 heroku restart
