@@ -144,7 +144,8 @@ class Game extends Component {
     return (
       <div>
         {/* <button onClick={this.randomColor}>Random Color</button> */}
-        <div className="instructions">Tap screen or press Spacebar to fly DOT through block obstacles</div>
+        <div className="brandname">FlappyTips</div>
+        <div className="instructions">Tap screen or press Spacebar to fly the DOT through block obstacles</div>
         <P5Wrapper
           sketch={sketch}
           color={birdColor}
