@@ -179,9 +179,9 @@ class Game extends Component {
 
   async handleSubmit(event) {
     console.log('handleSubmit');
-    const { api, blocksCleared, keyring } = this.state;
+    const { api, blocksCleared, currentBlockNumber, keyring } = this.state;
     const twitterHandle = this.refs.twitterHandle.value;
-    const reason = `${twitterHandle} played FlappyTips.herokuapp.com and cleared ${blocksCleared} blocks!`;
+    const reason = `${twitterHandle} played FlappyTips.herokuapp.com and cleared ${blocksCleared} blocks from ${currentBlockNumber}!`;
     event.preventDefault();
 
     // Alice
@@ -301,7 +301,7 @@ class Game extends Component {
         <Modal show={this.state.showModal} onHide={() => this.closeModal()}>
           <Form onSubmit={this.handleSubmit}>
             <Modal.Header closeButton>
-              <Modal.Title>Report your awesomeness!</Modal.Title>
+              <Modal.Title>Share your awesomeness on-chain!</Modal.Title>
             </Modal.Header>
             <Modal.Body>
               <Form.Group controlId="formTwitterHandle">
