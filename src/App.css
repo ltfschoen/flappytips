@@ -40,3 +40,12 @@
 .container {
   margin-top: 5%
 }
+
+.instructions {
+  color: #888888;
+  font-size: 1.5em;
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}

@@ -55,6 +55,8 @@ heroku ps:scale web=1:free
 
 ## Troubleshooting
 
+* If you get an unknown type error, then it may be necessary to update polkadot-js/api dependency in package.json, since it is constantly evolving.
+
 * To kill a frozen process
 ```
 ps -ef | grep node

@@ -28,7 +28,7 @@ export default function sketch(p){
   p.draw = () => {
     p.clear();
     p.fill(COLOURS.pink);
-    p.textSize(14);
+    p.textSize(13);
     p.textFont("Helvetica");
     // p.text('Date: ' + new Date().toLocaleTimeString(), 20, 20);
     p.text('Chain: ' + chain, 20, 40);
@@ -67,6 +67,19 @@ export default function sketch(p){
     if (p.key === " ") {
       p.bird.goUp();
     }
+  }
+
+  p.touchStarted = () => {
+    
+    if (birdColor === 255) {
+      birdColor = COLOURS.pink;
+      setTimeout(() => {
+        birdColor = 255;
+      }, 1000);
+    }
+    p.bird.goUp();
+    // prevent default
+    return false;
   }
 
   p.myCustomRedrawAccordingToNewPropsHandler = (newProps) => {
