@@ -5,14 +5,14 @@
 * Go to https://flappytips.herokuapp.com
 * Press space bar to make your dot fly and try to navigate through the obstacles.
 
-### Develop
+### Develop Environment
 
 Clone the repository, install Yarn and Node.js, and then run the following in terminal:
 ```
 npm install -g nodemon &&
 yarn &&
-yarn build &&
-yarn dev
+yarn run build &&
+yarn run start-dev
 ```
 
 * Go to http://localhost:3000
@@ -20,13 +20,9 @@ yarn dev
 
 Additional planned functionality and deployment to production is dependent on whether help is obtained from Riot channels in response to technical support enquiries.
 
-* To kill a frozen process
-```
-ps -ef | grep node
-kill -9 <PROCESS_ID>
-```
 ### Deploy to Heroku
 
+* Start
 ```
 heroku login
 heroku apps:create flappytips
@@ -38,9 +34,35 @@ heroku logs --tail
 heroku restart
 ```
 
+* Stop
+```
+heroku ps:stop web
+```
+
+* Scale up dynos
+```
+heroku ps:scale web=2:standard-2x
+```
+
+* Scale down dynos
+```
+heroku ps:scale web=1:free
+```
+
+* Fees - https://devcenter.heroku.com/articles/usage-and-billing
+* Scaling help - https://devcenter.heroku.com/articles/scaling
+
 ## Credits
 
 * https://codepen.io/renzo/pen/GXWbEq
+
+## Troubleshooting
+
+* To kill a frozen process
+```
+ps -ef | grep node
+kill -9 <PROCESS_ID>
+```
 
 ## Additional Notes
 
