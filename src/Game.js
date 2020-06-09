@@ -14,6 +14,7 @@ class Game extends Component {
   constructor(){
     super();
     this.state = {
+      accountAddress: undefined,
       activeAccountIds: {},
       blocksCleared: 0,
       chain: '',
@@ -271,8 +272,25 @@ class Game extends Component {
     });
   }
 
+  onChangeMnemonic = (event) => {
+    let accountAddress;
+    const { keyring } = this.state;
+    const mnemonicSeed = event.refs.mnemonicSeed.value;
+    try {
+      const newPair = keyring.addFromUri(mnemonicSeed);
+      console.log(`Keypair accountAddress [${newPair.address}]`);
+      accountAddress = newPair.address;
+    } catch (err) {
+      console.log('no matching pair for mnemonic seed');
+      accountAddress = undefined;
+    }
+    this.setState({
+      accountAddress,
+    });
+  }
+
   render() {
-    const { activeAccountIds, birdColor, blocksCleared, chain, currentBlockNumber, currentBlockHash,
+    const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, currentBlockNumber, currentBlockHash,
       currentBlockAuthors, currentEndpoint, isGameOver, parentBlockHash, previousBlockNumber } = this.state;
 
     return (
@@ -320,8 +338,8 @@ class Game extends Component {
                 </Form.Text>
               </Form.Group>
               <Form.Group controlId="formMnemonicSeed">
-                <Form.Label>Mnemonic Seed:</Form.Label>
-                <Form.Control type="text" ref="mnemonicSeed" name="mnemonicSeed" placeholder="Account Mnemonic Seed" />
+                <Form.Label>Mnemonic Seed:  Public Address (SS58): {accountAddress}</Form.Label>
+                <Form.Control type="text" ref="mnemonicSeed" name="mnemonicSeed" placeholder="Account Mnemonic Seed" onChange={() => this.onChangeMnemonic(this)}/>
                 <Form.Text className="text-muted">
                   Enter your secret Mnemonic Seed (Private Key) that you created at https://polkadot.js.org/apps/#/accounts for the chain endpoint shown above.
                 </Form.Text>
