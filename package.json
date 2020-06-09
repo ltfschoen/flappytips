@@ -15,6 +15,11 @@
     "react-p5-wrapper": "^2.0.0",
     "react-scripts": "3.4.1"
   },
+  "engines": {
+    "node": "10.x",
+    "npm": "6.x",
+    "yarn": "1.x"
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
