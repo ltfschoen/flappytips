@@ -229,7 +229,7 @@ class Game extends Component {
 
   async handleSubmitChain(event) {
     console.log('handleSubmitChain');
-    this.closeModalChain();
+    this.closeModalChainWindow();
     const customEndpoint = this.refs.customEndpoint.value;
     event.preventDefault();
     this.setState({
@@ -252,10 +252,17 @@ class Game extends Component {
     });
   }
 
-  closeModalChain = () => {
+  // Common method to close the chain window
+  closeModalChainWindow = () => {
     this.setState({
       showModalChain: false,
     });
+  }
+
+  // If the user clicks outside the chain modal, we want to setup but with the default chain endpoint
+  closeModalChain = () => {
+    this.closeModalChainWindow();
+    this.setup(undefined);
   }
 
   openModalChain = () => {
@@ -309,7 +316,7 @@ class Game extends Component {
                 <Form.Label>Twitter Handle:</Form.Label>
                 <Form.Control type="text" ref="twitterHandle" name="twitterHandle" placeholder="Twitter Handle" />
                 <Form.Text className="text-muted">
-                  Enter your Twitter handle
+                  Enter your Twitter handle or other form of nickname
                 </Form.Text>
               </Form.Group>
               <Form.Group controlId="formMnemonicSeed">
