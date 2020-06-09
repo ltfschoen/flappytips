@@ -18,7 +18,8 @@
     "react-bootstrap": "^1.0.1",
     "react-dom": "^16.13.1",
     "react-p5-wrapper": "^2.0.0",
-    "react-scripts": "3.4.1"
+    "react-scripts": "3.4.1",
+    "websocket-extensions": "^0.1.4"
   },
   "engines": {
     "node": "10.x",
