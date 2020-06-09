@@ -342,6 +342,7 @@ class Game extends Component {
                 <Form.Control type="text" ref="mnemonicSeed" name="mnemonicSeed" placeholder="Account Mnemonic Seed" onChange={() => this.onChangeMnemonic(this)}/>
                 <Form.Text className="text-muted">
                   Enter your secret Mnemonic Seed (Private Key) that you created at https://polkadot.js.org/apps/#/accounts for the chain endpoint shown above.
+                  Important: Ensure it has sufficient balance to pay fees for the submission (e.g. 1.000 milli KSM or DOT)
                 </Form.Text>
               </Form.Group>
             </Modal.Body>
