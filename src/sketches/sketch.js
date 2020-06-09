@@ -29,7 +29,7 @@ export default function sketch(p){
     pipesCleared = 0;
     obstaclesHit = 0;
     playQuality = 10;
-    obstacles.push(new Obstacle(p));
+    // obstacles.push(new Obstacle(p));
   }
 
   p.draw = () => {

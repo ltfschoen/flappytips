@@ -20,7 +20,8 @@ function Obstacle(p, currentBlockNumber, currentSpeed, customFont){
       p.rect(this.x, this.gapStart + this.gapLength, this.w, p.height);
 
       p.fill(COLOURS.pink);
-      p.text(String(currentBlockNumber), this.x + 5, 0, this.w, this.gapStart);
+      p.textSize(25);
+      p.text(String(currentBlockNumber), this.x - 15, this.gapStart + (this.gapLength / 2), this.w, this.gapStart);
   }
   this.update = function(){
       this.x -= this.speed;     
