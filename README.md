@@ -9,8 +9,10 @@
 
 Clone the repository, install Yarn and Node.js, and then run the following in terminal:
 ```
-yarn
-yarn start
+npm install -g nodemon &&
+yarn &&
+yarn build &&
+yarn dev
 ```
 
 * Go to http://localhost:3000
@@ -18,6 +20,11 @@ yarn start
 
 Additional planned functionality and deployment to production is dependent on whether help is obtained from Riot channels in response to technical support enquiries.
 
+* To kill a frozen process
+```
+ps -ef | grep node
+kill -9 <PROCESS_ID>
+```
 ### Deploy to Heroku
 
 ```
@@ -28,7 +35,12 @@ heroku local web
 heroku ps:scale web=1
 heroku open
 heroku logs --tail
+heroku restart
 ```
+
+## Credits
+
+* https://codepen.io/renzo/pen/GXWbEq
 
 ## Additional Notes
 
