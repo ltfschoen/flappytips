@@ -363,7 +363,11 @@ class Game extends Component {
               <Form.Label>Select a chain endpoint</Form.Label>
               <Form.Control as="select" ref="customEndpoint" name="customEndpoint">
                 {Object.values(ENDPOINTS).map((value, i) => {
-                  return <option key={i} value={value}>{value}</option>
+                  return (
+                    value === 'wss://testnet-harbour.datahighway.com'
+                      ? <option disabled="disabled" key={i} value={value}>{value}</option>
+                      : <option key={i} value={value}>{value}</option>
+                  )
                 })}
               </Form.Control>
             </Form.Group>
