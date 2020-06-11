@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import P5Wrapper from 'react-p5-wrapper';
+import { isMobile } from "react-device-detect";
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
+import { web3Accounts, web3Enable, web3FromAddress, web3ListRpcProviders, web3UseRpcProvider } from '@polkadot/extension-dapp';
 import { bufferToU8a, u8aToBuffer, u8aToString, stringToU8a, u8aToHex } from '@polkadot/util';
 import Button from "react-bootstrap/Button";
 // import Input from "react-bootstrap/Input";
@@ -23,6 +25,8 @@ class Game extends Component {
       previousBlockNumber: '',
       currentBlockHash: '',
       currentBlockAuthors: [],
+      extensionAllInjected: '',
+      extensionAllAccountsList: [],
       isGameStart: false,
       parentBlockHash: '',
       birdColor: 255,
@@ -38,16 +42,38 @@ class Game extends Component {
   }
 
   async componentDidMount() {
+    // Returns an array of all the injected sources
+    let allInjected = await web3Enable('FlappyTips');
+    allInjected = allInjected.map(({ name, version }) => `${name} ${version}`);
+    console.log('allInjected: ', allInjected);
+
+    // returns an array of { address, meta: { name, source } }
+    // meta.source contains the name of the extension that provides this account
+    let allAccounts = await web3Accounts();
+    let allAccountsList = [];
+    allAccounts = allAccounts.map(({ address }) => allAccountsList.push(`${address}`));
+    console.log('allAccounts', allAccountsList);
+
     this.setState({
+      extensionNotInstalled: allInjected.length === 0,
+      extensionAllInjected: allInjected,
+      extensionAllAccountsList: allAccountsList,
       showModalChain: true
     });
   }
 
   setup = async (customEndpoint) => {
+    // // IMPORTANT: This does not appear to work so we've used @polkadot-js/api's WsProvider instead
+    // // retrieve all the RPC providers from a particular source
+    // const allProviders = await web3ListRpcProviders('polkadot-js');
+    // console.log('allProviders', allProviders)
+    // // assuming one of the keys in `allProviders` is 'kusama-cc3', we can then use that provider
+    // const { provider } = web3UseRpcProvider('polkadot-js', 'kusama-cc3');
+
     const currentEndpoint = customEndpoint || ENDPOINTS.kusamaW3F;
+    const provider = new WsProvider(currentEndpoint);
     // Create a keyring instance. https://polkadot.js.org/api/start/keyring.html
     const keyring = new Keyring({ type: 'sr25519' });
-    const provider = new WsProvider(currentEndpoint);
     const api = await ApiPromise.create({ provider });
     const [chain, nodeName, nodeVersion] = await Promise.all([
       api.rpc.system.chain(),
@@ -182,18 +208,31 @@ class Game extends Component {
     console.log('handleSubmit');
     const { api, blocksCleared, currentBlockNumber, keyring } = this.state;
     const twitterHandle = this.refs.twitterHandle.value;
-    const reason = `${twitterHandle} played FlappyTips.herokuapp.com and cleared ${blocksCleared} blocks from ${currentBlockNumber}!`;
+    const reason = `${twitterHandle} played FlappyTips.herokuapp.com on desktop using Polkadot.js Extension and cleared ${blocksCleared} blocks from ${currentBlockNumber}!`;
     event.preventDefault();
 
-    // Alice
-    // const mnemonicSeed = 'fitness brass champion rotate offer oak alarm purchase end mixture tattoo toss';
-    const mnemonicSeed = this.refs.mnemonicSeed.value;
+    let senderAddress;
+    if (isMobile) {
+      // Alice
+      // const mnemonicSeed = 'fitness brass champion rotate offer oak alarm purchase end mixture tattoo toss';
+      const mnemonicSeed = this.refs.mnemonicSeed.value;
 
-    // Add an account to keyring
-    const newPair = keyring.addFromUri(mnemonicSeed);
-    console.log('keyring pairs', keyring.getPairs());
-    // Log some info
-    console.log(`Keypair has address ${newPair.address} with publicKey [${newPair.publicKey}]`);
+      // Add an account to keyring
+      const newPair = keyring.addFromUri(mnemonicSeed);
+      console.log('keyring pairs', keyring.getPairs());
+      // Log some info
+      console.log(`Keypair has address ${newPair.address} with publicKey [${newPair.publicKey}]`);
+      senderAddress = newPair.address;
+    } else {
+      const chainAccount = this.refs.chainAccount.value;
+      console.log('chainAccount entered: ', chainAccount);
+      // finds an injector for an address
+      const injector = await web3FromAddress(chainAccount);
+      
+      // Sets the signer for the address on the @polkadot/api so it causes popup to sign extrinsic
+      api.setSigner(injector.signer);
+      senderAddress = chainAccount;
+    }
 
     // Convert reason to message, sign and then verify
     const message = stringToU8a(reason);
@@ -202,30 +241,62 @@ class Game extends Component {
     // // Log info
     // console.log(`The signature ${u8aToHex(signature)}, is ${isValid ? '' : 'in'}valid`);
 
-    // let txHash;
-    // Note: Nonce is an optional RPC that needs to be explicitly exposed by the chain,
-    // otherwise do not use it.
-    // // retrieve the nextNonce
-    // const nonce = await api.rpc.account.nextNonce(newPair);
-    // // Sign and send a report awesome from the keyring pair
+    // await api.tx.balances
+    //   .transfer(senderAddress, 0.01)
+    //   .signAndSend(senderAddress, ({ status, events }) => {
+    //     this.showExtrinsicLogs('balances', status, events);
+    //   });
+    // Note: If returns error `Invalid Transaction: Payment`, then it is because the user is
+    // trying to send from an account without sufficient balance
 
-    // txHash = await api.tx.balances
-    //   .transfer(newPair.address, 0.01)
-    //   .signAndSend(newPair);
-    //   // .signAndSend(newPair, { nonce });
-    // // Show the hash
-    // // Note: If returns error `Invalid Transaction: Payment`, then it is because the user is
-    // // trying to send from an account without sufficient balance
-    // console.log(`Submitted transfer with hash ${txHash.toHex()}`);
+    // // Sign and send using user account
+    // // Note: Check the chain that this is supported by
+    // await api.tx.treasury
+    //   .reportAwesome(u8aToHex(message), senderAddress)
+    //   .signAndSend(senderAddress, ({ status, events }) => {
+    //     this.showExtrinsicLogs('reportAwesome', status, events);
+    //   });
+    // console.log('Submitted reportAwesome');
 
-    // Sign and send using user account
-    // Note: Check the chain that this is supported by
-    await api.tx.treasury
-      .reportAwesome(u8aToHex(message), newPair.address)
-      .signAndSend(newPair, ({ status, events }) => {
-        console.log('reportAwesome output: ', status, events);
-      });
-    console.log('Submitted reportAwesome');
+      // IMPORTANT: Not using this since we're now using Polkadot.js Extension instead of mnemonic input
+      // .reportAwesome(u8aToHex(message), newPair.address)
+      // .signAndSend(newPair, ({ status, events }) => {
+      //   console.log('reportAwesome output: ', status, events);
+      // });
+  }
+
+  showExtrinsicLogs = (extrinsicName, status, events) => {
+    const { api } = this.state;
+    if (status.isInBlock || status.isFinalized) {
+      console.log(`${extrinsicName} current status is ${status}`);
+
+      if (status.isInBlock) {
+        console.log(`${extrinsicName} transaction included at blockHash ${status.asInBlock}`);
+      } else if (status.isFinalized) {
+        console.log(`${extrinsicName} transaction finalized at blockHash ${status.asFinalized}`);
+      }
+
+      events
+        // find/filter for failed events
+        .filter(({ section, method }) =>
+          section === 'system' &&
+          method === 'ExtrinsicFailed'
+        )
+        // we know that data for system.ExtrinsicFailed is
+        // (DispatchError, DispatchInfo)
+        .forEach(({ data: [error, info] }) => {
+          if (error.isModule) {
+            // for module errors, we have the section indexed, lookup
+            const decoded = api.registry.findMetaError(error.asModule);
+            const { documentation, method, section } = decoded;
+
+            console.log(`${extrinsicName} error: ${section}.${method}: ${documentation.join(' ')}`);
+          } else {
+            // Other, CannotLookup, BadOrigin, no extra info
+            console.log(`${extrinsicName} other error: `, error.toString());
+          }
+        });
+    }
   }
 
   async handleSubmitChain(event) {
@@ -291,7 +362,8 @@ class Game extends Component {
 
   render() {
     const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, currentBlockNumber, currentBlockHash,
-      currentBlockAuthors, currentEndpoint, isGameOver, parentBlockHash, previousBlockNumber } = this.state;
+      currentBlockAuthors, currentEndpoint, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList, isGameOver,
+      parentBlockHash, previousBlockNumber, showModalChain } = this.state;
 
     return (
       <div>
@@ -337,14 +409,35 @@ class Game extends Component {
                   Enter your Twitter handle or other form of nickname
                 </Form.Text>
               </Form.Group>
-              <Form.Group controlId="formMnemonicSeed">
-                <Form.Label>Mnemonic Seed:  Public Address (SS58): {accountAddress}</Form.Label>
-                <Form.Control type="text" ref="mnemonicSeed" name="mnemonicSeed" placeholder="Account Mnemonic Seed" onChange={() => this.onChangeMnemonic(this)}/>
-                <Form.Text className="text-muted">
-                  Enter your secret Mnemonic Seed (Private Key) that you created at https://polkadot.js.org/apps/#/accounts for the chain endpoint shown above.
-                  Important: Ensure it has sufficient balance to pay fees for the submission (e.g. 1.000 milli KSM or DOT)
-                </Form.Text>
-              </Form.Group>
+              {!isMobile
+                ? (
+                  <Form.Group controlId="formChainAccount">
+                    <h5>Chain Account:</h5>
+                    <Form.Label>Select an account for this chain</Form.Label>
+                    <Form.Control as="select" ref="chainAccount" name="chainAccount">
+                      {extensionAllAccountsList.map((value, i) => {
+                        return <option key={i} value={value}>{value}</option>
+                      })}
+                    </Form.Control>
+                    <Form.Text className="text-muted">
+                      Important: Ensure it has sufficient balance to pay fees for a submission (e.g. >1.000 milli KSM or DOT)
+                    </Form.Text>
+                  </Form.Group>
+                )
+                : (
+                  <Form.Group controlId="formMnemonicSeed">
+                    <Form.Label>Mnemonic Seed:  Public Address (SS58): {accountAddress}</Form.Label>
+                    <Form.Control type="text" ref="mnemonicSeed" name="mnemonicSeed" placeholder="Account Mnemonic Seed" onChange={() => this.onChangeMnemonic(this)}/>
+                    <Form.Text className="text-muted">
+                      Enter your secret Mnemonic Seed (Private Key) that you created at https://polkadot.js.org/apps/#/accounts for the chain endpoint shown above.
+                      Important: Ensure it has sufficient balance to pay fees for the submission (e.g. 1.000 milli KSM or DOT)
+                    </Form.Text>
+                  </Form.Group>
+                )
+              }
+              <div>
+                After submitting, find your tip <a target="_new" href="https://polkadot.js.org/apps/#/treasury">here</a>
+              </div>
             </Modal.Body>
             <Modal.Footer>
               <Button className="btn btn-primary btn-large centerButton" type="submit">Send</Button>
@@ -352,11 +445,15 @@ class Game extends Component {
             </Modal.Footer>
           </Form>
         </Modal>
-        <Modal show={this.state.showModalChain} onHide={() => this.closeModalChain()}>
+        <Modal show={showModalChain && !extensionNotInstalled} onHide={() => this.closeModalChain()}>
           <Form onSubmit={this.handleSubmitChain}>
             <Modal.Header closeButton>
-              <Modal.Title>Choose a blockchain to play!</Modal.Title>
+              <Modal.Title>{isMobile ? 'FlappyTips Mobile' : 'FlappyTips Desktop'}: Choose a blockchain to play!</Modal.Title>
             </Modal.Header>
+            {!isMobile
+              ? <div><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extension detected: {extensionAllInjected}</b></div>
+              : null
+            }
             <Modal.Body>
             <Form.Group controlId="customEndpoint">
               <h5>Chain Endpoint:</h5>
@@ -364,7 +461,7 @@ class Game extends Component {
               <Form.Control as="select" ref="customEndpoint" name="customEndpoint">
                 {Object.values(ENDPOINTS).map((value, i) => {
                   return (
-                    value === 'wss://testnet-harbour.datahighway.com'
+                    value === 'wss://testnet-harbour.datahighway.com' || value === 'wss://westend-rpc.polkadot.io'
                       ? <option disabled="disabled" key={i} value={value}>{value}</option>
                       : <option key={i} value={value}>{value}</option>
                   )
@@ -373,9 +470,42 @@ class Game extends Component {
             </Form.Group>
             </Modal.Body>
             <Modal.Footer>
-              <Button className="btn btn-primary btn-large centerButton" type="submit">Save</Button>
+              <Button className="btn btn-primary btn-large centerButton" type="submit">Play</Button>
             </Modal.Footer>
           </Form>
+        </Modal>
+
+        <Modal show={extensionNotInstalled && !isMobile} onHide={() => console.log('Desktop detected. Polkadot.js extension is required')}>
+          <Modal.Header closeButton>
+            <Modal.Title>FlappyTips Desktop: Install and enable Polkadot.js Extension</Modal.Title>
+          </Modal.Header>
+
+          <Modal.Body>
+            <h3>Desktop users</h3>
+            <p>Desktop users should use the Polkadot.js Extension (similar to MetaMask) that allows use of your cryptocurrency wallet to easily interact with
+              this FlappyTips without exposing your private keys. Social interaction in FlappyTips
+              requires an active account with sufficient balance to pay each transaction fee (e.g. 0.01 KSM)
+              by accepting or rejecting pop-ups requesting your signature. After downloading it, enable it in your web browser settings, then refresh this
+              page and authorise the extension to play!
+            </p>
+            <p>
+              <Button target="_new" href="https://github.com/polkadot-js/extension#installation">Download the Polkadot.js Extension</Button>
+            </p>
+          </Modal.Body>
+        </Modal>
+
+        <Modal show={extensionNotInstalled && isMobile} onHide={() => console.log('Mobile device detected')}>
+          <Modal.Header closeButton>
+            <Modal.Title>FlappyTips Mobile</Modal.Title>
+          </Modal.Header>
+
+          <Modal.Body>
+            <h3>Mobile users</h3>
+            <p>We've detected that you're on a Mobile device where Polkadot.js Extension isn't supported, so you'll have to enter your private key (Mnemonic Seed) to share your game results until FlappyTips supports scanning account QR codes</p>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button onClick={() => this.closeModal()}>Play (Mobile only)</Button>
+          </Modal.Footer>
         </Modal>
       </div>
     );

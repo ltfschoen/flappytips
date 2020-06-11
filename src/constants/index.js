@@ -3,7 +3,7 @@ const ENDPOINTS = {
   polkadotW3F: 'wss://cc1-1.polkadot.network',
   dataHighwayHarbourTest: 'wss://testnet-harbour.datahighway.com',
   // Note: Westend not supported as it does not use Treasury, which is required for using Tips
-  // westendW3F: 'wss://westend-rpc.polkadot.io',
+  westendW3F: 'wss://westend-rpc.polkadot.io',
   // Note: Kulupu not supported as it returns error
   // `Unhandled Rejection (TypeError): Cannot read property 'validators' of undefined`
   // kulupuMainnet: 'wss://rpc.kulupu.network/ws',

@@ -1,10 +1,11 @@
-## Flappy tips
+## FlappyTips
 
 **Objective:** Fly the DOT character between the gaps as many blocks as possible. 
 
 **Features**:
 * Choice of currently supported chains (i.e. Polkadot, Kusama).
 * Player character is a DOT (similar to Flappy Bird)
+* Polkadot.js Extension is integrated when playing on Desktop, otherwise user needs to enter their private key to share their result (until FlappyTips supports account QR code scanning)
 * Responsive with support for mobile devices or desktop
 * Press Spacebar multiple times to fly the DOT on desktop
 * Touch the screen multiple times to fly the DOT on mobile devices
