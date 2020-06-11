@@ -34,7 +34,8 @@ class Game extends Component {
       provider: undefined,
       keyring: undefined,
       showModal: false,
-      showModalChain: false
+      showModalChain: false,
+      showModalMobile: isMobile
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -311,6 +312,11 @@ class Game extends Component {
     this.setup(customEndpoint);
   }
 
+  closeModalMobile = () => {
+    this.setState({
+      showModalMobile: false,
+    });
+  }
 
   closeModal = () => {
     this.setState({
@@ -363,7 +369,7 @@ class Game extends Component {
   render() {
     const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, currentBlockNumber, currentBlockHash,
       currentBlockAuthors, currentEndpoint, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList, isGameOver,
-      parentBlockHash, previousBlockNumber, showModalChain } = this.state;
+      parentBlockHash, previousBlockNumber, showModal, showModalChain, showModalMobile } = this.state;
 
     return (
       <div>
@@ -395,7 +401,7 @@ class Game extends Component {
           previousBlockNumber={previousBlockNumber}
           activeAccountIds={activeAccountIds}
         ></P5Wrapper>
-        <Modal show={this.state.showModal} onHide={() => this.closeModal()}>
+        <Modal show={showModal} onHide={() => this.closeModal()}>
           <Form onSubmit={this.handleSubmit}>
             <Modal.Header closeButton>
               <Modal.Title>Share your awesomeness on-chain!</Modal.Title>
@@ -445,10 +451,10 @@ class Game extends Component {
             </Modal.Footer>
           </Form>
         </Modal>
-        <Modal show={showModalChain && !extensionNotInstalled} onHide={() => this.closeModalChain()}>
+        <Modal show={!showModalMobile && showModalChain} onHide={() => this.closeModalChain()}>
           <Form onSubmit={this.handleSubmitChain}>
             <Modal.Header closeButton>
-              <Modal.Title>{isMobile ? 'FlappyTips Mobile' : 'FlappyTips Desktop'}: Choose a blockchain to play!</Modal.Title>
+              <Modal.Title>{isMobile ? 'FlappyTips on Mobile' : 'FlappyTips on Desktop'}: Choose a blockchain to play!</Modal.Title>
             </Modal.Header>
             {!isMobile
               ? <div><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extension detected: {extensionAllInjected}</b></div>
@@ -477,13 +483,13 @@ class Game extends Component {
 
         <Modal show={extensionNotInstalled && !isMobile} onHide={() => console.log('Desktop detected. Polkadot.js extension is required')}>
           <Modal.Header closeButton>
-            <Modal.Title>FlappyTips Desktop: Install and enable Polkadot.js Extension</Modal.Title>
+            <Modal.Title>FlappyTips on Desktop: Install and enable Polkadot.js Extension</Modal.Title>
           </Modal.Header>
 
           <Modal.Body>
             <h3>Desktop users</h3>
-            <p>Desktop users should use the Polkadot.js Extension (similar to MetaMask) that allows use of your cryptocurrency wallet to easily interact with
-              this FlappyTips without exposing your private keys. Social interaction in FlappyTips
+            <p>FlappyTips on Desktop users should use the Polkadot.js Extension (similar to MetaMask) that allows use of your cryptocurrency wallet to easily interact with
+              the game without exposing your private keys. Social interaction in FlappyTips
               requires an active account with sufficient balance to pay each transaction fee (e.g. 0.01 KSM)
               by accepting or rejecting pop-ups requesting your signature. After downloading it, enable it in your web browser settings, then refresh this
               page and authorise the extension to play!
@@ -494,17 +500,19 @@ class Game extends Component {
           </Modal.Body>
         </Modal>
 
-        <Modal show={extensionNotInstalled && isMobile} onHide={() => console.log('Mobile device detected')}>
+        <Modal show={showModalMobile && extensionNotInstalled && isMobile} onHide={() => console.log('Mobile device detected')}>
           <Modal.Header closeButton>
             <Modal.Title>FlappyTips Mobile</Modal.Title>
           </Modal.Header>
 
           <Modal.Body>
             <h3>Mobile users</h3>
-            <p>We've detected that you're on a Mobile device where Polkadot.js Extension isn't supported, so you'll have to enter your private key (Mnemonic Seed) to share your game results until FlappyTips supports scanning account QR codes</p>
+            <p><b>WARNING</b> To share your Flappy on Mobile game results, only loading your account by
+            entering your private key is currently supported. Only FlappyTips on Desktop supports loading
+            accounts using the Polkadot.js Extension..</p>
           </Modal.Body>
           <Modal.Footer>
-            <Button onClick={() => this.closeModal()}>Play (Mobile only)</Button>
+            <Button onClick={() => this.closeModalMobile()}>Play (Mobile only)</Button>
           </Modal.Footer>
         </Modal>
       </div>

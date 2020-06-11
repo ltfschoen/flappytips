@@ -2,6 +2,8 @@
 
 **Objective:** Fly the DOT character between the gaps as many blocks as possible. 
 
+**Economics** Incentivises users to create an account on the chain and deposit sufficient funds to cover the transaction costs required to share their game results. If the user plays the game and shares their results, they may be eligible for a tip from the treasury.
+
 **Features**:
 * Choice of currently supported chains (i.e. Polkadot, Kusama).
 * Player character is a DOT (similar to Flappy Bird)
@@ -13,6 +15,10 @@
 * After each block appears, the speed that it moves increases each time.
 * After about 10 blocks the gap may becomes larger but it still becomes more difficult as the blocks move faster
 * If you click "Share your awesomeness?" button after each game and enter your "Mnemonic Seed" that corresponds to the chain that you chose to connected to in the game, along with an optional identifer (i.e. your Twitter handle), it then will submit an extrinsic to the chain that will report your awesomeness for clearing some blocks as a Tip, and should appear in the "Tip" section here https://polkadot.js.org/apps/#/treasury. To obtain an account for that chain and an associated "Mnemonic Seed", go to https://polkadot.js.org/apps/#/accounts and create an account at "Add Account", and remember and use the "Mnemonic Seed".
+
+**Future**:
+* Add support for adding accounts by scanning QR code on mobile devices
+* Standardise the game configurations and prevent users from submitting a fake game result
 
 ### Play
 
