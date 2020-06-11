@@ -214,7 +214,7 @@ class Game extends Component {
     console.log('handleSubmit');
     const { api, blocksCleared, currentBlockNumber, keyring } = this.state;
     const twitterHandle = this.twitterHandle.current.value;
-    const reason = `${twitterHandle} played FlappyTips.herokuapp.com on desktop using Polkadot.js Extension and cleared ${blocksCleared} blocks from ${currentBlockNumber}!`;
+    const reason = `${twitterHandle} played FlappyTips.herokuapp.com (${isMobile ? 'Mobile' : 'Desktop'}) and cleared ${blocksCleared} blocks from ${currentBlockNumber}!`;
     event.preventDefault();
 
     let senderAddress;
