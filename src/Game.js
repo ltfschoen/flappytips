@@ -23,6 +23,7 @@ class Game extends Component {
       chain: '',
       currentBlockNumber: '',
       currentEndpoint: '',
+      currentEndpointName: '',
       previousBlockNumber: '',
       currentBlockHash: '',
       currentBlockAuthors: [],
@@ -54,14 +55,14 @@ class Game extends Component {
     // Returns an array of all the injected sources
     let allInjected = await web3Enable('FlappyTips');
     allInjected = allInjected.map(({ name, version }) => `${name} ${version}`);
-    console.log('allInjected: ', allInjected);
+    // console.log('allInjected: ', allInjected);
 
     // returns an array of { address, meta: { name, source } }
     // meta.source contains the name of the extension that provides this account
     let allAccounts = await web3Accounts();
     let allAccountsList = [];
     allAccounts = allAccounts.map(({ address }) => allAccountsList.push(`${address}`));
-    console.log('allAccounts', allAccountsList);
+    // console.log('allAccounts', allAccountsList);
 
     this.setState({
       extensionNotInstalled: allInjected.length === 0,
@@ -71,15 +72,15 @@ class Game extends Component {
     });
   }
 
-  setup = async (customEndpoint) => {
+  setup = async (customEndpointName) => {
     // // IMPORTANT: This does not appear to work so we've used @polkadot-js/api's WsProvider instead
     // // retrieve all the RPC providers from a particular source
     // const allProviders = await web3ListRpcProviders('polkadot-js');
     // console.log('allProviders', allProviders)
     // // assuming one of the keys in `allProviders` is 'kusama-cc3', we can then use that provider
     // const { provider } = web3UseRpcProvider('polkadot-js', 'kusama-cc3');
-
-    const currentEndpoint = customEndpoint || ENDPOINTS.kusamaW3F;
+    const customEndpointNameProvided = customEndpointName || 'Kusama';
+    const currentEndpoint = ENDPOINTS[customEndpointNameProvided];
     const provider = new WsProvider(currentEndpoint);
     // Create a keyring instance. https://polkadot.js.org/api/start/keyring.html
     const keyring = new Keyring({ type: 'sr25519' });
@@ -102,8 +103,8 @@ class Game extends Component {
       const [signedBlock] = await Promise.all([
         api.rpc.chain.getBlock(blockHash)
       ]);
-      console.log('signedBlock', signedBlock);
-      console.log('signedBlock', signedBlock.block.header.parentHash.toHex());
+      // console.log('signedBlock', signedBlock);
+      // console.log('signedBlock', signedBlock.block.header.parentHash.toHex());
 
       // // Hash for each extrinsic in the block
       // signedBlock.block.extrinsics.forEach((ex, index) => {
@@ -122,27 +123,27 @@ class Game extends Component {
       const [currentDigest] = await Promise.all([
         api.query.system.digest() 
       ]);
-      console.log('currentDigest', currentDigest);
+      // console.log('currentDigest', currentDigest);
 
       // Extrinsic data
       const [extrinsicData] = await Promise.all([
         api.query.system.extrinsicData(header.number) 
       ]);
-      console.log('extrinsicData', extrinsicData);
+      // console.log('extrinsicData', extrinsicData);
 
       // ExtrinsicsRoot
       const [extrinsicsRoot] = await Promise.all([
         api.query.system.extrinsicsRoot() 
       ]);
-      console.log('extrinsicsRoot', extrinsicsRoot.toString());
+      // console.log('extrinsicsRoot', extrinsicsRoot.toString());
 
       // Event topics
       const [eventTopics] = await Promise.all([
         api.query.system.eventTopics(currentBlockHash) 
       ]);
-      console.log('eventTopics', eventTopics);
+      // console.log('eventTopics', eventTopics);
 
-      console.log(`\nReceived ${currentBlockEvents.length} events:`);
+      // console.log(`\nReceived ${currentBlockEvents.length} events:`);
 
       const { activeAccountIds } = this.state;
       let newActiveAccountIds = activeAccountIds;
@@ -152,24 +153,24 @@ class Game extends Component {
         const { event, phase } = record;
         const types = event.typeDef;
 
-        console.log('Event record: ', record);
-        console.log(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
-        console.log(`\t\t${event.meta.documentation.toString()}`);
+        // console.log('Event record: ', record);
+        // console.log(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
+        // console.log(`\t\t${event.meta.documentation.toString()}`);
 
         event.data.forEach((data, index) => {
-          console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
-          console.log('types[index].type: ', types[index].type, typeof types[index].type, types[index].type === 'AccountId');
+          // console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
+          // console.log('types[index].type: ', types[index].type, typeof types[index].type, types[index].type === 'AccountId');
           if (types[index].type === 'AccountId') {
             activeAccountIds.hasOwnProperty(data.toString()) ? foundAccountIds[data.toString()] += 1 : foundAccountIds[data.toString()] = 1;
           }
-          console.log('foundAccountIds: ', foundAccountIds);
+          // console.log('foundAccountIds: ', foundAccountIds);
         });
         if (foundAccountIds.length !== 0) {
           newActiveAccountIds = merge(activeAccountIds, foundAccountIds);
         }
         // FIXME - its getting the validators account id that authored the block, but i want the account id that
         // sent the Deposit extrinsic instead
-        console.log('newActiveAccountIds: ', newActiveAccountIds);
+        // console.log('newActiveAccountIds: ', newActiveAccountIds);
       });
 
       const currentBlockAuthors = validators && validators.map((item, index) => item.toString());
@@ -179,6 +180,7 @@ class Game extends Component {
     this.setState({
       chain: chain.toString(),
       currentEndpoint,
+      customEndpointName: customEndpointNameProvided,
       api,
       keyring,
       provider,
@@ -203,8 +205,8 @@ class Game extends Component {
   }
 
   gameOver = (blocksCleared) => {
-    const { currentBlockNumber } = this.state;
-    const reason = `played https://flappytips.herokuapp.com (${isMobile ? 'Mobile' : 'Desktop'}) and cleared ${blocksCleared} blocks from #${currentBlockNumber}!`;
+    const { currentBlockNumber, currentEndpointName } = this.state;
+    const reason = `played https://flappytips.herokuapp.com (${isMobile ? 'Mobile' : 'Desktop'}) on ${currentEndpointName} and cleared ${blocksCleared} blocks from #${currentBlockNumber}!`;
     this.setState({
       blocksCleared,
       isGameOver: true,
@@ -217,9 +219,12 @@ class Game extends Component {
   }
 
   async handleSubmit(event) {
-    console.log('handleSubmit');
+    // console.log('handleSubmit');
     const { api, keyring, reason } = this.state;
-    const twitterHandle = this.twitterHandle.current.value;
+    if (!this.twitterHandle.current || !this.mnemonicSeed.current) {
+      return;
+    }
+    const twitterHandle = this.twitterHandle.current.value || 'unknown';
     const reasonWithHandle = `${twitterHandle} ${reason}`;
     event.preventDefault();
 
@@ -231,13 +236,13 @@ class Game extends Component {
 
       // Add an account to keyring
       const newPair = keyring.addFromUri(mnemonicSeed);
-      console.log('keyring pairs', keyring.getPairs());
+      // console.log('keyring pairs', keyring.getPairs());
       // Log some info
       console.log(`Keypair has address ${newPair.address} with publicKey [${newPair.publicKey}]`);
       senderAddress = newPair.address;
     } else {
       const chainAccount = this.chainAccount.current.value;
-      console.log('chainAccount entered: ', chainAccount);
+      // console.log('chainAccount entered: ', chainAccount);
       // finds an injector for an address
       const injector = await web3FromAddress(chainAccount);
       
@@ -268,7 +273,7 @@ class Game extends Component {
       .signAndSend(senderAddress, ({ status, events }) => {
         this.showExtrinsicLogs('reportAwesome', status, events);
       });
-    console.log('Submitted reportAwesome');
+    // console.log('Submitted reportAwesome');
 
       // IMPORTANT: Not using this since we're now using Polkadot.js Extension instead of mnemonic input
       // .reportAwesome(u8aToHex(message), newPair.address)
@@ -280,7 +285,7 @@ class Game extends Component {
   showExtrinsicLogs = (extrinsicName, status, events) => {
     const { api } = this.state;
     if (status.isInBlock || status.isFinalized) {
-      console.log(`${extrinsicName} current status is ${status}`);
+      // console.log(`${extrinsicName} current status is ${status}`);
 
       if (status.isInBlock) {
         console.log(`${extrinsicName} transaction included at blockHash ${status.asInBlock}`);
@@ -314,13 +319,14 @@ class Game extends Component {
   async handleSubmitChain(event) {
     console.log('handleSubmitChain');
     this.closeModalChainWindow();
-    const customEndpoint = this.customEndpoint.current.value;
+    if (!this.customEndpoint.current) {
+      return;
+    }
+    const customEndpoint = ENDPOINTS[this.customEndpoint.current.value];
+    const customEndpointName = this.customEndpoint.current.value;
     event.preventDefault();
-    this.setState({
-      currentEndpoint: customEndpoint
-    });
 
-    this.setup(customEndpoint);
+    this.setup(customEndpointName);
   }
 
   closeModalMobile = () => {
@@ -379,9 +385,12 @@ class Game extends Component {
 
   render() {
     const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, currentBlockNumber, currentBlockHash,
-      currentBlockAuthors, currentEndpoint, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList, isGameOver,
+      currentBlockAuthors, currentEndpoint, currentEndpointName, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList, isGameOver,
       parentBlockHash, previousBlockNumber, reason, showModal, showModalChain, showModalMobile } = this.state;
     const reasonForTweet = 'I just ' + reason + ' @polkadotnetwork #buildPolkadot';
+    console.log('reasonForTweet', reasonForTweet)
+    console.log('currentEndpoint', currentEndpoint)
+    console.log('currentEndpointName', currentEndpointName)
 
     return (
       <div>
@@ -481,11 +490,11 @@ class Game extends Component {
               <h5>Chain Endpoint:</h5>
               <Form.Label>Select a chain endpoint</Form.Label>
               <Form.Control as="select" ref={this.customEndpoint} name="customEndpoint">
-                {Object.values(ENDPOINTS).map((value, i) => {
+                {Object.keys(ENDPOINTS).map((key, i) => {
                   return (
-                    value === 'wss://testnet-harbour.datahighway.com' || value === 'wss://westend-rpc.polkadot.io'
-                      ? <option disabled="disabled" key={i} value={value}>{value}</option>
-                      : <option key={i} value={value}>{value}</option>
+                    key === 'DataHighway Harbour Testnet' || key === 'Westend Testnet'
+                      ? <option disabled="disabled" key={i} value={key}>{key}</option>
+                      : <option key={i} value={key}>{key}</option>
                   )
                 })}
               </Form.Control>
