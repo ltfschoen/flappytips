@@ -23,6 +23,7 @@ class Game extends Component {
       chain: '',
       currentBlockNumber: '',
       currentEndpoint: '',
+      currentEndpointName: '',
       previousBlockNumber: '',
       currentBlockHash: '',
       currentBlockAuthors: [],
@@ -79,7 +80,8 @@ class Game extends Component {
     // // assuming one of the keys in `allProviders` is 'kusama-cc3', we can then use that provider
     // const { provider } = web3UseRpcProvider('polkadot-js', 'kusama-cc3');
 
-    const currentEndpoint = customEndpoint || ENDPOINTS.kusamaW3F;
+    const currentEndpoint = customEndpoint || ENDPOINTS['Kusama'];
+    const currentEndpointName = Object.keys(ENDPOINTS)[Object.values(ENDPOINTS).indexOf(currentEndpoint)];
     const provider = new WsProvider(currentEndpoint);
     // Create a keyring instance. https://polkadot.js.org/api/start/keyring.html
     const keyring = new Keyring({ type: 'sr25519' });
@@ -179,6 +181,7 @@ class Game extends Component {
     this.setState({
       chain: chain.toString(),
       currentEndpoint,
+      currentEndpointName,
       api,
       keyring,
       provider,
@@ -203,8 +206,8 @@ class Game extends Component {
   }
 
   gameOver = (blocksCleared) => {
-    const { currentBlockNumber } = this.state;
-    const reason = `played https://flappytips.herokuapp.com (${isMobile ? 'Mobile' : 'Desktop'}) and cleared ${blocksCleared} blocks from #${currentBlockNumber}!`;
+    const { currentBlockNumber, currentEndpointName } = this.state;
+    const reason = `played https://flappytips.herokuapp.com (${isMobile ? 'Mobile' : 'Desktop'}) on ${currentEndpointName} and cleared ${blocksCleared} blocks from #${currentBlockNumber}!`;
     this.setState({
       blocksCleared,
       isGameOver: true,
@@ -219,7 +222,10 @@ class Game extends Component {
   async handleSubmit(event) {
     console.log('handleSubmit');
     const { api, keyring, reason } = this.state;
-    const twitterHandle = this.twitterHandle.current.value;
+    if (!this.mnemonicSeed.current || !this.chainAccount.current) {
+      return;
+    }
+    const twitterHandle = (this.twitterHandle.current && this.twitterHandle.current.value) || 'unknown';
     const reasonWithHandle = `${twitterHandle} ${reason}`;
     event.preventDefault();
 
@@ -314,13 +320,15 @@ class Game extends Component {
   async handleSubmitChain(event) {
     console.log('handleSubmitChain');
     this.closeModalChainWindow();
-    const customEndpoint = this.customEndpoint.current.value;
+    const currentEndpoint = this.customEndpoint.current && this.customEndpoint.current.value;
+    const currentEndpointName = Object.keys(ENDPOINTS)[Object.values(ENDPOINTS).indexOf(currentEndpoint)];
     event.preventDefault();
     this.setState({
-      currentEndpoint: customEndpoint
+      currentEndpoint,
+      currentEndpointName
     });
 
-    this.setup(customEndpoint);
+    this.setup(currentEndpoint);
   }
 
   closeModalMobile = () => {
@@ -379,7 +387,7 @@ class Game extends Component {
 
   render() {
     const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, currentBlockNumber, currentBlockHash,
-      currentBlockAuthors, currentEndpoint, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList, isGameOver,
+      currentBlockAuthors, currentEndpoint, currentEndpointName, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList, isGameOver,
       parentBlockHash, previousBlockNumber, reason, showModal, showModalChain, showModalMobile } = this.state;
     const reasonForTweet = 'I just ' + reason + ' @polkadotnetwork #buildPolkadot';
 
@@ -395,7 +403,7 @@ class Game extends Component {
           )
           : (
             <div>
-              <div className={`game-state white`}>Game over! You're awesome for clearing {blocksCleared} blocks!</div>
+              <div className={`game-state white`}>Game over! You're awesome for clearing {blocksCleared} blocks on {currentEndpointName}!</div>
               <Button variant="primary" className="play-again btn btn-lg" onTouchStart={() => this.playAgain()} onClick={() => this.playAgain()}>Play Again?</Button>
               <Button variant="success" className="report-awesomeness btn btn-lg" onTouchStart={() => this.openModal()} onClick={() => this.openModal()}>Share & Request Tip?</Button>
             </div>
@@ -481,11 +489,11 @@ class Game extends Component {
               <h5>Chain Endpoint:</h5>
               <Form.Label>Select a chain endpoint</Form.Label>
               <Form.Control as="select" ref={this.customEndpoint} name="customEndpoint">
-                {Object.values(ENDPOINTS).map((value, i) => {
+                {Object.keys(ENDPOINTS).map((key, i) => {
                   return (
-                    value === 'wss://testnet-harbour.datahighway.com' || value === 'wss://westend-rpc.polkadot.io'
-                      ? <option disabled="disabled" key={i} value={value}>{value}</option>
-                      : <option key={i} value={value}>{value}</option>
+                    key === 'DataHighway Harbour Testnet' || key === 'Westend Testnet'
+                      ? <option disabled="disabled" key={i} value={ENDPOINTS[key]}>{key}</option>
+                      : <option key={i} value={ENDPOINTS[key]}>{key}</option>
                   )
                 })}
               </Form.Control>
