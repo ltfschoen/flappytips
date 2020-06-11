@@ -38,6 +38,11 @@ class Game extends Component {
       showModalMobile: isMobile
     };
 
+    this.twitterHandle = React.createRef();
+    this.mnemonicSeed = React.createRef();
+    this.chainAccount = React.createRef();
+    this.customEndpoint = React.createRef();
+
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleSubmitChain = this.handleSubmitChain.bind(this);
   }
@@ -208,7 +213,7 @@ class Game extends Component {
   async handleSubmit(event) {
     console.log('handleSubmit');
     const { api, blocksCleared, currentBlockNumber, keyring } = this.state;
-    const twitterHandle = this.refs.twitterHandle.value;
+    const twitterHandle = this.twitterHandle.current.value;
     const reason = `${twitterHandle} played FlappyTips.herokuapp.com on desktop using Polkadot.js Extension and cleared ${blocksCleared} blocks from ${currentBlockNumber}!`;
     event.preventDefault();
 
@@ -216,7 +221,7 @@ class Game extends Component {
     if (isMobile) {
       // Alice
       // const mnemonicSeed = 'fitness brass champion rotate offer oak alarm purchase end mixture tattoo toss';
-      const mnemonicSeed = this.refs.mnemonicSeed.value;
+      const mnemonicSeed = this.mnemonicSeed.current.value;
 
       // Add an account to keyring
       const newPair = keyring.addFromUri(mnemonicSeed);
@@ -225,7 +230,7 @@ class Game extends Component {
       console.log(`Keypair has address ${newPair.address} with publicKey [${newPair.publicKey}]`);
       senderAddress = newPair.address;
     } else {
-      const chainAccount = this.refs.chainAccount.value;
+      const chainAccount = this.chainAccount.current.value;
       console.log('chainAccount entered: ', chainAccount);
       // finds an injector for an address
       const injector = await web3FromAddress(chainAccount);
@@ -303,7 +308,7 @@ class Game extends Component {
   async handleSubmitChain(event) {
     console.log('handleSubmitChain');
     this.closeModalChainWindow();
-    const customEndpoint = this.refs.customEndpoint.value;
+    const customEndpoint = this.customEndpoint.current.value;
     event.preventDefault();
     this.setState({
       currentEndpoint: customEndpoint
@@ -352,7 +357,7 @@ class Game extends Component {
   onChangeMnemonic = (event) => {
     let accountAddress;
     const { keyring } = this.state;
-    const mnemonicSeed = event.refs.mnemonicSeed.value;
+    const mnemonicSeed = this.mnemonicSeed.current.value;
     try {
       const newPair = keyring.addFromUri(mnemonicSeed);
       console.log(`Keypair accountAddress [${newPair.address}]`);
@@ -384,7 +389,7 @@ class Game extends Component {
           : (
             <div>
               <div className={`game-state red`}>Game over! You're awesome for clearing {blocksCleared} blocks!</div>
-              <Button variant="dark" className="play-again btn btn-lg" onTouchStart={() => this.playAgain()} onClick={() => this.playAgain()}>Play Again?</Button>
+              <Button variant="primary" className="play-again btn btn-lg" onTouchStart={() => this.playAgain()} onClick={() => this.playAgain()}>Play Again?</Button>
               <Button variant="success" className="report-awesomeness btn btn-lg" onTouchStart={() => this.openModal()} onClick={() => this.openModal()}>Report your awesomeness?</Button>
             </div>
           )
@@ -410,7 +415,7 @@ class Game extends Component {
               <Form.Group controlId="formTwitterHandle">
                 <h5>Chain Endpoint: {currentEndpoint}</h5>
                 <Form.Label>Twitter Handle:</Form.Label>
-                <Form.Control type="text" ref="twitterHandle" name="twitterHandle" placeholder="Twitter Handle" />
+                <Form.Control type="text" ref={this.twitterHandle} name="twitterHandle" placeholder="Twitter Handle" />
                 <Form.Text className="text-muted">
                   Enter your Twitter handle or other form of nickname
                 </Form.Text>
@@ -420,7 +425,7 @@ class Game extends Component {
                   <Form.Group controlId="formChainAccount">
                     <h5>Chain Account:</h5>
                     <Form.Label>Select an account for this chain</Form.Label>
-                    <Form.Control as="select" ref="chainAccount" name="chainAccount">
+                    <Form.Control as="select" ref={this.chainAccount} name="chainAccount">
                       {extensionAllAccountsList.map((value, i) => {
                         return <option key={i} value={value}>{value}</option>
                       })}
@@ -433,7 +438,7 @@ class Game extends Component {
                 : (
                   <Form.Group controlId="formMnemonicSeed">
                     <Form.Label>Mnemonic Seed:  Public Address (SS58): {accountAddress}</Form.Label>
-                    <Form.Control type="text" ref="mnemonicSeed" name="mnemonicSeed" placeholder="Account Mnemonic Seed" onChange={() => this.onChangeMnemonic(this)}/>
+                    <Form.Control type="text" ref={this.mnemonicSeed} name="mnemonicSeed" placeholder="Account Mnemonic Seed" onChange={() => this.onChangeMnemonic(this)}/>
                     <Form.Text className="text-muted">
                       Enter your secret Mnemonic Seed (Private Key) that you created at https://polkadot.js.org/apps/#/accounts for the chain endpoint shown above.
                       Important: Ensure it has sufficient balance to pay fees for the submission (e.g. 1.000 milli KSM or DOT)
@@ -445,9 +450,9 @@ class Game extends Component {
                 After submitting, find your tip <a target="_new" href="https://polkadot.js.org/apps/#/treasury">here</a>
               </div>
             </Modal.Body>
-            <Modal.Footer>
-              <Button className="btn btn-primary btn-large centerButton" type="submit">Send</Button>
-              <Button onClick={() => this.closeModal()} >Close</Button>
+            <Modal.Footer className="justify-content-between">
+              <Button variant="success" className="btn btn-primary btn-large mr-auto btn-block" type="submit">Send</Button>
+              {/* <Button variant="secondary" className="btn btn-primary btn-large btn-block" onTouchStart={() => this.closeModal()} onClick={() => this.closeModal()} >Close</Button> */}
             </Modal.Footer>
           </Form>
         </Modal>
@@ -464,7 +469,7 @@ class Game extends Component {
             <Form.Group controlId="customEndpoint">
               <h5>Chain Endpoint:</h5>
               <Form.Label>Select a chain endpoint</Form.Label>
-              <Form.Control as="select" ref="customEndpoint" name="customEndpoint">
+              <Form.Control as="select" ref={this.customEndpoint} name="customEndpoint">
                 {Object.values(ENDPOINTS).map((value, i) => {
                   return (
                     value === 'wss://testnet-harbour.datahighway.com' || value === 'wss://westend-rpc.polkadot.io'
@@ -476,13 +481,13 @@ class Game extends Component {
             </Form.Group>
             </Modal.Body>
             <Modal.Footer>
-              <Button className="btn btn-primary btn-large centerButton" type="submit">Play</Button>
+              <Button variant="success" className="btn btn-primary btn-large btn-block" type="submit">Play</Button>
             </Modal.Footer>
           </Form>
         </Modal>
 
-        <Modal show={extensionNotInstalled && !isMobile} onHide={() => console.log('Desktop detected. Polkadot.js extension is required')}>
-          <Modal.Header closeButton>
+        <Modal show={extensionNotInstalled && !isMobile} onHide={() => console.log('Polkadot.js Extension required on Desktop')}>
+          <Modal.Header>
             <Modal.Title>FlappyTips on Desktop: Install and enable Polkadot.js Extension</Modal.Title>
           </Modal.Header>
 
@@ -495,7 +500,7 @@ class Game extends Component {
               page and authorise the extension to play!
             </p>
             <p>
-              <Button target="_new" href="https://github.com/polkadot-js/extension#installation">Download the Polkadot.js Extension</Button>
+              <Button variant="primary" className="btn btn-primary btn-large btn-block" target="_new" href="https://github.com/polkadot-js/extension#installation">Download the Polkadot.js Extension</Button>
             </p>
           </Modal.Body>
         </Modal>
@@ -509,10 +514,10 @@ class Game extends Component {
             <h3>Mobile users</h3>
             <p><b>WARNING</b> To share your Flappy on Mobile game results, only loading your account by
             entering your private key is currently supported. Only FlappyTips on Desktop supports loading
-            accounts using the Polkadot.js Extension..</p>
+            accounts using the Polkadot.js Extension.</p>
           </Modal.Body>
           <Modal.Footer>
-            <Button onClick={() => this.closeModalMobile()}>Play (Mobile only)</Button>
+            <Button variant="success" className="btn btn-lg btn-block" onTouchStart={() => this.closeModalMobile()} onClick={() => this.closeModalMobile()}>Play</Button>
           </Modal.Footer>
         </Modal>
       </div>
