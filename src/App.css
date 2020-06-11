@@ -1,5 +1,6 @@
 .App {
   text-align: center;
+  background-color: #777777;
 }
 
 .App-logo {
@@ -42,7 +43,6 @@
 }
 
 .game-state {
-  color: #888888;
   font-size: 1.5em;
   position: fixed;
   top: 40%;
@@ -50,11 +50,22 @@
   transform: translate(-50%, -50%);
 }
 
+.pink {
+  color: #FF0863;
+}
+
+.grey {
+  color: #999999;
+}
+.white {
+  color: #FFFFFF;
+}
+
 .brandname {
-  font-family: monospace;
+  font-family: inherit;
   font-weight: 900;
   font-style: italic;
-  color: #000000;
+  color: #424242;
   font-size: 3em;
   position: fixed;
   top: 90%;
@@ -78,4 +89,14 @@
   top: 75%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+
+.btn-primary {
+  font-size: large !important;
+  background-color: #FF0863 !important;
+  border-color: #FF0863 !important;
+}
+
+.btn-success {
+  font-size: x-large !important;
 }

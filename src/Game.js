@@ -4,6 +4,7 @@ import { isMobile } from "react-device-detect";
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 import { web3Accounts, web3Enable, web3FromAddress, web3ListRpcProviders, web3UseRpcProvider } from '@polkadot/extension-dapp';
 import { bufferToU8a, u8aToBuffer, u8aToString, stringToU8a, u8aToHex } from '@polkadot/util';
+import { TwitterShareButton } from 'react-twitter-embed';
 import Button from "react-bootstrap/Button";
 // import Input from "react-bootstrap/Input";
 import Modal from "react-bootstrap/Modal";
@@ -33,6 +34,7 @@ class Game extends Component {
       api: undefined,
       provider: undefined,
       keyring: undefined,
+      reason: '',
       showModal: false,
       showModalChain: false,
       showModalMobile: isMobile
@@ -42,6 +44,7 @@ class Game extends Component {
     this.mnemonicSeed = React.createRef();
     this.chainAccount = React.createRef();
     this.customEndpoint = React.createRef();
+    this.tweet = React.createRef();
 
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleSubmitChain = this.handleSubmitChain.bind(this);
@@ -200,9 +203,12 @@ class Game extends Component {
   }
 
   gameOver = (blocksCleared) => {
+    const { currentBlockNumber } = this.state;
+    const reason = `played https://flappytips.herokuapp.com (${isMobile ? 'Mobile' : 'Desktop'}) and cleared ${blocksCleared} blocks from #${currentBlockNumber}!`;
     this.setState({
       blocksCleared,
-      isGameOver: true
+      isGameOver: true,
+      reason
     })
   }
 
@@ -212,9 +218,9 @@ class Game extends Component {
 
   async handleSubmit(event) {
     console.log('handleSubmit');
-    const { api, blocksCleared, currentBlockNumber, keyring } = this.state;
+    const { api, keyring, reason } = this.state;
     const twitterHandle = this.twitterHandle.current.value;
-    const reason = `${twitterHandle} played FlappyTips.herokuapp.com (${isMobile ? 'Mobile' : 'Desktop'}) and cleared ${blocksCleared} blocks from ${currentBlockNumber}!`;
+    const reasonWithHandle = `${twitterHandle} ${reason}`;
     event.preventDefault();
 
     let senderAddress;
@@ -241,7 +247,7 @@ class Game extends Component {
     }
 
     // Convert reason to message, sign and then verify
-    const message = stringToU8a(reason);
+    const message = stringToU8a(reasonWithHandle);
     // const signature = newPair.sign(message);
     // const isValid = newPair.verify(message, signature);
     // // Log info
@@ -255,14 +261,14 @@ class Game extends Component {
     // Note: If returns error `Invalid Transaction: Payment`, then it is because the user is
     // trying to send from an account without sufficient balance
 
-    // // Sign and send using user account
-    // // Note: Check the chain that this is supported by
-    // await api.tx.treasury
-    //   .reportAwesome(u8aToHex(message), senderAddress)
-    //   .signAndSend(senderAddress, ({ status, events }) => {
-    //     this.showExtrinsicLogs('reportAwesome', status, events);
-    //   });
-    // console.log('Submitted reportAwesome');
+    // Sign and send using user account
+    // Note: Check the chain that this is supported by
+    await api.tx.treasury
+      .reportAwesome(u8aToHex(message), senderAddress)
+      .signAndSend(senderAddress, ({ status, events }) => {
+        this.showExtrinsicLogs('reportAwesome', status, events);
+      });
+    console.log('Submitted reportAwesome');
 
       // IMPORTANT: Not using this since we're now using Polkadot.js Extension instead of mnemonic input
       // .reportAwesome(u8aToHex(message), newPair.address)
@@ -374,7 +380,8 @@ class Game extends Component {
   render() {
     const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, currentBlockNumber, currentBlockHash,
       currentBlockAuthors, currentEndpoint, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList, isGameOver,
-      parentBlockHash, previousBlockNumber, showModal, showModalChain, showModalMobile } = this.state;
+      parentBlockHash, previousBlockNumber, reason, showModal, showModalChain, showModalMobile } = this.state;
+    const reasonForTweet = 'I just ' + reason + ' @polkadotnetwork #buildPolkadot';
 
     return (
       <div>
@@ -384,13 +391,13 @@ class Game extends Component {
           ? (
             currentBlockNumber > 0
             ? null
-            : <div className={`game-state`}>Wait for next block, then Tap or press Spacebar to fly DOT through it</div>
+            : <div className={`game-state grey`}>Wait for next block, then Tap or press Spacebar to fly through it</div>
           )
           : (
             <div>
-              <div className={`game-state red`}>Game over! You're awesome for clearing {blocksCleared} blocks!</div>
+              <div className={`game-state white`}>Game over! You're awesome for clearing {blocksCleared} blocks!</div>
               <Button variant="primary" className="play-again btn btn-lg" onTouchStart={() => this.playAgain()} onClick={() => this.playAgain()}>Play Again?</Button>
-              <Button variant="success" className="report-awesomeness btn btn-lg" onTouchStart={() => this.openModal()} onClick={() => this.openModal()}>Report your awesomeness?</Button>
+              <Button variant="success" className="report-awesomeness btn btn-lg" onTouchStart={() => this.openModal()} onClick={() => this.openModal()}>Share & Request Tip?</Button>
             </div>
           )
         }
@@ -409,17 +416,9 @@ class Game extends Component {
         <Modal show={showModal} onHide={() => this.closeModal()}>
           <Form onSubmit={this.handleSubmit}>
             <Modal.Header closeButton>
-              <Modal.Title>Share your awesomeness on-chain!</Modal.Title>
+              <Modal.Title>Share & Request Tip (on-chain)! <br /> <h6><i>Chain Endpoint: <span style={{color: '#007bff'}}>{currentEndpoint}</span></i></h6></Modal.Title>
             </Modal.Header>
             <Modal.Body>
-              <Form.Group controlId="formTwitterHandle">
-                <h5>Chain Endpoint: {currentEndpoint}</h5>
-                <Form.Label>Twitter Handle:</Form.Label>
-                <Form.Control type="text" ref={this.twitterHandle} name="twitterHandle" placeholder="Twitter Handle" />
-                <Form.Text className="text-muted">
-                  Enter your Twitter handle or other form of nickname
-                </Form.Text>
-              </Form.Group>
               {!isMobile
                 ? (
                   <Form.Group controlId="formChainAccount">
@@ -431,7 +430,7 @@ class Game extends Component {
                       })}
                     </Form.Control>
                     <Form.Text className="text-muted">
-                      Important: Ensure it has sufficient balance to pay fees for a submission (e.g. >1.000 milli KSM or DOT)
+                      Important: Ensure sufficient balance to pay transaction fees (e.g. >0.001 KSM)
                     </Form.Text>
                   </Form.Group>
                 )
@@ -440,18 +439,30 @@ class Game extends Component {
                     <Form.Label>Mnemonic Seed:  Public Address (SS58): {accountAddress}</Form.Label>
                     <Form.Control type="text" ref={this.mnemonicSeed} name="mnemonicSeed" placeholder="Account Mnemonic Seed" onChange={() => this.onChangeMnemonic(this)}/>
                     <Form.Text className="text-muted">
-                      Enter your secret Mnemonic Seed (Private Key) that you created at https://polkadot.js.org/apps/#/accounts for the chain endpoint shown above.
-                      Important: Ensure it has sufficient balance to pay fees for the submission (e.g. 1.000 milli KSM or DOT)
+                      Enter the secret of the account you created at https://polkadot.js.org/apps/#/accounts for the chain endpoint shown above.
+                      Important: Ensure sufficient balance to pay transaction fees (e.g. >0.001 KSM)
                     </Form.Text>
                   </Form.Group>
                 )
               }
+              <Form.Group controlId="formTwitterHandle">
+                <Form.Label>Twitter Handle:</Form.Label>
+                <Form.Control type="text" ref={this.twitterHandle} name="twitterHandle" placeholder="Twitter Handle" />
+                <Form.Text className="text-muted">
+                  Enter your Twitter handle or other form of nickname
+                </Form.Text>
+              </Form.Group>
               <div>
                 After submitting, find your tip <a target="_new" href="https://polkadot.js.org/apps/#/treasury">here</a>
               </div>
             </Modal.Body>
             <Modal.Footer className="justify-content-between">
-              <Button variant="success" className="btn btn-primary btn-large mr-auto btn-block" type="submit">Send</Button>
+              <Button variant="success" className="btn btn-primary btn-large mr-auto btn-block" type="submit">Send Request</Button>
+              <script async src="https://platform.twitter.com/widgets.js" charSet="utf-8"></script>
+              <TwitterShareButton
+                url={`https://flappytips.herokuapp.com`}
+                options={{ text: reasonForTweet, via: 'ltfschoen' }}
+              />
               {/* <Button variant="secondary" className="btn btn-primary btn-large btn-block" onTouchStart={() => this.closeModal()} onClick={() => this.closeModal()} >Close</Button> */}
             </Modal.Footer>
           </Form>
@@ -459,10 +470,10 @@ class Game extends Component {
         <Modal show={!showModalMobile && showModalChain} onHide={() => this.closeModalChain()}>
           <Form onSubmit={this.handleSubmitChain}>
             <Modal.Header closeButton>
-              <Modal.Title>{isMobile ? 'FlappyTips on Mobile' : 'FlappyTips on Desktop'}: Choose a blockchain to play!</Modal.Title>
+              <Modal.Title>{isMobile ? 'FlappyTips on Mobile' : 'FlappyTips on Desktop'}: <br /><i>Choose a blockchain to play!</i></Modal.Title>
             </Modal.Header>
             {!isMobile
-              ? <div><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extension detected: {extensionAllInjected}</b></div>
+              ? <span style={{color: "#AAAAAA"}}><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extension detected: {extensionAllInjected}</b></span>
               : null
             }
             <Modal.Body>
@@ -506,15 +517,14 @@ class Game extends Component {
         </Modal>
 
         <Modal show={showModalMobile && extensionNotInstalled && isMobile} onHide={() => console.log('Mobile device detected')}>
-          <Modal.Header closeButton>
-            <Modal.Title>FlappyTips Mobile</Modal.Title>
+          <Modal.Header>
+            <Modal.Title>FlappyTips on Mobile</Modal.Title>
           </Modal.Header>
 
           <Modal.Body>
             <h3>Mobile users</h3>
-            <p><b>WARNING</b> To share your Flappy on Mobile game results, only loading your account by
-            entering your private key is currently supported. Only FlappyTips on Desktop supports loading
-            accounts using the Polkadot.js Extension.</p>
+            <p><b>WARNING</b> Sharing your FlappyTips on Mobile game results on mobile devices currently only supports loading your account by
+            entering your private key. Only FlappyTips on Desktop supports loading accounts using the Polkadot.js Extension.</p>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="success" className="btn btn-lg btn-block" onTouchStart={() => this.closeModalMobile()} onClick={() => this.closeModalMobile()}>Play</Button>

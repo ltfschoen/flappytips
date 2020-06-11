@@ -13,7 +13,7 @@ function Obstacle(p, currentBlockNumber, currentSpeed, customFont){
   this.speed = currentSpeed;
 
   this.show = function(){
-      p.fill(0);
+      p.fill('#FFFFFF');
       if (this.highlight){
           p.fill(COLOURS.pink);
       }

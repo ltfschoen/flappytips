@@ -14,7 +14,7 @@
 * Blocks appear each time a new block is authored on your chosen chain. The chain must support `treasury.reportAwesome`
 * After each block appears, the speed that it moves increases each time.
 * After about 10 blocks the gap may becomes larger but it still becomes more difficult as the blocks move faster
-* If you click "Share your awesomeness?" button after each game and enter your "Mnemonic Seed" that corresponds to the chain that you chose to connected to in the game, along with an optional identifer (i.e. your Twitter handle), it then will submit an extrinsic to the chain that will report your awesomeness for clearing some blocks as a Tip, and should appear in the "Tip" section here https://polkadot.js.org/apps/#/treasury. To obtain an account for that chain and an associated "Mnemonic Seed", go to https://polkadot.js.org/apps/#/accounts and create an account at "Add Account", and remember and use the "Mnemonic Seed".
+* If you click "Request Tip?" button after each game and enter your "Mnemonic Seed" that corresponds to the chain that you chose to connected to in the game, along with an optional identifer (i.e. your Twitter handle), it then will submit an extrinsic to the chain that will report your awesomeness for clearing some blocks as a Tip, and should appear in the "Tip" section here https://polkadot.js.org/apps/#/treasury. To obtain an account for that chain and an associated "Mnemonic Seed", go to https://polkadot.js.org/apps/#/accounts and create an account at "Add Account", and remember and use the "Mnemonic Seed".
 
 **Future**:
 * Add support for adding accounts by scanning QR code on mobile devices

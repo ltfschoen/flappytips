@@ -36,13 +36,14 @@ export default function sketch(p){
 
   p.draw = () => {
     p.clear();
+    p.background('#000000');
     p.fill(COLOURS.pink);
-    p.textSize(14);
+    p.textSize(16);
     p.textFont("Helvetica");
     // p.text('Date: ' + new Date().toLocaleTimeString(), 20, 20);
     p.text('Game Speed: ' + currentSpeed, 20, 40);
     p.text('Chain Name: ' + chain, 20, 60);
-    p.text('Current Block Number: ' + currentBlockNumber, 20, 80);
+    p.text('Current Block: ' + currentBlockNumber, 20, 80);
     // p.text('Current Block Hash: ' + currentBlockHash, 20, 80);
     // if (currentBlockAuthors.length > 0) {
     //   p.text('Current Block Authors: ' + currentBlockAuthors.join(', '), 20, 100);
