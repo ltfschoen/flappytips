@@ -18,6 +18,16 @@ mod leaderboard {
         account_map: storage::HashMap<AccountId, u32>,
     }
 
+    /// Events
+    /// See https://substrate.dev/substrate-contracts-workshop/#/2/creating-an-event
+    #[ink(event)]
+    struct SetAccountScore {
+        #[ink(topic)]
+        of: AccountId,
+        #[ink(topic)]
+        score: u32
+    }
+
     impl Leaderboard {
         /// Constructor
 
@@ -58,6 +68,14 @@ mod leaderboard {
                     self.account_map.insert(of, score);
                 }
             };
+
+            // Emit event
+            self.env()
+                .emit_event(
+                    SetAccountScore {
+                        of,
+                        score,
+                    });
         }
 
         // Set the score for the calling AccountId
@@ -72,6 +90,14 @@ mod leaderboard {
                     self.account_map.insert(caller, score);
                 }
             };
+
+            // Emit event
+            self.env()
+                .emit_event(
+                    SetAccountScore {
+                        of: caller,
+                        score,
+                    });
         }
 
         /// Private functions
