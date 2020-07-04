@@ -77,29 +77,29 @@ mod leaderboard {
             value
         }
 
-        // Get all scores for the all AccountIds
-        #[ink(message)]
-        fn get_all_scores(&self) -> Result<Vec<storage::HashMap<AccountId, u32>>, &'static str> {
-            let mut all_account_to_scores: Vec<storage::HashMap<AccountId, u32>> = Vec::new();
+        // // Get all scores for the all AccountIds
+        // #[ink(message)]
+        // fn get_all_scores(&self) -> Result<Vec<storage::HashMap<AccountId, u32>>, &'static str> {
+        //     let mut all_account_to_scores: Vec<storage::HashMap<AccountId, u32>> = Vec::new();
             
-            let mut score: u32;
-            let mut account_scores: storage::HashMap<AccountId, u32>;
-            for account in self.accounts.iter() {
-                let score = self.account_to_score.get(&account);
-                match score {
-                    None => Err("Error: Unable to find score for account"),
-                    Some(x) => {
-                        account_scores.insert(
-                            *account,
-                            *score.unwrap_or(&0),
-                        );
-                        all_account_to_scores.push(account_scores);
-                        Ok(&all_account_to_scores)
-                    },
-                };
-            }
-            Ok(all_account_to_scores)
-        }
+        //     let mut score: u32;
+        //     let mut account_scores: storage::HashMap<AccountId, u32>;
+        //     for account in self.accounts.iter().cloned() {
+        //         let score = self.account_to_score.get(&account);
+        //         match score {
+        //             None => Err("Error: Unable to find score for account"),
+        //             Some(x) => {
+        //                 account_scores.insert(
+        //                     account,
+        //                     *score.unwrap_or(&0),
+        //                 );
+        //                 all_account_to_scores.push(account_scores);
+        //                 Ok(&all_account_to_scores)
+        //             },
+        //         };
+        //     }
+        //     Ok(all_account_to_scores)
+        // }
 
 
         // Set the score for a given AccountId
