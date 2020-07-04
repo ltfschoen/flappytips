@@ -180,5 +180,10 @@ mod leaderboard {
             assert_eq!(leaderboard.set_score_of_account(get_dummy_account(), 2), Ok(()));
             assert_eq!(leaderboard.get_score_of_account(get_dummy_account()), 2);
         }
+
+        // TODO - Add tests for Events
+        // See: https://paritytech.github.io/ink/ink_core/env/test/fn.recorded_events.html
+        // Pending this issue to export the necessary EmittedEvent type from ink_core
+        // https://github.com/paritytech/ink/issues/468
     }
 }
