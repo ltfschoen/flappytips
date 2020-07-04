@@ -87,3 +87,67 @@ kill -9 <PROCESS_ID>
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 Credit to this repo that was used to replicate a Flappy Bird like game https://codepen.io/renzo/pen/GXWbEq
+
+## Smart Contracts
+
+### Create Leaderboard using Substrate ink! Smart Contract language
+
+* Install Substrate, WASM, latest Substrate node client with built-in Contracts module, ink! CLI.
+See https://substrate.dev/substrate-contracts-workshop/#/0/setup
+```
+curl https://getsubstrate.io -sSf | bash -s -- --fast
+rustup target add wasm32-unknown-unknown --toolchain stable
+rustup component add rust-src --toolchain nightly
+cargo install node-cli --git https://github.com/paritytech/substrate.git --tag v2.0.0-rc4 --force
+cargo install cargo-contract --vers 0.6.1 --force
+```
+
+* Generate boilerplate Flipper smart contract.
+See https://substrate.dev/substrate-contracts-workshop/#/0/creating-an-ink-project
+```
+mkdir -p ink/contracts
+cd ink/contracts
+cargo contract new flipper
+cd flipper
+```
+
+* Build smart contract to convert ink! project into Wasm binary for deployment to chain.
+Access in ./target/<CONTRACT_NAME>.wasm
+```
+cargo +nightly contract build
+```
+
+* Test smart contract
+```
+cargo +nightly test
+```
+
+* Generate smart contract metadata (ABI).
+Access in ./target/<CONTRACT_NAME>.json
+```
+cargo +nightly contract generate-metadata
+```
+
+### Deploy Smart Contract to Edgeware
+
+* Deploy smart contract to Substrate node. See https://substrate.dev/substrate-contracts-workshop/#/0/deploying-your-contract
+  * Contract deployment is split into: 1. Deploying code on blockchain (only once); 2. Create smart contract instance; 3. Instantiate multiple times (without having to redeploy code and waste space on blockchain)
+  * Go to https://polkadot.js.org/apps/#/settings.
+  * Change remote node to Edgeware and "Save"
+  * Go to https://polkadot.js.org/apps/#/contracts/code.
+  * Click "Upload WASM" to open popup
+  * Select a "deployment account" with account balance (e.g. Alice)
+  * Select the generated flipper.wasm file in "compiled contract WASM" 
+  * Select the generated flipper.json file in "contract ABI"
+  * Click "Upload" and "Sign & Submit" (with sufficient gas to execute the contract call)
+* Instantiate Contract. See https://substrate.dev/substrate-contracts-workshop/#/0/deploying-your-contract?id=creating-an-instance-of-your-contract
+  * Go to https://polkadot.js.org/apps/#/contracts/code
+  * Click "Deploy" for flipper.wasm
+    * Give the contract account an endowment of 10 Units to pay storage rent
+    * Set the maximum gas allowed to value 1,000,000
+  * Note: Contract creation involves creation of a new Account.
+  Give the contract account at least the existential deposit defined by the blockchain.
+  Ensure contract balance is refilled with sufficient balance to pay the contract's rent (endowment)
+  otherwise the contract becomes an invalid tombstone.
+* Call smart contract using Polkadot.js Apps. See https://substrate.dev/substrate-contracts-workshop/#/0/calling-your-contract
+  * Deploy Contract
