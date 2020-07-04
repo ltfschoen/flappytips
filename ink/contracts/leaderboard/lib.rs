@@ -28,18 +28,21 @@ mod leaderboard {
         score: u32
     }
 
-    /// Errors that can occur upon calling this contract.
-    /// Reference: https://github.com/paritytech/ink/blob/master/examples/dns/lib.rs
-    #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
-    #[cfg_attr(feature = "std", derive(::scale_info::TypeInfo))]
-    pub enum Error {
-        /// Returned if caller is not owner while required to.
-        CallerIsNotOwner,
-    }
+    // TODO - restore once ink! 3.0 is released
+    // /// Errors that can occur upon calling this contract.
+    // /// Reference: https://github.com/paritytech/ink/blob/master/examples/dns/lib.rs
+    // #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
+    // #[cfg_attr(feature = "std", derive(::scale_info::TypeInfo))]
+    // pub enum Error {
+    //     /// Returned if caller is not owner while required to.
+    //     CallerIsNotOwner,
+    // }
 
-    /// Type alias for the contract's result type.
-    /// Reference: https://github.com/paritytech/ink/blob/master/examples/dns/lib.rs
-    pub type Result<T> = core::result::Result<T, Error>;
+    // TODO - restore once ink! 3.0 is released
+    // /// Type alias for the contract's result type.
+    // /// Reference: https://github.com/paritytech/ink/blob/master/examples/dns/lib.rs
+    // pub type Result<T> = core::result::Result<T, Error>;
+    pub type Result<T, U> = core::result::Result<T, U>;
 
     impl Leaderboard {
         /// Constructor
@@ -72,10 +75,11 @@ mod leaderboard {
 
         // Set the score for a given AccountId
         #[ink(message)]
-        fn set_score_of_account(&mut self, of: AccountId, score: u32) -> Result<()> {
+        fn set_score_of_account(&mut self, of: AccountId, score: u32) -> Result<(), &'static str> {
             let owner = self.get_owner();
             if of != owner {
-                return Err(Error::CallerIsNotOwner)
+                // return Err(Error::CallerIsNotOwner)
+                return Err("Error: CallerIsNotOwner")
             }
             match self.account_to_score.get(&of) {
                 Some(_) => {
@@ -99,11 +103,12 @@ mod leaderboard {
 
         // Set the score for the calling AccountId
         #[ink(message)]
-        fn set_score_of_sender(&mut self, score: u32) -> Result<()> {
+        fn set_score_of_sender(&mut self, score: u32) -> Result<(), &'static str> {
             let caller = self.env().caller();
             let owner = self.get_owner();
             if caller != owner {
-                return Err(Error::CallerIsNotOwner)
+                // return Err(Error::CallerIsNotOwner)
+                return Err("Error: CallerIsNotOwner")
             }
             match self.account_to_score.get(&caller) {
                 Some(_) => {

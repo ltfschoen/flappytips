@@ -10,7 +10,9 @@ ink_primitives = { version = "2", git = "https://github.com/paritytech/ink", tag
 ink_core = { version = "2", git = "https://github.com/paritytech/ink", tag = "latest-v2", package = "ink_core", default-features = false }
 ink_lang = { version = "2", git = "https://github.com/paritytech/ink", tag = "latest-v2", package = "ink_lang", default-features = false }
 
-scale = { package = "parity-scale-codec", version = "1.2", default-features = false, features = ["derive"] }
+scale = { package = "parity-scale-codec", version = "1.3", default-features = false, features = ["derive"] }
+# TODO - restore once ink! 3.0 is released
+# scale-info = { version = "0.2", default-features = false, features = ["derive"], optional = true }
 
 [dependencies.type-metadata]
 git = "https://github.com/type-metadata/type-metadata.git"
