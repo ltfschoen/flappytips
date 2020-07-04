@@ -83,17 +83,17 @@ mod leaderboard {
             let mut all_account_to_scores: Vec<storage::HashMap<AccountId, u32>> = Vec::new();
             
             let mut score: u32;
+            let mut account_scores: storage::HashMap<AccountId, u32>;
             for account in self.accounts.iter() {
                 let score = self.account_to_score.get(&account);
-                let mut account_scores: storage::HashMap<AccountId, u32>;
                 match score {
                     None => Err("Error: Unable to find score for account"),
                     Some(x) => {
                         account_scores.insert(
                             *account,
-                            *score.unwrap(),
+                            *score.unwrap_or(&0),
                         );
-                        // *all_account_to_scores.push(account_scores);
+                        all_account_to_scores.push(account_scores);
                         Ok(&all_account_to_scores)
                     },
                 };
