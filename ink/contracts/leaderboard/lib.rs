@@ -15,7 +15,7 @@ mod leaderboard {
         owner: storage::Value<AccountId>,
 
         //// Store a mapping from AccountIds to a u32 of user on the leaderboard in the storage
-        account_map: storage::HashMap<AccountId, u32>,
+        account_to_score: storage::HashMap<AccountId, u32>,
     }
 
     /// Events
@@ -28,6 +28,19 @@ mod leaderboard {
         score: u32
     }
 
+    /// Errors that can occur upon calling this contract.
+    /// Reference: https://github.com/paritytech/ink/blob/master/examples/dns/lib.rs
+    #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
+    #[cfg_attr(feature = "std", derive(::scale_info::TypeInfo))]
+    pub enum Error {
+        /// Returned if caller is not owner while required to.
+        CallerIsNotOwner,
+    }
+
+    /// Type alias for the contract's result type.
+    /// Reference: https://github.com/paritytech/ink/blob/master/examples/dns/lib.rs
+    pub type Result<T> = core::result::Result<T, Error>;
+
     impl Leaderboard {
         /// Constructor
 
@@ -37,7 +50,7 @@ mod leaderboard {
             // See https://substrate.dev/substrate-contracts-workshop/#/1/storing-a-value?id=initializing-storage
             self.owner.set(self.env().caller());
 
-            self.account_map.insert(AccountId::from([0x1; 32]), 0);
+            self.account_to_score.insert(AccountId::from([0x1; 32]), 0);
         }
 
         /// Public Functions
@@ -59,13 +72,17 @@ mod leaderboard {
 
         // Set the score for a given AccountId
         #[ink(message)]
-        fn set_score_of_account(&mut self, of: AccountId, score: u32) -> () {
-            match self.account_map.get(&of) {
+        fn set_score_of_account(&mut self, of: AccountId, score: u32) -> Result<()> {
+            let owner = self.get_owner();
+            if of != owner {
+                return Err(Error::CallerIsNotOwner)
+            }
+            match self.account_to_score.get(&of) {
                 Some(_) => {
-                    self.account_map.mutate_with(&of, |value| *value = score);
+                    self.account_to_score.mutate_with(&of, |value| *value = score);
                 }
                 None => {
-                    self.account_map.insert(of, score);
+                    self.account_to_score.insert(of, score);
                 }
             };
 
@@ -76,18 +93,24 @@ mod leaderboard {
                         of,
                         score,
                     });
+
+            Ok(())
         }
 
         // Set the score for the calling AccountId
         #[ink(message)]
-        fn set_score_of_sender(&mut self, score: u32) -> () {
+        fn set_score_of_sender(&mut self, score: u32) -> Result<()> {
             let caller = self.env().caller();
-            match self.account_map.get(&caller) {
+            let owner = self.get_owner();
+            if caller != owner {
+                return Err(Error::CallerIsNotOwner)
+            }
+            match self.account_to_score.get(&caller) {
                 Some(_) => {
-                    self.account_map.mutate_with(&caller, |value| *value = score);
+                    self.account_to_score.mutate_with(&caller, |value| *value = score);
                 }
                 None => {
-                    self.account_map.insert(caller, score);
+                    self.account_to_score.insert(caller, score);
                 }
             };
 
@@ -98,14 +121,22 @@ mod leaderboard {
                         of: caller,
                         score,
                     });
+            
+            Ok(())
         }
 
         /// Private functions
 
         /// Returns the score for an AccountId or 0 if it is not set.
         fn account_score_or_zero(&self, of: &AccountId) -> u32 {
-            let score = self.account_map.get(of).unwrap_or(&0);
+            let score = self.account_to_score.get(of).unwrap_or(&0);
             *score
+        }
+
+        /// Returns the contract owner.
+        /// Reference: https://github.com/paritytech/ink/blob/master/examples/dns/lib.rs
+        fn get_owner(&self) -> AccountId {
+            *self.owner.get()
         }
     }
 
@@ -139,14 +170,14 @@ mod leaderboard {
         #[test]
         fn set_score_of_sender_works() {
             let mut leaderboard = Leaderboard::new();
-            assert_eq!(leaderboard.set_score_of_sender(1), ());
+            assert_eq!(leaderboard.set_score_of_sender(1), Ok(()));
             assert_eq!(leaderboard.get_score_of_sender(), 1);
         }
 
         #[test]
         fn set_score_of_account_works() {
             let mut leaderboard = Leaderboard::new();
-            assert_eq!(leaderboard.set_score_of_account(get_dummy_account(), 2), ());
+            assert_eq!(leaderboard.set_score_of_account(get_dummy_account(), 2), Ok(()));
             assert_eq!(leaderboard.get_score_of_account(get_dummy_account()), 2);
         }
     }
