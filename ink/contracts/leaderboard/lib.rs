@@ -11,38 +11,85 @@ mod leaderboard {
     /// to add new static storage fields to your contract.
     #[ink(storage)]
     struct Leaderboard {
-        /// Stores a single `bool` value on the storage.
-        value: storage::Value<bool>,
+        /// Store a contract owner
+        owner: storage::Value<AccountId>,
+
+        //// Store a mapping from AccountIds to a u32 of user on the leaderboard in the storage
+        account_map: storage::HashMap<AccountId, u32>,
     }
 
     impl Leaderboard {
-        /// Constructor that initializes the `bool` value to the given `init_value`.
+        /// Constructor
+
         #[ink(constructor)]
-        fn new(&mut self, init_value: bool) {
-            self.value.set(init_value);
+        fn new(&mut self) {
+            // IMPORTANT: Initialize all storage values
+            // See https://substrate.dev/substrate-contracts-workshop/#/1/storing-a-value?id=initializing-storage
+            self.owner.set(self.env().caller());
+
+            self.account_map.insert(AccountId::from([0x1; 32]), 0);
         }
 
-        /// Constructor that initializes the `bool` value to `false`.
-        ///
-        /// Constructors can delegate to other constructors.
-        #[ink(constructor)]
-        fn default(&mut self) {
-            self.new(false)
-        }
+        /// Public Functions
 
-        /// A message that can be called on instantiated contracts.
-        /// This one flips the value of the stored `bool` from `true`
-        /// to `false` and vice versa.
+        // Get the score for a given AccountId
         #[ink(message)]
-        fn flip(&mut self) {
-            *self.value = !self.get();
+        fn get_score_of_account(&self, of: AccountId) -> u32 {
+            let value = self.account_score_or_zero(&of);
+            value
         }
 
-        /// Simply returns the current value of our `bool`.
+        // Get the score for the calling AccountId
         #[ink(message)]
-        fn get(&self) -> bool {
-            *self.value
+        fn get_score_of_sender(&self) -> u32 {
+            let caller = self.env().caller();
+            let value = self.account_score_or_zero(&caller);
+            value
         }
+
+        // Set the score for the calling AccountId
+        #[ink(message)]
+        fn set_score_of_sender(&self, score: u32) -> () {
+            let caller = self.env().caller();
+            match self.account_map.get(&caller) {
+                Some(_) => {
+                    self.account_map.mutate_with(&caller, |value| *value += score);
+                }
+                None => {
+                    self.account_map.insert(caller, score);
+                }
+            };
+        }
+
+        // Set the score for a given AccountId
+        #[ink(message)]
+        fn set_score_of_account(&self, of: AccountId, score: u32) -> () {
+            let caller = self.env().caller();
+            match self.account_map.get(&of) {
+                Some(_) => {
+                    self.account_map.mutate_with(&of, |value| *value += score);
+                }
+                None => {
+                    self.account_map.insert(of, score);
+                }
+            };
+        }
+
+        /// Private functions
+
+        /// Returns the score for an AccountId or 0 if it is not set.
+        fn account_score_or_zero(&self, of: &AccountId) -> u32 {
+            let score = self.account_map.get(of).unwrap_or(&0);
+            *score
+        }
+    }
+
+    // Free Functions
+
+    /// Returns a dummy AccountId for unit tests
+    fn get_dummy_account() -> AccountId {
+        let account: AccountId = [0u8; 32].into();
+        account
     }
 
     /// Unit tests in Rust are normally defined within such a `#[cfg(test)]`
@@ -53,24 +100,21 @@ mod leaderboard {
         /// Imports all the definitions from the outer scope so we can use them here.
         use super::*;
 
-        /// We test if the default constructor does its job.
         #[test]
-        fn default_works() {
-            // Note that even though we defined our `#[ink(constructor)]`
-            // above as `&mut self` functions that return nothing we can call
-            // them in test code as if they were normal Rust constructors
-            // that take no `self` argument but return `Self`.
-            let leaderboard = Leaderboard::default();
-            assert_eq!(leaderboard.get(), false);
+        fn constructor_new_works() {
+            let leaderboard = Leaderboard::new();
         }
 
-        /// We test a simple use case of our contract.
         #[test]
-        fn it_works() {
-            let mut leaderboard = Leaderboard::new(false);
-            assert_eq!(leaderboard.get(), false);
-            leaderboard.flip();
-            assert_eq!(leaderboard.get(), true);
+        fn get_score_of_account_works() {
+            let mut leaderboard = Leaderboard::new();
+            assert_eq!(leaderboard.get_score_of_account(get_dummy_account()), 0);
+        }
+
+        #[test]
+        fn get_score_of_sender_works() {
+            let mut leaderboard = Leaderboard::new();
+            assert_eq!(leaderboard.get_score_of_sender(), 0);
         }
     }
 }
