@@ -130,18 +130,19 @@ mod leaderboard {
             Ok(())
         }
 
+        /// Returns the contract owner.
+        /// Reference: https://github.com/paritytech/ink/blob/master/examples/dns/lib.rs
+        #[ink(message)]
+        fn get_owner(&self) -> AccountId {
+            *self.owner.get()
+        }
+
         /// Private functions
 
         /// Returns the score for an AccountId or 0 if it is not set.
         fn account_score_or_zero(&self, of: &AccountId) -> u32 {
             let score = self.account_to_score.get(of).unwrap_or(&0);
             *score
-        }
-
-        /// Returns the contract owner.
-        /// Reference: https://github.com/paritytech/ink/blob/master/examples/dns/lib.rs
-        fn get_owner(&self) -> AccountId {
-            *self.owner.get()
         }
     }
 
@@ -156,20 +157,30 @@ mod leaderboard {
         // Free Functions
 
         /// Returns a dummy AccountId for unit tests
-        fn get_dummy_account() -> AccountId {
+        fn test_get_dummy_account() -> AccountId {
             [0u8; 32].into()
+        }
+
+        fn test_get_owner() -> AccountId {
+            [1u8; 32].into()
         }
 
         #[test]
         fn get_score_of_account_works() {
             let leaderboard = Leaderboard::new();
-            assert_eq!(leaderboard.get_score_of_account(get_dummy_account()), 0);
+            assert_eq!(leaderboard.get_score_of_account(test_get_dummy_account()), 0);
         }
 
         #[test]
         fn get_score_of_sender_works() {
             let leaderboard = Leaderboard::new();
             assert_eq!(leaderboard.get_score_of_sender(), 0);
+        }
+
+        #[test]
+        fn get_owner_works() {
+            let leaderboard = Leaderboard::new();
+            assert_eq!(leaderboard.get_owner(), test_get_owner());
         }
 
         #[test]
@@ -180,10 +191,21 @@ mod leaderboard {
         }
 
         #[test]
-        fn set_score_of_account_works() {
+        fn set_score_of_account_is_ok_when_sender_equals_given_account_works() {
             let mut leaderboard = Leaderboard::new();
-            assert_eq!(leaderboard.set_score_of_account(get_dummy_account(), 2), Ok(()));
-            assert_eq!(leaderboard.get_score_of_account(get_dummy_account()), 2);
+            assert_eq!(leaderboard.get_owner(), test_get_owner());
+            assert_eq!(leaderboard.set_score_of_account(test_get_owner(), 2), Ok(()));
+            assert_eq!(leaderboard.get_score_of_account(test_get_owner()), 2);
+            assert_eq!(leaderboard.get_score_of_account(test_get_dummy_account()), 0);
+        }
+
+        #[test]
+        fn set_score_of_account_errors_when_sender_not_equal_given_account_works() {
+            let mut leaderboard = Leaderboard::new();
+            assert_eq!(leaderboard.get_owner(), test_get_owner());
+            assert_eq!(leaderboard.set_score_of_account(test_get_dummy_account(), 2), Err("Error: CallerIsNotOwner"));
+            assert_eq!(leaderboard.get_score_of_account(test_get_dummy_account()), 0);
+            assert_eq!(leaderboard.get_score_of_account(test_get_owner()), 0);
         }
 
         // TODO - Add tests for Events
