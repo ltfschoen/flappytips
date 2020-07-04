@@ -16,6 +16,9 @@ mod leaderboard {
 
         //// Store a mapping from AccountIds to a u32 of user on the leaderboard in the storage
         account_to_score: storage::HashMap<AccountId, u32>,
+
+        /// Store AccountIds on the leaderboard in storage
+        accounts: storage::Vec<AccountId>,
     }
 
     /// Events
@@ -52,7 +55,8 @@ mod leaderboard {
             // IMPORTANT: Initialize all storage values
             // See https://substrate.dev/substrate-contracts-workshop/#/1/storing-a-value?id=initializing-storage
             self.owner.set(self.env().caller());
-
+            let initialising_account = AccountId::from([0x1; 32]);
+            self.accounts.push(initialising_account);
             self.account_to_score.insert(AccountId::from([0x1; 32]), 0);
         }
 
@@ -73,6 +77,31 @@ mod leaderboard {
             value
         }
 
+        // Get all scores for the all AccountIds
+        #[ink(message)]
+        fn get_all_scores(&self) -> Result<Vec<storage::HashMap<AccountId, u32>>, &'static str> {
+            let mut all_account_to_scores: Vec<storage::HashMap<AccountId, u32>> = Vec::new();
+            
+            let mut score: u32;
+            for account in self.accounts.iter() {
+                let score = self.account_to_score.get(&account);
+                let mut account_scores: storage::HashMap<AccountId, u32>;
+                match score {
+                    None => Err("Error: Unable to find score for account"),
+                    Some(x) => {
+                        account_scores.insert(
+                            *account,
+                            *score.unwrap(),
+                        );
+                        // *all_account_to_scores.push(account_scores);
+                        Ok(&all_account_to_scores)
+                    },
+                };
+            }
+            Ok(all_account_to_scores)
+        }
+
+
         // Set the score for a given AccountId
         #[ink(message)]
         fn set_score_of_account(&mut self, of: AccountId, score: u32) -> Result<(), &'static str> {
@@ -87,6 +116,7 @@ mod leaderboard {
                 }
                 None => {
                     self.account_to_score.insert(of, score);
+                    self.accounts.push(of);
                 }
             };
 
@@ -116,6 +146,7 @@ mod leaderboard {
                 }
                 None => {
                     self.account_to_score.insert(caller, score);
+                    self.accounts.push(caller);
                 }
             };
 
