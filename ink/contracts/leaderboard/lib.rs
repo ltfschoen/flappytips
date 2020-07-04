@@ -51,13 +51,21 @@ mod leaderboard {
         /// Constructor
 
         #[ink(constructor)]
-        fn new(&mut self) {
+        fn new(&mut self) -> Self {
             // IMPORTANT: Initialize all storage values
             // See https://substrate.dev/substrate-contracts-workshop/#/1/storing-a-value?id=initializing-storage
-            self.owner.set(self.env().caller());
-            let initialising_account = AccountId::from([0x1; 32]);
-            self.accounts.push(initialising_account);
-            self.account_to_score.insert(AccountId::from([0x1; 32]), 0);
+            let instantiating_account = AccountId::from([0x1; 32]);
+
+            let instance = Self {
+                accounts: accounts.push(instantiating_account),
+                account_to_score: account_to_score.insert(AccountId::from([0x1; 32]), 0),
+                owner: owner.set(self.env().caller()),
+            };
+
+            Self::env().emit_event(InstantiatedContract {
+                of: self.owner,
+            });
+            instance
         }
 
         /// Public Functions
@@ -196,6 +204,24 @@ mod leaderboard {
             [1u8; 32].into()
         }
 
+        /// Tests
+
+        fn constructor_event_works() {
+            let leaderboard = Leaderboard::new();
+
+            // Transfer event triggered during initial contruction.
+            let emitted_events = env::test::recorded_events().collect::<Vec<_>>();
+            assert_eq!(1, emitted_events.len());
+            let raw_event = emitted_events.first().unwrap();
+            let event = <Event as scale::Decode>::decode(&mut &raw_event.data[..])
+                .expect("Invalid contract Event");
+            if let Event::InstantiatedContract(instance) = event {
+                assert_eq!(test_get_owner(), instance.of);
+            } else {
+                panic!("Expected an InstantiatedContract Event")
+            }
+        }
+
         #[test]
         fn get_score_of_account_works() {
             let leaderboard = Leaderboard::new();
@@ -219,6 +245,8 @@ mod leaderboard {
             let mut leaderboard = Leaderboard::new();
             assert_eq!(leaderboard.set_score_of_sender(1), Ok(()));
             assert_eq!(leaderboard.get_score_of_sender(), 1);
+            // SetAccountScore event triggered
+            assert_eq!(env::test::recorded_events().count(), 1);
         }
 
         #[test]
@@ -228,6 +256,8 @@ mod leaderboard {
             assert_eq!(leaderboard.set_score_of_account(test_get_owner(), 2), Ok(()));
             assert_eq!(leaderboard.get_score_of_account(test_get_owner()), 2);
             assert_eq!(leaderboard.get_score_of_account(test_get_dummy_account()), 0);
+            // SetAccountScore event triggered
+            assert_eq!(env::test::recorded_events().count(), 1);
         }
 
         #[test]
