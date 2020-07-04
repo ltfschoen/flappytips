@@ -10,6 +10,7 @@ mod leaderboard {
     /// Add new fields to the below struct in order
     /// to add new static storage fields to your contract.
     #[ink(storage)]
+    #[derive(Copy, Clone)]
     struct Leaderboard {
         /// Store a contract owner
         owner: storage::Value<AccountId>,
@@ -100,7 +101,6 @@ mod leaderboard {
         //     }
         //     Ok(all_account_to_scores)
         // }
-
 
         // Set the score for a given AccountId
         #[ink(message)]
