@@ -152,3 +152,7 @@ cargo +nightly contract generate-metadata
   otherwise the contract becomes an invalid tombstone.
 * Call smart contract using Polkadot.js Apps. See https://substrate.dev/substrate-contracts-workshop/#/0/calling-your-contract
   * Deploy Contract
+
+### Documentation for ink!
+
+https://paritytech.github.io/ink/
