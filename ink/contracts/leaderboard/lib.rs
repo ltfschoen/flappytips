@@ -9,12 +9,11 @@ mod leaderboard {
     use ink_core::storage;
     // Important Note: Do not use HashMap. If you want to return `std::collection::HashMap`
     // you should instead use `ink_prelude::collections::BTreeMap` and use `PartialOrd + Eq`
-    // instead of `Hash` for its keys 
-    use ink_prelude::collections::BTreeMap as BTreeMap;
+    // instead of `Hash` for its keys
     use ink_prelude::vec::Vec;
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-    struct AccountToScore (
+    pub struct AccountToScore (
         AccountId,
         u32
     );
@@ -95,18 +94,17 @@ mod leaderboard {
         fn get_all_scores(&self) -> Result<Vec<AccountToScore>, &'static str> {
             let mut all_account_to_scores: Vec<AccountToScore> = Vec::new();
 
-            let mut score: u32;
-            let mut account_scores = BTreeMap::new();
-            for account in self.accounts.iter().cloned() {
+            let mut account_scores: AccountToScore;
+            for account in self.accounts.iter() {
                 let score = self.account_to_score.get(&account);
                 match score {
                     None => Err("Error: Unable to find score for account"),
                     Some(x) => {
-                        account_scores.insert(
-                            account,
+                        account_scores = AccountToScore (
+                            *account,
                             *score.unwrap_or(&0),
                         );
-                        all_account_to_scores.push(AccountToScore::from(account_scores));
+                        all_account_to_scores.push(account_scores);
                         Ok(&all_account_to_scores)
                     },
                 };
@@ -181,6 +179,21 @@ mod leaderboard {
             *self.owner.get()
         }
 
+        #[ink(message)]
+        // TODO - convert to set a vector of delegates owners
+        fn set_owner(&mut self, account: AccountId) -> Result<(), &'static str> {
+            let caller = self.env().caller();
+            let owner = self.get_owner();
+            if caller != owner {
+                // return Err(Error::CallerIsNotOwner)
+                return Err("Error: CallerIsNotOwner")
+            }
+            self.owner.set(account);
+
+            // TODO - emit set owner event
+            Ok(())
+        }
+
         /// Private functions
 
         /// Returns the score for an AccountId or 0 if it is not set.
@@ -250,6 +263,20 @@ mod leaderboard {
             assert_eq!(leaderboard.set_score_of_account(test_get_dummy_account(), 2), Err("Error: CallerIsNotOwner"));
             assert_eq!(leaderboard.get_score_of_account(test_get_dummy_account()), 0);
             assert_eq!(leaderboard.get_score_of_account(test_get_owner()), 0);
+        }
+
+        #[test]
+        fn get_all_scores_works() {
+            let mut leaderboard = Leaderboard::new();
+            assert_eq!(leaderboard.set_score_of_account(test_get_owner(), 3), Ok(()));
+            assert_eq!(leaderboard.set_owner(test_get_dummy_account()), Ok(()));
+            assert_eq!(leaderboard.set_score_of_account(test_get_dummy_account(), 5), Ok(()));
+            assert_eq!(leaderboard.get_all_scores(),
+                Ok(vec!(
+                    AccountToScore (test_get_owner(), 3),
+                    AccountToScore (test_get_dummy_account(), 5)
+                ))
+            );
         }
 
         // TODO - Add tests for Events
