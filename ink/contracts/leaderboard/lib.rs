@@ -1,17 +1,17 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+// ink types: https://github.com/paritytech/ink/blob/master/core/src/env/types.rs
+
 use ink_lang as ink;
-use std::collections::HashMap;
+// Important Note: Do not use HashMap. If you want to return `std::collection::HashMap`
+// you should instead use `ink_prelude::collections::BTreeMap` and use `PartialOrd + Eq`
+// instead of `Hash` for its keys 
+use ink_prelude::collections::BTreeMap;
+use ink_prelude::vec::Vec;
 
 #[ink::contract(version = "0.1.0")]
 mod leaderboard {
     use ink_core::storage;
-
-    #[derive(Clone, Copy, Hash, Eq, PartialEq, Debug)]
-    struct AccountToScore {
-        account: AccountId,
-        score: u32
-    }
 
     /// Defines the storage of your contract.
     /// Add new fields to the below struct in order
@@ -86,13 +86,11 @@ mod leaderboard {
 
         // Get all scores for the all AccountIds
         #[ink(message)]
-        fn get_all_scores(&self) -> Result<Vec<storage::HashMap<AccountId, u32>>, &'static str> {
-            let mut all_account_to_scores: Vec<storage::HashMap<AccountId, u32>> = Vec::new();
+        fn get_all_scores(&self) -> Result<Vec<(AccountId, u32)>, &'static str> {
+            let mut all_account_to_scores: Vec<(AccountId, u32)> = Vec::new();
             
             let mut score: u32;
-            // TODO - pending ink! 3.0
-            // let mut account_scores: storage::HashMap<AccountId, u32>;
-            let mut account_scores: AccountToScore = HashMap::new();
+            let mut account_scores = BTreeMap::new();
             for account in self.accounts.iter().cloned() {
                 let score = self.account_to_score.get(&account);
                 match score {
@@ -104,8 +102,8 @@ mod leaderboard {
                         //     *score.unwrap_or(&0),
                         // );
                         account_scores.insert(
-                            account: account,
-                            score: *score.unwrap_or(&0),
+                            account,
+                            score.unwrap_or(&0),
                         );
                         all_account_to_scores.push(account_scores);
                         Ok(&all_account_to_scores)
