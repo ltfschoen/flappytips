@@ -13,6 +13,12 @@ use ink_prelude::vec::Vec;
 mod leaderboard {
     use ink_core::storage;
 
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+    struct AccountToScore (
+        AccountId,
+        u32
+    );
+
     /// Defines the storage of your contract.
     /// Add new fields to the below struct in order
     /// to add new static storage fields to your contract.
@@ -88,22 +94,19 @@ mod leaderboard {
         #[ink(message)]
         fn get_all_scores(&self) -> Result<Vec<(AccountId, u32)>, &'static str> {
             let mut all_account_to_scores: Vec<(AccountId, u32)> = Vec::new();
-            
+
             let mut score: u32;
-            let mut account_scores = BTreeMap::new();
+            let mut account_scores = BTreeMap::<AccountId, u32>::new();
             for account in self.accounts.iter().cloned() {
                 let score = self.account_to_score.get(&account);
                 match score {
                     None => Err("Error: Unable to find score for account"),
                     Some(x) => {
-                        // TODO - pending ink! 3.0
-                        // account_scores.insert(
-                        //     account,
-                        //     *score.unwrap_or(&0),
-                        // );
                         account_scores.insert(
-                            account,
-                            score.unwrap_or(&0),
+                            AccountToScore(
+                                account,
+                                *score.unwrap_or(&0),
+                            )
                         );
                         all_account_to_scores.push(account_scores);
                         Ok(&all_account_to_scores)
