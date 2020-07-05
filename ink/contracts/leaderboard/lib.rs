@@ -3,15 +3,15 @@
 // ink types: https://github.com/paritytech/ink/blob/master/core/src/env/types.rs
 
 use ink_lang as ink;
-// Important Note: Do not use HashMap. If you want to return `std::collection::HashMap`
-// you should instead use `ink_prelude::collections::BTreeMap` and use `PartialOrd + Eq`
-// instead of `Hash` for its keys 
-use ink_prelude::collections::BTreeMap;
-use ink_prelude::vec::Vec;
 
 #[ink::contract(version = "0.1.0")]
 mod leaderboard {
     use ink_core::storage;
+    // Important Note: Do not use HashMap. If you want to return `std::collection::HashMap`
+    // you should instead use `ink_prelude::collections::BTreeMap` and use `PartialOrd + Eq`
+    // instead of `Hash` for its keys 
+    use ink_prelude::collections::BTreeMap as BTreeMap;
+    use ink_prelude::vec::Vec;
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
     struct AccountToScore (
