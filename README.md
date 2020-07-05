@@ -119,6 +119,7 @@ cargo +nightly contract build
 
 * Test smart contract
 ```
+cd ink/contracts/leaderboard
 cargo +nightly test
 ```
 

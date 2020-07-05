@@ -73,12 +73,18 @@ mod leaderboard {
 
         #[ink(constructor)]
         fn new(&mut self) {
-            // IMPORTANT: Initialize all storage values
-            // See https://substrate.dev/substrate-contracts-workshop/#/1/storing-a-value?id=initializing-storage
-            self.set_owner(self.env().caller());
-            let initialising_account = AccountId::from([0x1; 32]);
-            self.accounts.push(initialising_account);
-            self.account_to_score.insert(AccountId::from([0x1; 32]), 0);
+            let caller = self.env().caller();
+            match self.set_owner(caller) {
+                Ok(_) => {
+                    // IMPORTANT: Initialize all storage values
+                    // See https://substrate.dev/substrate-contracts-workshop/#/1/storing-a-value?id=initializing-storage
+                    self.accounts.push(caller);
+                    self.account_to_score.insert(caller, 0);
+                }
+                Err(e) => {
+                    panic!("Error: Unable to set owner of contract {:?}", e);
+                }
+            };
         }
 
         /// Public Functions
@@ -211,6 +217,7 @@ mod leaderboard {
             Ok(owner_delegates)
         }
 
+        /// Set a contract owner delegate
         #[ink(message)]
         fn set_owner_delegate(&mut self, account: AccountId) -> Result<(), &'static str> {
             let caller = self.env().caller();
@@ -278,9 +285,13 @@ mod leaderboard {
             [0u8; 32].into()
         }
 
+        /// Returns the AccountId that that deploys the contract in the
+        /// Unit Tests and so owns the contract 
         fn test_get_owner() -> AccountId {
             [1u8; 32].into()
         }
+
+        /// Unit Test Functions
 
         #[test]
         fn get_score_of_account_works() {
