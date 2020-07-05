@@ -1,10 +1,17 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use ink_lang as ink;
+use std::collections::HashMap;
 
 #[ink::contract(version = "0.1.0")]
 mod leaderboard {
     use ink_core::storage;
+
+    #[derive(Clone, Copy, Hash, Eq, PartialEq, Debug)]
+    struct AccountToScore {
+        account: AccountId,
+        score: u32
+    }
 
     /// Defines the storage of your contract.
     /// Add new fields to the below struct in order
@@ -77,29 +84,36 @@ mod leaderboard {
             value
         }
 
-        // // Get all scores for the all AccountIds
-        // #[ink(message)]
-        // fn get_all_scores(&self) -> Result<Vec<storage::HashMap<AccountId, u32>>, &'static str> {
-        //     let mut all_account_to_scores: Vec<storage::HashMap<AccountId, u32>> = Vec::new();
+        // Get all scores for the all AccountIds
+        #[ink(message)]
+        fn get_all_scores(&self) -> Result<Vec<storage::HashMap<AccountId, u32>>, &'static str> {
+            let mut all_account_to_scores: Vec<storage::HashMap<AccountId, u32>> = Vec::new();
             
-        //     let mut score: u32;
-        //     let mut account_scores: storage::HashMap<AccountId, u32>;
-        //     for account in self.accounts.iter().cloned() {
-        //         let score = self.account_to_score.get(&account);
-        //         match score {
-        //             None => Err("Error: Unable to find score for account"),
-        //             Some(x) => {
-        //                 account_scores.insert(
-        //                     account,
-        //                     *score.unwrap_or(&0),
-        //                 );
-        //                 all_account_to_scores.push(account_scores);
-        //                 Ok(&all_account_to_scores)
-        //             },
-        //         };
-        //     }
-        //     Ok(all_account_to_scores)
-        // }
+            let mut score: u32;
+            // TODO - pending ink! 3.0
+            // let mut account_scores: storage::HashMap<AccountId, u32>;
+            let mut account_scores: AccountToScore = HashMap::new();
+            for account in self.accounts.iter().cloned() {
+                let score = self.account_to_score.get(&account);
+                match score {
+                    None => Err("Error: Unable to find score for account"),
+                    Some(x) => {
+                        // TODO - pending ink! 3.0
+                        // account_scores.insert(
+                        //     account,
+                        //     *score.unwrap_or(&0),
+                        // );
+                        account_scores.insert(
+                            account: account,
+                            score: *score.unwrap_or(&0),
+                        );
+                        all_account_to_scores.push(account_scores);
+                        Ok(&all_account_to_scores)
+                    },
+                };
+            }
+            Ok(all_account_to_scores)
+        }
 
 
         // Set the score for a given AccountId
