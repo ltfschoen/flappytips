@@ -92,23 +92,21 @@ mod leaderboard {
 
         // Get all scores for the all AccountIds
         #[ink(message)]
-        fn get_all_scores(&self) -> Result<Vec<(AccountId, u32)>, &'static str> {
-            let mut all_account_to_scores: Vec<(AccountId, u32)> = Vec::new();
+        fn get_all_scores(&self) -> Result<Vec<AccountToScore>, &'static str> {
+            let mut all_account_to_scores: Vec<AccountToScore> = Vec::new();
 
             let mut score: u32;
-            let mut account_scores = BTreeMap::<AccountId, u32>::new();
+            let mut account_scores = BTreeMap::new();
             for account in self.accounts.iter().cloned() {
                 let score = self.account_to_score.get(&account);
                 match score {
                     None => Err("Error: Unable to find score for account"),
                     Some(x) => {
                         account_scores.insert(
-                            AccountToScore(
-                                account,
-                                *score.unwrap_or(&0),
-                            )
+                            account,
+                            *score.unwrap_or(&0),
                         );
-                        all_account_to_scores.push(account_scores);
+                        all_account_to_scores.push(account_scores as AccountToScore);
                         Ok(&all_account_to_scores)
                     },
                 };
