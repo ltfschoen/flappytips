@@ -106,7 +106,7 @@ mod leaderboard {
                             account,
                             *score.unwrap_or(&0),
                         );
-                        all_account_to_scores.push(account_scores as AccountToScore);
+                        all_account_to_scores.push(AccountToScore::from(account_scores));
                         Ok(&all_account_to_scores)
                     },
                 };
