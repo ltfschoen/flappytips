@@ -75,7 +75,7 @@ mod leaderboard {
         fn new(&mut self) {
             // IMPORTANT: Initialize all storage values
             // See https://substrate.dev/substrate-contracts-workshop/#/1/storing-a-value?id=initializing-storage
-            self.owner.set(self.env().caller());
+            self.set_owner(self.env().caller());
             let initialising_account = AccountId::from([0x1; 32]);
             self.accounts.push(initialising_account);
             self.account_to_score.insert(AccountId::from([0x1; 32]), 0);
@@ -182,6 +182,12 @@ mod leaderboard {
         #[ink(message)]
         fn get_owner(&self) -> AccountId {
             *self.owner.get()
+        }
+
+        /// Set the contract owner.
+        #[ink(message)]
+        fn set_owner(&self, account: AccountId) -> () {
+            self.owner.set(account)
         }
 
         /// Returns contract owner delegates.
