@@ -26,6 +26,9 @@ mod leaderboard {
         /// Store a contract owner
         owner: storage::Value<AccountId>,
 
+        /// Store delegate contract owners
+        owner_delegates: storage::Vec<storage::Value<AccountId>>,
+
         //// Store a mapping from AccountIds to a u32 of user on the leaderboard in the storage
         account_to_score: storage::HashMap<AccountId, u32>,
 
@@ -41,6 +44,12 @@ mod leaderboard {
         of: AccountId,
         #[ink(topic)]
         score: u32
+    }
+
+    #[ink(event)]
+    struct SetOwnerDelegate {
+        #[ink(topic)]
+        account: AccountId
     }
 
     // TODO - restore once ink! 3.0 is released
@@ -95,6 +104,9 @@ mod leaderboard {
             let mut all_account_to_scores: Vec<AccountToScore> = Vec::new();
 
             let mut account_scores: AccountToScore;
+            if self.accounts.is_empty() {
+                return Err("Error: Unable to find any accounts");
+            }
             for account in self.accounts.iter() {
                 let score = self.account_to_score.get(&account);
                 match score {
@@ -112,15 +124,11 @@ mod leaderboard {
             Ok(all_account_to_scores)
         }
 
-
         // Set the score for a given AccountId
         #[ink(message)]
         fn set_score_of_account(&mut self, of: AccountId, score: u32) -> Result<(), &'static str> {
-            let owner = self.get_owner();
-            if of != owner {
-                // return Err(Error::CallerIsNotOwner)
-                return Err("Error: CallerIsNotOwner")
-            }
+            self.is_owner(&of);
+            self.is_owner_delegate(&of);
             match self.account_to_score.get(&of) {
                 Some(_) => {
                     self.account_to_score.mutate_with(&of, |value| *value = score);
@@ -146,11 +154,8 @@ mod leaderboard {
         #[ink(message)]
         fn set_score_of_sender(&mut self, score: u32) -> Result<(), &'static str> {
             let caller = self.env().caller();
-            let owner = self.get_owner();
-            if caller != owner {
-                // return Err(Error::CallerIsNotOwner)
-                return Err("Error: CallerIsNotOwner")
-            }
+            self.is_owner(&caller);
+            self.is_owner_delegate(&caller);
             match self.account_to_score.get(&caller) {
                 Some(_) => {
                     self.account_to_score.mutate_with(&caller, |value| *value = score);
@@ -179,16 +184,29 @@ mod leaderboard {
             *self.owner.get()
         }
 
+        /// Returns contract owner delegates.
+        #[ink(message)]
+        fn get_owner_delegates(&self) -> Vec<AccountId> {
+            return self.owner_delegates;
+        }
+
         #[ink(message)]
         // TODO - convert to set a vector of delegates owners
-        fn set_owner(&mut self, account: AccountId) -> Result<(), &'static str> {
+        fn set_delegate_owner(&mut self, account: AccountId) -> Result<(), &'static str> {
             let caller = self.env().caller();
             let owner = self.get_owner();
             if caller != owner {
                 // return Err(Error::CallerIsNotOwner)
                 return Err("Error: CallerIsNotOwner")
             }
-            self.owner.set(account);
+            self.owner_delegates.push(account);
+
+            // Emit event
+            self.env()
+            .emit_event(
+                SetOwnerDelegate {
+                    account
+                });
 
             // TODO - emit set owner event
             Ok(())
@@ -200,6 +218,25 @@ mod leaderboard {
         fn account_score_or_zero(&self, of: &AccountId) -> u32 {
             let score = self.account_to_score.get(of).unwrap_or(&0);
             *score
+        }
+
+        /// Check if AccountId is the owner
+        fn is_owner(&self, of: &AccountId) -> bool {
+            let owner = self.get_owner();
+            if owner != *of {
+                return false;
+            }
+            return true;
+        }
+
+        /// Check if AccountId is an owner delegate
+        fn is_owner_delegate(&self, of: &AccountId) -> bool {
+            let owner_delegates = self.get_owner_delegates();
+            let mut is_owner_delegate = false;
+            if owner_delegates.iter().any(|&d| d == *of) {
+                is_owner_delegate = true;
+            }
+            is_owner_delegate
         }
     }
 
@@ -269,10 +306,10 @@ mod leaderboard {
         fn get_all_scores_works() {
             let mut leaderboard = Leaderboard::new();
             assert_eq!(leaderboard.set_score_of_account(test_get_owner(), 3), Ok(()));
-            assert_eq!(leaderboard.set_owner(test_get_dummy_account()), Ok(()));
+            assert_eq!(leaderboard.set_delegate_owner(test_get_dummy_account()), Ok(()));
             assert_eq!(leaderboard.set_score_of_account(test_get_dummy_account(), 5), Ok(()));
             assert_eq!(leaderboard.get_all_scores(),
-                Ok(vec!(
+                Ok(ink_prelude::vec!(
                     AccountToScore (test_get_owner(), 3),
                     AccountToScore (test_get_dummy_account(), 5)
                 ))
