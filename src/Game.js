@@ -81,7 +81,7 @@ class Game extends Component {
     // // assuming one of the keys in `allProviders` is 'kusama-cc3', we can then use that provider
     // const { provider } = web3UseRpcProvider('polkadot-js', 'kusama-cc3');
 
-    const currentEndpoint = customEndpoint || ENDPOINTS['Kusama'];
+    const currentEndpoint = customEndpoint || ENDPOINTS['Edgeware Mainnet'];
     const currentEndpointName = Object.keys(ENDPOINTS)[Object.values(ENDPOINTS).indexOf(currentEndpoint)];
     const provider = new WsProvider(currentEndpoint);
     // Create a keyring instance. https://polkadot.js.org/api/start/keyring.html
