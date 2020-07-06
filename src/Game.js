@@ -129,7 +129,7 @@ class Game extends Component {
       const [signedBlock] = await Promise.all([
         api.rpc.chain.getBlock(blockHash)
       ]);
-      console.log('signedBlock', signedBlock);
+      // console.log('signedBlock', signedBlock);
       console.log('signedBlock', signedBlock.block.header.parentHash.toHex());
 
       // // Hash for each extrinsic in the block
