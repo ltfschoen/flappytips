@@ -4,7 +4,7 @@ import { isMobile } from "react-device-detect";
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 import { web3Accounts, web3Enable, web3FromAddress, web3ListRpcProviders, web3UseRpcProvider } from '@polkadot/extension-dapp';
 import { bufferToU8a, u8aToBuffer, u8aToString, stringToU8a, u8aToHex } from '@polkadot/util';
-import * as edgewareDefinitions from 'edgeware-node-types/interfaces/definitions';
+import * as edgewareDefinitions from 'edgeware-node-types/dist/definitions';
 import { TwitterShareButton } from 'react-twitter-embed';
 import Button from "react-bootstrap/Button";
 // import Input from "react-bootstrap/Input";
@@ -166,7 +166,14 @@ class Game extends Component {
 
       const { activeAccountIds } = this.state;
       let newActiveAccountIds = activeAccountIds;
-
+      let [currentBlockEvents] = [];
+      [currentBlockEvents] = await Promise.all([
+        api.query.system.events.at(currentBlockHash) 
+      ]);
+      // console.log('currentBlockEvents', currentBlockEvents);
+      if (currentBlockEvents.length) {
+        console.log(`\nReceived ${currentBlockEvents.length} events:`);
+      }
       // Only update the newActiveAccountIds if we're not using Edgeware
       // until this issue is resolved: https://github.com/hicommonwealth/edgeware-node/issues/176
       if (currentEndpointName !== 'Edgeware Mainnet') {
