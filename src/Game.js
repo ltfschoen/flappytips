@@ -140,10 +140,16 @@ class Game extends Component {
       //   // console.log('Hash for extrinsic in the block', index, u8aToString(bufferToU8a(ex.data)));
       // });
 
-      const [currentBlockEvents] = await Promise.all([
-        api.query.system.events.at(currentBlockHash) 
-      ]);
-      // console.log('currentBlockEvents', currentBlockEvents);
+      let [currentBlockEvents] = [];
+      if (currentEndpointName !== 'Edgeware Mainnet') {
+        [currentBlockEvents] = await Promise.all([
+          api.query.system.events.at(currentBlockHash) 
+        ]);
+        // console.log('currentBlockEvents', currentBlockEvents);
+        if (currentBlockEvents.length) {
+          console.log(`\nReceived ${currentBlockEvents.length} events:`);
+        }
+      }
 
       // Digest of current block
       const [currentDigest] = await Promise.all([
@@ -169,37 +175,43 @@ class Game extends Component {
       ]);
       console.log('eventTopics', eventTopics);
 
-      console.log(`\nReceived ${currentBlockEvents.length} events:`);
-
       const { activeAccountIds } = this.state;
       let newActiveAccountIds = activeAccountIds;
-      let foundAccountIds = {};
 
-      currentBlockEvents.forEach((record) => {
-        const { event, phase } = record;
-        const types = event.typeDef;
+      // Only update the newActiveAccountIds if we're not using Edgeware
+      // until this issue is resolved: https://github.com/hicommonwealth/edgeware-node/issues/176
+      if (currentEndpointName !== 'Edgeware Mainnet') {
+        let foundAccountIds = {};
+        currentBlockEvents.forEach((record) => {
+          const { event, phase } = record;
+          const types = event.typeDef;
 
-        console.log('Event record: ', record);
-        console.log(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
-        console.log(`\t\t${event.meta.documentation.toString()}`);
+          console.log('Event record: ', record);
+          console.log(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
+          console.log(`\t\t${event.meta.documentation.toString()}`);
 
-        event.data.forEach((data, index) => {
-          console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
-          console.log('types[index].type: ', types[index].type, typeof types[index].type, types[index].type === 'AccountId');
-          if (types[index].type === 'AccountId') {
-            activeAccountIds.hasOwnProperty(data.toString()) ? foundAccountIds[data.toString()] += 1 : foundAccountIds[data.toString()] = 1;
+          event.data.forEach((data, index) => {
+            console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
+            console.log('types[index].type: ', types[index].type, typeof types[index].type, types[index].type === 'AccountId');
+            if (types[index].type === 'AccountId') {
+              activeAccountIds.hasOwnProperty(data.toString()) ? foundAccountIds[data.toString()] += 1 : foundAccountIds[data.toString()] = 1;
+            }
+            console.log('foundAccountIds: ', foundAccountIds);
+          });
+          if (foundAccountIds.length !== 0) {
+            newActiveAccountIds = merge(activeAccountIds, foundAccountIds);
           }
-          console.log('foundAccountIds: ', foundAccountIds);
+          // FIXME - its getting the validators account id that authored the block, but i want the account id that
+          // sent the Deposit extrinsic instead
+          console.log('newActiveAccountIds: ', newActiveAccountIds);
         });
-        if (foundAccountIds.length !== 0) {
-          newActiveAccountIds = merge(activeAccountIds, foundAccountIds);
-        }
-        // FIXME - its getting the validators account id that authored the block, but i want the account id that
-        // sent the Deposit extrinsic instead
-        console.log('newActiveAccountIds: ', newActiveAccountIds);
-      });
+      }
 
-      const currentBlockAuthors = validators && validators.map((item, index) => item.toString());
+      let currentBlockAuthors = [];
+      if (currentEndpointName !== 'Edgeware Mainnet') {
+        currentBlockAuthors = validators && validators.map((item, index) => item.toString());
+      }
+
       this.handleReceiveNewHead(currentBlockNumber, currentBlockHash, currentBlockAuthors, parentBlockHash, newActiveAccountIds);
     });
 
