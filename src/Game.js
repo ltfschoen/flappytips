@@ -140,17 +140,6 @@ class Game extends Component {
       //   // console.log('Hash for extrinsic in the block', index, u8aToString(bufferToU8a(ex.data)));
       // });
 
-      let [currentBlockEvents] = [];
-      if (currentEndpointName !== 'Edgeware Mainnet') {
-        [currentBlockEvents] = await Promise.all([
-          api.query.system.events.at(currentBlockHash) 
-        ]);
-        // console.log('currentBlockEvents', currentBlockEvents);
-        if (currentBlockEvents.length) {
-          console.log(`\nReceived ${currentBlockEvents.length} events:`);
-        }
-      }
-
       // Digest of current block
       const [currentDigest] = await Promise.all([
         api.query.system.digest() 
@@ -181,6 +170,15 @@ class Game extends Component {
       // Only update the newActiveAccountIds if we're not using Edgeware
       // until this issue is resolved: https://github.com/hicommonwealth/edgeware-node/issues/176
       if (currentEndpointName !== 'Edgeware Mainnet') {
+        let [currentBlockEvents] = [];
+        [currentBlockEvents] = await Promise.all([
+          api.query.system.events.at(currentBlockHash) 
+        ]);
+        // console.log('currentBlockEvents', currentBlockEvents);
+        if (currentBlockEvents.length) {
+          console.log(`\nReceived ${currentBlockEvents.length} events:`);
+        }
+
         let foundAccountIds = {};
         currentBlockEvents.forEach((record) => {
           const { event, phase } = record;
