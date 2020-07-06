@@ -88,9 +88,8 @@ class Game extends Component {
     const keyring = new Keyring({ type: 'sr25519' });
     const types = Object.values(edgewareDefinitions).reduce((res, { types }) => ({ ...res, ...types }), {});
     let api
-    if (currentEndpointName === 'Edgware Mainnet') {
-      api = await ApiPromise.create({ provider });
-    } else {
+    if (currentEndpointName === 'Edgeware Mainnet') {
+      console.log('Setting up Edgeware');
       api = await ApiPromise.create({
         provider,
         // Reference: https://www.npmjs.com/package/edgeware-node-types#usage
@@ -109,6 +108,8 @@ class Game extends Component {
         // override duplicate type name
         typesAlias: { voting: { Tally: 'VotingTally' } },
       });
+    } else {
+      api = await ApiPromise.create({ provider });
     }
     const [chain, nodeName, nodeVersion] = await Promise.all([
       api.rpc.system.chain(),
