@@ -6,7 +6,7 @@ import { web3Accounts, web3Enable, web3FromAddress, web3ListRpcProviders, web3Us
 import { bufferToU8a, u8aToBuffer, u8aToString, stringToU8a, u8aToHex } from '@polkadot/util';
 import * as edgewareDefinitions from 'edgeware-node-types/interfaces/definitions';
 import { TwitterShareButton } from 'react-twitter-embed';
-import Button from "react-bootstrap/Button";
+import { Alert, Button } from "react-bootstrap";
 // import Input from "react-bootstrap/Input";
 import Modal from "react-bootstrap/Modal";
 import Form from "react-bootstrap/Form";
@@ -25,6 +25,7 @@ class Game extends Component {
       currentBlockNumber: '',
       currentEndpoint: '',
       currentEndpointName: '',
+      errorMessage: '',
       previousBlockNumber: '',
       currentBlockHash: '',
       currentBlockAuthors: [],
@@ -220,7 +221,8 @@ class Game extends Component {
       api,
       keyring,
       provider,
-      showModalChain: false
+      showModalChain: false,
+      showModalMobile: false
     });
   }
 
@@ -256,36 +258,11 @@ class Game extends Component {
 
   async handleSubmit(event) {
     console.log('handleSubmit');
+    event.preventDefault(); // Prevent page refreshing when click submit
+
     const { api, keyring, reason } = this.state;
-    if (!this.mnemonicSeed.current || !this.chainAccount.current) {
-      return;
-    }
     const twitterHandle = (this.twitterHandle.current && this.twitterHandle.current.value) || 'unknown';
     const reasonWithHandle = `${twitterHandle} ${reason}`;
-    event.preventDefault();
-
-    let senderAddress;
-    if (isMobile) {
-      // Alice
-      // const mnemonicSeed = 'fitness brass champion rotate offer oak alarm purchase end mixture tattoo toss';
-      const mnemonicSeed = this.mnemonicSeed.current.value;
-
-      // Add an account to keyring
-      const newPair = keyring.addFromUri(mnemonicSeed);
-      console.log('keyring pairs', keyring.getPairs());
-      // Log some info
-      console.log(`Keypair has address ${newPair.address} with publicKey [${newPair.publicKey}]`);
-      senderAddress = newPair.address;
-    } else {
-      const chainAccount = this.chainAccount.current.value;
-      console.log('chainAccount entered: ', chainAccount);
-      // finds an injector for an address
-      const injector = await web3FromAddress(chainAccount);
-      
-      // Sets the signer for the address on the @polkadot/api so it causes popup to sign extrinsic
-      api.setSigner(injector.signer);
-      senderAddress = chainAccount;
-    }
 
     // Convert reason to message, sign and then verify
     const message = stringToU8a(reasonWithHandle);
@@ -294,6 +271,56 @@ class Game extends Component {
     // // Log info
     // console.log(`The signature ${u8aToHex(signature)}, is ${isValid ? '' : 'in'}valid`);
 
+    try {
+      if (isMobile) {
+        if (!this.mnemonicSeed.current || !this.mnemonicSeed.current.value) {
+          console.error('Error: Unable to submit. Missing mnemonic seed form input or empty value');
+          return;
+        }
+        // Alice
+        // const mnemonicSeed = 'fitness brass champion rotate offer oak alarm purchase end mixture tattoo toss';
+        const mnemonicSeed = this.mnemonicSeed.current.value;
+
+        // Add an account to keyring
+        const newPair = keyring.addFromUri(mnemonicSeed);
+        console.log('keyring pairs', keyring.getPairs());
+        // Log some info
+        console.log(`Keypair has address ${newPair.address} with publicKey [${newPair.publicKey}]`);
+        api.setSigner(newPair);
+        await api.tx.treasury
+          .reportAwesome(u8aToHex(message), newPair.address)
+          .signAndSend(newPair, ({ status, events }) => {
+            this.showExtrinsicLogs('reportAwesome', status, events);
+          });
+        console.log('Submitted reportAwesome on Mobile');
+      } else {
+        // Sign using Polkadot Extension
+        if (!this.chainAccount.current.value || !this.chainAccount.current.value) {
+          console.error('Error: Unable to submit. Missing chain account form input of empty value');
+          return;
+        }
+        const chainAccount = this.chainAccount.current.value;
+        console.log('chainAccount entered: ', chainAccount);
+        // finds an injector for an address
+        const injector = await web3FromAddress(chainAccount);
+        
+        // Sets the signer for the address on the @polkadot/api so it causes popup to sign extrinsic
+        api.setSigner(injector.signer);
+
+        await api.tx.treasury
+          .reportAwesome(u8aToHex(message), chainAccount)
+          .signAndSend(chainAccount, ({ status, events }) => {
+            this.showExtrinsicLogs('reportAwesome', status, events);
+          });
+        console.log('Submitted reportAwesome on Desktop');
+      }
+    } catch (error) {
+      console.error('Caught error: ', error);
+      this.setState({
+        errorMessage: error.message
+      });
+    }
+
     // await api.tx.balances
     //   .transfer(senderAddress, 0.01)
     //   .signAndSend(senderAddress, ({ status, events }) => {
@@ -301,21 +328,6 @@ class Game extends Component {
     //   });
     // Note: If returns error `Invalid Transaction: Payment`, then it is because the user is
     // trying to send from an account without sufficient balance
-
-    // Sign and send using user account
-    // Note: Check the chain that this is supported by
-    await api.tx.treasury
-      .reportAwesome(u8aToHex(message), senderAddress)
-      .signAndSend(senderAddress, ({ status, events }) => {
-        this.showExtrinsicLogs('reportAwesome', status, events);
-      });
-    console.log('Submitted reportAwesome');
-
-      // IMPORTANT: Not using this since we're now using Polkadot.js Extension instead of mnemonic input
-      // .reportAwesome(u8aToHex(message), newPair.address)
-      // .signAndSend(newPair, ({ status, events }) => {
-      //   console.log('reportAwesome output: ', status, events);
-      // });
   }
 
   showExtrinsicLogs = (extrinsicName, status, events) => {
@@ -354,10 +366,12 @@ class Game extends Component {
 
   async handleSubmitChain(event) {
     console.log('handleSubmitChain');
+    event.preventDefault(); // Prevent page refreshing when click submit
+
     this.closeModalChainWindow();
+    this.closeModalMobile();
     const currentEndpoint = this.customEndpoint.current && this.customEndpoint.current.value;
     const currentEndpointName = Object.keys(ENDPOINTS)[Object.values(ENDPOINTS).indexOf(currentEndpoint)];
-    event.preventDefault();
     this.setState({
       currentEndpoint,
       currentEndpointName
@@ -422,7 +436,7 @@ class Game extends Component {
 
   render() {
     const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, currentBlockNumber, currentBlockHash,
-      currentBlockAuthors, currentEndpoint, currentEndpointName, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList, isGameOver,
+      currentBlockAuthors, currentEndpoint, currentEndpointName, errorMessage, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList, isGameOver,
       parentBlockHash, previousBlockNumber, reason, showModal, showModalChain, showModalMobile } = this.state;
     const reasonForTweet = 'I just ' + reason + ' @polkadotnetwork #buildPolkadot';
 
@@ -501,6 +515,12 @@ class Game extends Component {
             </Modal.Body>
             <Modal.Footer className="justify-content-between">
               <Button variant="success" className="btn btn-primary btn-large mr-auto btn-block" type="submit">Send Request</Button>
+              { errorMessage ? (
+                  <Alert variant="danger">
+                    { errorMessage }
+                  </Alert>
+                ) : null
+              }
               <script async src="https://platform.twitter.com/widgets.js" charSet="utf-8"></script>
               <TwitterShareButton
                 url={`https://flappytips.herokuapp.com`}
@@ -510,7 +530,7 @@ class Game extends Component {
             </Modal.Footer>
           </Form>
         </Modal>
-        <Modal show={!showModalMobile && showModalChain} onHide={() => this.closeModalChain()}>
+        <Modal show={showModalMobile || showModalChain} onHide={() => this.closeModalChain()}>
           <Form onSubmit={this.handleSubmitChain}>
             <Modal.Header closeButton>
               <Modal.Title>{isMobile ? 'FlappyTips on Mobile' : 'FlappyTips on Desktop'}: <br /><i>Choose a blockchain to play!</i></Modal.Title>
