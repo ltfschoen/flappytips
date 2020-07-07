@@ -12,7 +12,9 @@ mod leaderboard {
     // instead of `Hash` for its keys
     use ink_prelude::vec::Vec;
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+    #[derive(Debug, Clone, Copy, scale::Encode, scale::Decode, PartialEq, Eq, PartialOrd, Ord)]
+    // Alternatively: `#[derive(scale::Codec)]`
+    #[derive()] 
     pub struct AccountToScore (
         AccountId,
         u32
