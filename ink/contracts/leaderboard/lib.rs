@@ -11,29 +11,14 @@ mod leaderboard {
     // you should instead use `ink_prelude::collections::BTreeMap` and use `PartialOrd + Eq`
     // instead of `Hash` for its keys
     use ink_prelude::vec::Vec;
-    use serde_derive::{Serialize, Deserialize};
-    use parity_scale_codec::{Encode, Decode, Compact, HasCompact, CompactAs};
 
-    #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-    #[derive(Debug, Clone, Copy, Decode, Encode, PartialEq, Eq, PartialOrd, Ord)]
+    #[derive(Debug, Clone, Copy, scale::Encode, scale::Decode, PartialEq, Eq, PartialOrd, Ord)]
+    // Alternatively: `#[derive(scale::Codec)]`
+    #[derive()] 
     pub struct AccountToScore (
-        #[codec(skip)]
         AccountId,
-        #[codec(skip)]
         u32
     );
-
-    impl Encode for AccountToScore {
-        type As = (AccountId, u32);
-    
-        fn encode_as(&self) -> &Self::As {
-            &()
-        }
-    
-        fn decode_from(_: Self::As) -> Self {
-            AccountToScore(12)
-        }
-    }
 
     /// Defines the storage of your contract.
     /// Add new fields to the below struct in order
