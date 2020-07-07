@@ -10,6 +10,7 @@ import { Alert, Button } from "react-bootstrap";
 // import Input from "react-bootstrap/Input";
 import Modal from "react-bootstrap/Modal";
 import Form from "react-bootstrap/Form";
+import pkg from '../package.json';
 import sketch from './sketches/sketch';
 import { ENDPOINTS } from './constants';
 import merge from './helpers/merge';
@@ -54,6 +55,7 @@ class Game extends Component {
   }
 
   async componentDidMount() {
+    console.log(`FlappyTips v${pkg.version}`);
     // Returns an array of all the injected sources
     let allInjected = await web3Enable('FlappyTips');
     allInjected = allInjected.map(({ name, version }) => `${name} ${version}`);
@@ -244,7 +246,7 @@ class Game extends Component {
 
   gameOver = (blocksCleared) => {
     const { currentBlockNumber, currentEndpointName } = this.state;
-    const reason = `played https://flappytips.herokuapp.com (${isMobile ? 'Mobile' : 'Desktop'}) on ${currentEndpointName} and cleared ${blocksCleared} blocks from #${currentBlockNumber}!`;
+    const reason = `played https://flappytips.herokuapp.com v${pkg.version} (${isMobile ? 'Mobile' : 'Desktop'}) on ${currentEndpointName} and cleared ${blocksCleared} blocks from #${currentBlockNumber}!`;
     this.setState({
       blocksCleared,
       isGameOver: true,
