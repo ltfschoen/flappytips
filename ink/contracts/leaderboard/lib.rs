@@ -92,6 +92,7 @@ mod leaderboard {
     impl Leaderboard {
         /// Constructor
 
+        /// Create instance of contract. Set the caller as contract owner.
         #[ink(constructor)]
         fn new(&mut self) {
             let caller = self.env().caller();
@@ -111,14 +112,14 @@ mod leaderboard {
 
         /// Public Functions
 
-        // Get the score for a given AccountId
+        /// Get the score for a given AccountId
         #[ink(message)]
         fn get_score_of_account(&self, of: AccountId) -> u32 {
             let value = self.account_score_or_zero(&of);
             value
         }
 
-        // Get the username for a given AccountId
+        /// Get the username for a given AccountId
         #[ink(message)]
         fn get_username_of_account(&self, of: AccountId) -> String {
             let value = self.account_username_or_zero(&of);
@@ -126,7 +127,7 @@ mod leaderboard {
             String::from_utf8(value.to_vec()).unwrap()
         }
 
-        // Get the score for the calling AccountId
+        /// Get the score for the calling AccountId
         #[ink(message)]
         fn get_score_of_sender(&self) -> u32 {
             let caller = self.env().caller();
@@ -134,7 +135,7 @@ mod leaderboard {
             value
         }
 
-        // Get all scores for the all AccountIds
+        /// Get all scores for the all AccountIds
         #[ink(message)]
         fn get_all_scores(&self) -> Result<Vec<AccountToScore>, &'static str> {
             let mut all_account_to_scores: Vec<AccountToScore> = Vec::new();
@@ -160,7 +161,7 @@ mod leaderboard {
             Ok(all_account_to_scores)
         }
 
-        // Get all usernames for the all AccountIds
+        /// Get all usernames for the all AccountIds
         #[ink(message)]
         fn get_all_usernames(&self) -> Result<Vec<AccountToUsername>, &'static str> {
             let mut all_account_to_usernames: Vec<AccountToUsername> = Vec::new();
@@ -187,7 +188,7 @@ mod leaderboard {
             Ok(all_account_to_usernames)
         }
 
-        // Set the score for a given AccountId
+        /// Set the score for a given AccountId
         #[ink(message)]
         fn set_score_of_account(&mut self, of: AccountId, score: u32) -> Result<(), &'static str> {
             if !self.is_owner(&of) && !self.is_owner_delegate(&of) {
@@ -214,7 +215,7 @@ mod leaderboard {
             Ok(())
         }
 
-        // Set the username for a given AccountId
+        /// Set the username for a given AccountId
         #[ink(message)]
         fn set_username_of_account(&mut self, of: AccountId, username: String) -> Result<(), &'static str> {
             let _username: String = username.into();
@@ -243,7 +244,7 @@ mod leaderboard {
             Ok(())
         }
 
-        // Set the score for the calling AccountId
+        /// Set the score for the calling AccountId
         #[ink(message)]
         fn set_score_of_sender(&mut self, score: u32) -> Result<(), &'static str> {
             let caller = self.env().caller();
@@ -271,14 +272,14 @@ mod leaderboard {
             Ok(())
         }
 
-        /// Returns the contract owner.
+        /// Get the contract owner AccountId.
         /// Reference: https://github.com/paritytech/ink/blob/master/examples/dns/lib.rs
         #[ink(message)]
         fn get_owner(&self) -> AccountId {
             *self.owner.get()
         }
 
-        /// Set the contract owner.
+        /// Set the contract owner AccountId.
         #[ink(message)]
         fn set_owner(&mut self, account: AccountId) -> Result<(), &'static str> {
             self.owner.set(account);
@@ -288,7 +289,7 @@ mod leaderboard {
             Ok(())
         }
 
-        /// Returns contract owner delegates.
+        /// Get the contract owner's delegates.
         #[ink(message)]
         fn get_owner_delegates(&self) -> Result<Vec<AccountId>, &'static str> {
             // storage::Vec<storage::Value<AccountId>>,
@@ -303,7 +304,7 @@ mod leaderboard {
             Ok(owner_delegates)
         }
 
-        /// Set a contract owner delegate
+        /// Set a contract owner's delegate
         #[ink(message)]
         fn set_owner_delegate(&mut self, account: AccountId) -> Result<(), &'static str> {
             let caller = self.env().caller();
@@ -327,13 +328,13 @@ mod leaderboard {
 
         /// Private functions
 
-        /// Returns the score for an AccountId or 0 if it is not set.
+        /// Get the score for an AccountId or 0 if it is not set.
         fn account_score_or_zero(&self, of: &AccountId) -> u32 {
             let score = self.account_to_score.get(of).unwrap_or(&0);
             *score
         }
 
-        /// Returns the username for an AccountId or '' if it is not set.
+        /// Get the username for an AccountId or nothing if it is not set.
         fn account_username_or_zero(&self, of: &AccountId) -> Vec<u8> {
             let blank: Vec<u8> = Vec::new();
             let username = self.account_to_username.get(of).unwrap_or(&blank);
