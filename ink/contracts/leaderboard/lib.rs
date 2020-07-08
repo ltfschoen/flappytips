@@ -13,6 +13,7 @@ mod leaderboard {
     use ink_prelude::string::String;
     use ink_prelude::vec::Vec;
 
+    #[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
     #[derive(Debug, Clone, Copy, scale::Encode, scale::Decode, PartialEq, Eq, PartialOrd, Ord)]
     // Alternatively: `#[derive(scale::Codec)]`
     pub struct AccountToScore (
@@ -20,6 +21,7 @@ mod leaderboard {
         u32
     );
 
+    #[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
     #[derive(Debug, Clone, scale::Encode, scale::Decode, PartialEq, Eq, PartialOrd, Ord)]
     pub struct AccountToUsername (
         AccountId,
@@ -41,7 +43,7 @@ mod leaderboard {
         account_to_score: storage::HashMap<AccountId, u32>,
 
         //// Store a mapping from AccountIds to a String of user on the leaderboard in the storage
-        account_to_username: storage::HashMap<AccountId, String>,
+        account_to_username: storage::HashMap<AccountId, Vec<u8>>,
 
         /// Store AccountIds on the leaderboard in storage
         accounts: storage::Vec<AccountId>,
@@ -99,7 +101,7 @@ mod leaderboard {
                     // See https://substrate.dev/substrate-contracts-workshop/#/1/storing-a-value?id=initializing-storage
                     self.accounts.push(caller);
                     self.account_to_score.insert(caller, 0);
-                    self.account_to_username.insert(caller, String::from(""));
+                    self.account_to_username.insert(caller, Vec::new());
                 }
                 Err(e) => {
                     panic!("Error: Unable to set owner of contract {:?}", e);
@@ -120,7 +122,8 @@ mod leaderboard {
         #[ink(message)]
         fn get_username_of_account(&self, of: AccountId) -> String {
             let value = self.account_username_or_zero(&of);
-            value
+            // https://paritytech.github.io/ink/ink_prelude/string/index.html
+            String::from_utf8(value.to_vec()).unwrap()
         }
 
         // Get the score for the calling AccountId
@@ -161,7 +164,7 @@ mod leaderboard {
         #[ink(message)]
         fn get_all_usernames(&self) -> Result<Vec<AccountToUsername>, &'static str> {
             let mut all_account_to_usernames: Vec<AccountToUsername> = Vec::new();
-            let blank = String::from("");
+            let _blank: Vec<u8> = Vec::new();
 
             let mut account_usernames: AccountToUsername;
             if self.accounts.is_empty() {
@@ -174,7 +177,7 @@ mod leaderboard {
                     Some(_) => {
                         account_usernames = AccountToUsername (
                             *account,
-                            String::from(username.unwrap_or(&blank)),
+                            String::from_utf8((&username.unwrap_or(&_blank)).to_vec()).unwrap()
                         );
                         all_account_to_usernames.push(account_usernames);
                         Ok(&all_account_to_usernames)
@@ -214,27 +217,28 @@ mod leaderboard {
         // Set the username for a given AccountId
         #[ink(message)]
         fn set_username_of_account(&mut self, of: AccountId, username: String) -> Result<(), &'static str> {
-            let _username = String::from(&username);
+            let _username: String = username.into();
             if !self.is_owner(&of) && !self.is_owner_delegate(&of) {
                 return Err("Error: CallerIsNotOwner and CallerIsNotOwnerDelegate")
             }
             match self.account_to_username.get(&of) {
                 Some(_) => {
-                    self.account_to_username.mutate_with(&of, |value| *value = String::from(username));
+                    self.account_to_username.mutate_with(&of, |value| *value = _username.into_bytes());
                 }
                 None => {
-                    self.account_to_username.insert(of, String::from(username));
+                    self.account_to_username.insert(of, _username.into_bytes());
                     self.accounts.push(of);
                 }
             };
 
-            // Emit event
-            self.env()
-                .emit_event(
-                    SetAccountUsername {
-                        of,
-                        username: String::from(_username),
-                    });
+            // FIXME
+            // // Emit event
+            // self.env()
+            //     .emit_event(
+            //         SetAccountUsername {
+            //             of,
+            //             username: _username,
+            //         });
 
             Ok(())
         }
@@ -330,10 +334,10 @@ mod leaderboard {
         }
 
         /// Returns the username for an AccountId or '' if it is not set.
-        fn account_username_or_zero(&self, of: &AccountId) -> String {
-            let blank = String::from("");
+        fn account_username_or_zero(&self, of: &AccountId) -> Vec<u8> {
+            let blank: Vec<u8> = Vec::new();
             let username = self.account_to_username.get(of).unwrap_or(&blank);
-            String::from(username)
+            username.to_vec()
         }
 
         /// Check if AccountId is the owner
