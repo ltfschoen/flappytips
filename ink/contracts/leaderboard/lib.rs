@@ -10,14 +10,20 @@ mod leaderboard {
     // Important Note: Do not use HashMap. If you want to return `std::collection::HashMap`
     // you should instead use `ink_prelude::collections::BTreeMap` and use `PartialOrd + Eq`
     // instead of `Hash` for its keys
+    use ink_prelude::string::String;
     use ink_prelude::vec::Vec;
 
     #[derive(Debug, Clone, Copy, scale::Encode, scale::Decode, PartialEq, Eq, PartialOrd, Ord)]
     // Alternatively: `#[derive(scale::Codec)]`
-    #[derive()] 
     pub struct AccountToScore (
         AccountId,
         u32
+    );
+
+    #[derive(Debug, Clone, scale::Encode, scale::Decode, PartialEq, Eq, PartialOrd, Ord)]
+    pub struct AccountToUsername (
+        AccountId,
+        String
     );
 
     /// Defines the storage of your contract.
@@ -34,6 +40,9 @@ mod leaderboard {
         //// Store a mapping from AccountIds to a u32 of user on the leaderboard in the storage
         account_to_score: storage::HashMap<AccountId, u32>,
 
+        //// Store a mapping from AccountIds to a String of user on the leaderboard in the storage
+        account_to_username: storage::HashMap<AccountId, String>,
+
         /// Store AccountIds on the leaderboard in storage
         accounts: storage::Vec<AccountId>,
     }
@@ -46,6 +55,14 @@ mod leaderboard {
         of: AccountId,
         #[ink(topic)]
         score: u32
+    }
+
+    #[ink(event)]
+    struct SetAccountUsername {
+        #[ink(topic)]
+        of: AccountId,
+        #[ink(topic)]
+        username: String,
     }
 
     #[ink(event)]
@@ -82,6 +99,7 @@ mod leaderboard {
                     // See https://substrate.dev/substrate-contracts-workshop/#/1/storing-a-value?id=initializing-storage
                     self.accounts.push(caller);
                     self.account_to_score.insert(caller, 0);
+                    self.account_to_username.insert(caller, String::from(""));
                 }
                 Err(e) => {
                     panic!("Error: Unable to set owner of contract {:?}", e);
@@ -95,6 +113,13 @@ mod leaderboard {
         #[ink(message)]
         fn get_score_of_account(&self, of: AccountId) -> u32 {
             let value = self.account_score_or_zero(&of);
+            value
+        }
+
+        // Get the username for a given AccountId
+        #[ink(message)]
+        fn get_username_of_account(&self, of: AccountId) -> String {
+            let value = self.account_username_or_zero(&of);
             value
         }
 
@@ -132,6 +157,33 @@ mod leaderboard {
             Ok(all_account_to_scores)
         }
 
+        // Get all usernames for the all AccountIds
+        #[ink(message)]
+        fn get_all_usernames(&self) -> Result<Vec<AccountToUsername>, &'static str> {
+            let mut all_account_to_usernames: Vec<AccountToUsername> = Vec::new();
+            let blank = String::from("");
+
+            let mut account_usernames: AccountToUsername;
+            if self.accounts.is_empty() {
+                return Err("Error: Unable to find any accounts");
+            }
+            for account in self.accounts.iter() {
+                let username = self.account_to_username.get(&account);
+                match username {
+                    None => Err("Error: Unable to find username for account"),
+                    Some(_) => {
+                        account_usernames = AccountToUsername (
+                            *account,
+                            String::from(username.unwrap_or(&blank)),
+                        );
+                        all_account_to_usernames.push(account_usernames);
+                        Ok(&all_account_to_usernames)
+                    },
+                };
+            }
+            Ok(all_account_to_usernames)
+        }
+
         // Set the score for a given AccountId
         #[ink(message)]
         fn set_score_of_account(&mut self, of: AccountId, score: u32) -> Result<(), &'static str> {
@@ -154,6 +206,34 @@ mod leaderboard {
                     SetAccountScore {
                         of,
                         score,
+                    });
+
+            Ok(())
+        }
+
+        // Set the username for a given AccountId
+        #[ink(message)]
+        fn set_username_of_account(&mut self, of: AccountId, username: String) -> Result<(), &'static str> {
+            let _username = String::from(&username);
+            if !self.is_owner(&of) && !self.is_owner_delegate(&of) {
+                return Err("Error: CallerIsNotOwner and CallerIsNotOwnerDelegate")
+            }
+            match self.account_to_username.get(&of) {
+                Some(_) => {
+                    self.account_to_username.mutate_with(&of, |value| *value = String::from(username));
+                }
+                None => {
+                    self.account_to_username.insert(of, String::from(username));
+                    self.accounts.push(of);
+                }
+            };
+
+            // Emit event
+            self.env()
+                .emit_event(
+                    SetAccountUsername {
+                        of,
+                        username: String::from(_username),
                     });
 
             Ok(())
@@ -249,6 +329,13 @@ mod leaderboard {
             *score
         }
 
+        /// Returns the username for an AccountId or '' if it is not set.
+        fn account_username_or_zero(&self, of: &AccountId) -> String {
+            let blank = String::from("");
+            let username = self.account_to_username.get(of).unwrap_or(&blank);
+            String::from(username)
+        }
+
         /// Check if AccountId is the owner
         fn is_owner(&self, of: &AccountId) -> bool {
             let owner = self.get_owner();
@@ -287,6 +374,21 @@ mod leaderboard {
             [0u8; 32].into()
         }
 
+        /// Returns a blank username for unit tests
+        fn test_get_blank_username() -> String {
+            String::from("").into()
+        }
+
+        /// Returns a dummy username Alice for unit tests
+        fn test_get_dummy_username_alice() -> String {
+            String::from("Alice").into()
+        }
+
+        /// Returns a dummy username Bob for unit tests
+        fn test_get_dummy_username_bob() -> String {
+            String::from("Bob").into()
+        }
+
         /// Returns the AccountId that that deploys the contract in the
         /// Unit Tests and so owns the contract 
         fn test_get_owner() -> AccountId {
@@ -299,6 +401,12 @@ mod leaderboard {
         fn get_score_of_account_works() {
             let leaderboard = Leaderboard::new();
             assert_eq!(leaderboard.get_score_of_account(test_get_dummy_account()), 0);
+        }
+
+        #[test]
+        fn get_username_of_account_works() {
+            let leaderboard = Leaderboard::new();
+            assert_eq!(leaderboard.get_username_of_account(test_get_dummy_account()), test_get_blank_username());
         }
 
         #[test]
@@ -374,6 +482,20 @@ mod leaderboard {
                 Ok(ink_prelude::vec!(
                     AccountToScore (test_get_owner(), 3),
                     AccountToScore (test_get_dummy_account(), 5)
+                ))
+            );
+        }
+
+        #[test]
+        fn get_all_usernames_works() {
+            let mut leaderboard = Leaderboard::new();
+            assert_eq!(leaderboard.set_username_of_account(test_get_owner(), test_get_dummy_username_alice()), Ok(()));
+            assert_eq!(leaderboard.set_owner_delegate(test_get_dummy_account()), Ok(()));
+            assert_eq!(leaderboard.set_username_of_account(test_get_dummy_account(), test_get_dummy_username_bob()), Ok(()));
+            assert_eq!(leaderboard.get_all_usernames(),
+                Ok(ink_prelude::vec!(
+                    AccountToUsername (test_get_owner(), test_get_dummy_username_alice()),
+                    AccountToUsername (test_get_dummy_account(), test_get_dummy_username_bob())
                 ))
             );
         }
