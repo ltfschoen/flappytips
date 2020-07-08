@@ -13,6 +13,7 @@ mod leaderboard {
     use ink_prelude::string::String;
     use ink_prelude::vec::Vec;
 
+    #[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
     #[derive(Debug, Clone, Copy, scale::Encode, scale::Decode, PartialEq, Eq, PartialOrd, Ord)]
     // Alternatively: `#[derive(scale::Codec)]`
     pub struct AccountToScore (
@@ -20,6 +21,7 @@ mod leaderboard {
         u32
     );
 
+    #[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
     #[derive(Debug, Clone, scale::Encode, scale::Decode, PartialEq, Eq, PartialOrd, Ord)]
     pub struct AccountToUsername (
         AccountId,
