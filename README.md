@@ -31,8 +31,7 @@ Clone the repository, install Yarn and Node.js, and then run the following in te
 ```
 npm install -g nodemon &&
 yarn &&
-yarn run build &&
-yarn run start-dev
+yarn run dev
 ```
 
 * Go to http://localhost:3000
@@ -156,3 +155,7 @@ cargo +nightly contract generate-metadata
 ### Documentation for ink!
 
 https://paritytech.github.io/ink/
+
+### References:
+
+* Migrate to SSR - https://dev.to/kedar9/creating-a-node-app-with-react-webpack-4-babel-7-express-and-sass-3mae

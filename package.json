@@ -3,6 +3,10 @@
   "version": "1.1.0",
   "private": true,
   "dependencies": {
+    "@babel/core": "^7.10.4",
+    "@babel/preset-env": "^7.10.4",
+    "@babel/preset-es2015": "^7.0.0-beta.53",
+    "@babel/preset-react": "^7.10.4",
     "@polkadot/api": "^1.18.1",
     "@polkadot/extension-dapp": "^0.30.1",
     "@polkadot/util": "^2.13.1",
@@ -10,10 +14,17 @@
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
+    "babel-loader": "^8.1.0",
     "bootstrap": "^4.5.0",
+    "clean-webpack-plugin": "^3.0.0",
+    "copy-webpack-plugin": "^6.0.3",
+    "css-loader": "^3.6.0",
     "edgeware-node-types": "^2.3.3",
     "express": "^4.17.1",
+    "html-webpack-plugin": "^4.3.0",
+    "ignore-styles": "^5.0.1",
     "jquery": "^3.5.1",
+    "node-sass": "^4.14.1",
     "p5": "^1.0.0",
     "popper.js": "^1.16.1",
     "react": "^16.13.1",
@@ -23,7 +34,14 @@
     "react-p5-wrapper": "^2.0.0",
     "react-scripts": "3.4.1",
     "react-twitter-embed": "^3.0.3",
+    "sass-loader": "^9.0.2",
+    "style-loader": "^1.2.1",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.12",
     "websocket-extensions": "^0.1.4"
+  },
+  "devDependencies": {
+    "file-loader": "^6.0.0"
   },
   "engines": {
     "node": "10.x",
@@ -31,11 +49,11 @@
     "yarn": "1.x"
   },
   "scripts": {
-    "start": "node server.js",
-    "start-dev": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "node server/index.js",
+    "dev": "webpack --mode development && node server/index.js",
+    "build": "webpack --mode production",
     "heroku-postbuild": "yarn build",
-    "production": "yarn build && node server.js"
+    "production": "yarn build && node server/index.js"
   },
   "eslintConfig": {
     "extends": "react-app"
