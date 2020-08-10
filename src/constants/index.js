@@ -8,6 +8,7 @@ const ENDPOINTS = {
   // Note: Kulupu not supported as it returns error
   // `Unhandled Rejection (TypeError): Cannot read property 'validators' of undefined`
   // 'Kulupu Mainnet': 'wss://rpc.kulupu.network/ws',
+  'Sia': 'https://siastats.info'
 }
 
 const COLOURS = {

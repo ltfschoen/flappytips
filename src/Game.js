@@ -10,10 +10,28 @@ import { Alert, Button } from "react-bootstrap";
 // import Input from "react-bootstrap/Input";
 import Modal from "react-bootstrap/Modal";
 import Form from "react-bootstrap/Form";
+import axios from "axios";
 import pkg from '../package.json';
 import sketch from './sketches/sketch';
 import { ENDPOINTS } from './constants';
 import merge from './helpers/merge';
+
+const getNetworkStatus = async (currentEndpoint) => {
+  return new Promise((resolve, reject) => {
+    axios
+      .get(`${currentEndpoint}/dbs/network_status.json`,
+        { headers: { 'Accept': 'application/json' }}
+      )
+      .then((response) => {
+        console.log('Response from fetching network status: ', response);
+        resolve(response);
+      })
+      .catch((error) => {
+        console.error('Error fetching network status: ', error);
+        reject(error);
+      });
+  });
+} 
 
 class Game extends Component {
   constructor(){
@@ -76,21 +94,18 @@ class Game extends Component {
     });
   }
 
-  setup = async (customEndpoint) => {
-    // // IMPORTANT: This does not appear to work so we've used @polkadot-js/api's WsProvider instead
-    // // retrieve all the RPC providers from a particular source
-    // const allProviders = await web3ListRpcProviders('polkadot-js');
-    // console.log('allProviders', allProviders)
-    // // assuming one of the keys in `allProviders` is 'kusama-cc3', we can then use that provider
-    // const { provider } = web3UseRpcProvider('polkadot-js', 'kusama-cc3');
-
-    const currentEndpoint = customEndpoint || ENDPOINTS['Edgeware Mainnet'];
-    const currentEndpointName = Object.keys(ENDPOINTS)[Object.values(ENDPOINTS).indexOf(currentEndpoint)];
+  setupApi = async (currentEndpoint, currentEndpointName) => {
+    if (currentEndpoint === "https://siastats.info") {
+      currentEndpoint = ENDPOINTS['Edgeware Mainnet']
+    }
+    if (currentEndpointName === "Sia") {
+      currentEndpointName = 'Edgeware Mainnet'
+    }
     const provider = new WsProvider(currentEndpoint);
     // Create a keyring instance. https://polkadot.js.org/api/start/keyring.html
     const keyring = new Keyring({ type: 'sr25519' });
     const types = Object.values(edgewareDefinitions).reduce((res, { types }) => ({ ...res, ...types }), {});
-    let api
+    let api;
     if (currentEndpointName === 'Edgeware Mainnet') {
       console.log('Setting up Edgeware');
       api = await ApiPromise.create({
@@ -114,107 +129,139 @@ class Game extends Component {
     } else {
       api = await ApiPromise.create({ provider });
     }
-    const [chain, nodeName, nodeVersion] = await Promise.all([
-      api.rpc.system.chain(),
-      api.rpc.system.name(),
-      api.rpc.system.version(),
-    ]);
-    await api.rpc.chain.subscribeNewHeads(async (header) => {
-      let currentBlockNumber = header.number.toString();
-      let parentBlockHash = header.parentHash.toString();
+    return { provider, keyring, types, api };
+  }
 
-      const [blockHash, validators] = await Promise.all([
-        api.rpc.chain.getBlockHash(currentBlockNumber),
-        api.query.session.validators()
+  setup = async (customEndpoint) => {
+    // // IMPORTANT: This does not appear to work so we've used @polkadot-js/api's WsProvider instead
+    // // retrieve all the RPC providers from a particular source
+    // const allProviders = await web3ListRpcProviders('polkadot-js');
+    // console.log('allProviders', allProviders)
+    // // assuming one of the keys in `allProviders` is 'kusama-cc3', we can then use that provider
+    // const { provider } = web3UseRpcProvider('polkadot-js', 'kusama-cc3');
+
+    const currentEndpoint = customEndpoint || ENDPOINTS['Edgeware Mainnet'];
+    let currentEndpointName = Object.keys(ENDPOINTS)[Object.values(ENDPOINTS).indexOf(currentEndpoint)];
+    let chain, nodeName, nodeVersion;
+    let provider, keyring, types, api;
+
+    if (currentEndpoint === "https://siastats.info") {
+      const response = await getNetworkStatus(currentEndpoint);
+      if (!response && response.status !== 200) {
+        console.error('Unable to connect to Sia');
+        return;
+      }
+      console.log('Received Sia network status');
+      const currentBlockNumber = (response && response.data && response.data.block_height) || '';
+      console.log('Sia current block number', currentBlockNumber);
+      currentEndpointName = "Sia Stats";
+      this.handleReceiveNewHead(currentBlockNumber, '', [], '', {});
+      chain = 'Sia';
+      let provider, keyring, types, api = await this.setupApi(currentEndpoint, currentEndpointName);
+    } else {
+      let provider, keyring, types, api = await this.setupApi(currentEndpoint, currentEndpointName);
+      [chain, nodeName, nodeVersion] = await Promise.all([
+        api.rpc.system.chain(),
+        api.rpc.system.name(),
+        api.rpc.system.version(),
       ]);
-      let currentBlockHash = blockHash.toString();
+      await api.rpc.chain.subscribeNewHeads(async (header) => {
+        let currentBlockNumber = header.number.toString();
+        let parentBlockHash = header.parentHash.toString();
 
-      const [signedBlock] = await Promise.all([
-        api.rpc.chain.getBlock(blockHash)
-      ]);
-      // console.log('signedBlock', signedBlock);
-      console.log('signedBlock', signedBlock.block.header.parentHash.toHex());
-
-      // // Hash for each extrinsic in the block
-      // signedBlock.block.extrinsics.forEach((ex, index) => {
-      //   console.log('Hash for extrinsic in the block', index, ex.hash.toHex());
-      //   // FIXME
-      //   console.log('Hash for extrinsic in the block', index, bufferToU8a(ex.data.buffer).toHex());
-      //   // console.log('Hash for extrinsic in the block', index, u8aToString(bufferToU8a(ex.data)));
-      // });
-
-      // Digest of current block
-      const [currentDigest] = await Promise.all([
-        api.query.system.digest() 
-      ]);
-      console.log('currentDigest', currentDigest);
-
-      // Extrinsic data
-      const [extrinsicData] = await Promise.all([
-        api.query.system.extrinsicData(header.number) 
-      ]);
-      console.log('extrinsicData', extrinsicData);
-
-      // ExtrinsicsRoot
-      const [extrinsicsRoot] = await Promise.all([
-        api.query.system.extrinsicsRoot() 
-      ]);
-      console.log('extrinsicsRoot', extrinsicsRoot.toString());
-
-      // Event topics
-      const [eventTopics] = await Promise.all([
-        api.query.system.eventTopics(currentBlockHash) 
-      ]);
-      console.log('eventTopics', eventTopics);
-
-      const { activeAccountIds } = this.state;
-      let newActiveAccountIds = activeAccountIds;
-
-      // Only update the newActiveAccountIds if we're not using Edgeware
-      // until this issue is resolved: https://github.com/hicommonwealth/edgeware-node/issues/176
-      if (currentEndpointName !== 'Edgeware Mainnet') {
-        let [currentBlockEvents] = [];
-        [currentBlockEvents] = await Promise.all([
-          api.query.system.events.at(currentBlockHash) 
+        const [blockHash, validators] = await Promise.all([
+          api.rpc.chain.getBlockHash(currentBlockNumber),
+          api.query.session.validators()
         ]);
-        // console.log('currentBlockEvents', currentBlockEvents);
-        if (currentBlockEvents.length) {
-          console.log(`\nReceived ${currentBlockEvents.length} events:`);
+        let currentBlockHash = blockHash.toString();
+
+        const [signedBlock] = await Promise.all([
+          api.rpc.chain.getBlock(blockHash)
+        ]);
+        // console.log('signedBlock', signedBlock);
+        console.log('signedBlock', signedBlock.block.header.parentHash.toHex());
+
+        // // Hash for each extrinsic in the block
+        // signedBlock.block.extrinsics.forEach((ex, index) => {
+        //   console.log('Hash for extrinsic in the block', index, ex.hash.toHex());
+        //   // FIXME
+        //   console.log('Hash for extrinsic in the block', index, bufferToU8a(ex.data.buffer).toHex());
+        //   // console.log('Hash for extrinsic in the block', index, u8aToString(bufferToU8a(ex.data)));
+        // });
+
+        // Digest of current block
+        const [currentDigest] = await Promise.all([
+          api.query.system.digest() 
+        ]);
+        console.log('currentDigest', currentDigest);
+
+        // Extrinsic data
+        const [extrinsicData] = await Promise.all([
+          api.query.system.extrinsicData(header.number) 
+        ]);
+        console.log('extrinsicData', extrinsicData);
+
+        // ExtrinsicsRoot
+        const [extrinsicsRoot] = await Promise.all([
+          api.query.system.extrinsicsRoot() 
+        ]);
+        console.log('extrinsicsRoot', extrinsicsRoot.toString());
+
+        // Event topics
+        const [eventTopics] = await Promise.all([
+          api.query.system.eventTopics(currentBlockHash) 
+        ]);
+        console.log('eventTopics', eventTopics);
+
+        const { activeAccountIds } = this.state;
+        let newActiveAccountIds = activeAccountIds;
+
+        // Only update the newActiveAccountIds if we're not using Edgeware
+        // until this issue is resolved: https://github.com/hicommonwealth/edgeware-node/issues/176
+        if (currentEndpointName !== 'Edgeware Mainnet') {
+          let [currentBlockEvents] = [];
+          [currentBlockEvents] = await Promise.all([
+            api.query.system.events.at(currentBlockHash) 
+          ]);
+          // console.log('currentBlockEvents', currentBlockEvents);
+          if (currentBlockEvents.length) {
+            console.log(`\nReceived ${currentBlockEvents.length} events:`);
+          }
+
+          let foundAccountIds = {};
+          currentBlockEvents.forEach((record) => {
+            const { event, phase } = record;
+            const types = event.typeDef;
+
+            console.log('Event record: ', record);
+            console.log(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
+            console.log(`\t\t${event.meta.documentation.toString()}`);
+
+            event.data.forEach((data, index) => {
+              console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
+              console.log('types[index].type: ', types[index].type, typeof types[index].type, types[index].type === 'AccountId');
+              if (types[index].type === 'AccountId') {
+                activeAccountIds.hasOwnProperty(data.toString()) ? foundAccountIds[data.toString()] += 1 : foundAccountIds[data.toString()] = 1;
+              }
+              console.log('foundAccountIds: ', foundAccountIds);
+            });
+            if (foundAccountIds.length !== 0) {
+              newActiveAccountIds = merge(activeAccountIds, foundAccountIds);
+            }
+            // FIXME - its getting the validators account id that authored the block, but i want the account id that
+            // sent the Deposit extrinsic instead
+            console.log('newActiveAccountIds: ', newActiveAccountIds);
+          });
         }
 
-        let foundAccountIds = {};
-        currentBlockEvents.forEach((record) => {
-          const { event, phase } = record;
-          const types = event.typeDef;
+        let currentBlockAuthors = [];
+        if (currentEndpointName !== 'Edgeware Mainnet') {
+          currentBlockAuthors = validators && validators.map((item, index) => item.toString());
+        }
 
-          console.log('Event record: ', record);
-          console.log(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
-          console.log(`\t\t${event.meta.documentation.toString()}`);
-
-          event.data.forEach((data, index) => {
-            console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
-            console.log('types[index].type: ', types[index].type, typeof types[index].type, types[index].type === 'AccountId');
-            if (types[index].type === 'AccountId') {
-              activeAccountIds.hasOwnProperty(data.toString()) ? foundAccountIds[data.toString()] += 1 : foundAccountIds[data.toString()] = 1;
-            }
-            console.log('foundAccountIds: ', foundAccountIds);
-          });
-          if (foundAccountIds.length !== 0) {
-            newActiveAccountIds = merge(activeAccountIds, foundAccountIds);
-          }
-          // FIXME - its getting the validators account id that authored the block, but i want the account id that
-          // sent the Deposit extrinsic instead
-          console.log('newActiveAccountIds: ', newActiveAccountIds);
-        });
-      }
-
-      let currentBlockAuthors = [];
-      if (currentEndpointName !== 'Edgeware Mainnet') {
-        currentBlockAuthors = validators && validators.map((item, index) => item.toString());
-      }
-
-      this.handleReceiveNewHead(currentBlockNumber, currentBlockHash, currentBlockAuthors, parentBlockHash, newActiveAccountIds);
-    });
+        this.handleReceiveNewHead(currentBlockNumber, currentBlockHash, currentBlockAuthors, parentBlockHash, newActiveAccountIds);
+      });
+    }
 
     this.setState({
       chain: chain.toString(),
@@ -222,7 +269,7 @@ class Game extends Component {
       currentEndpointName,
       api,
       keyring,
-      provider,
+      provider: provider || '',
       showModalChain: false,
       showModalMobile: false
     });
@@ -231,12 +278,12 @@ class Game extends Component {
   handleReceiveNewHead = (currentBlockNumber, currentBlockHash, currentBlockAuthors, parentBlockHash, newActiveAccountIds) => {
     let previousBlockNumber = this.state.currentBlockNumber;
     this.setState({
-      currentBlockNumber,
-      currentBlockHash,
-      currentBlockAuthors,
-      parentBlockHash,
-      previousBlockNumber,
-      activeAccountIds: newActiveAccountIds
+      currentBlockNumber: currentBlockNumber || '',
+      currentBlockHash: currentBlockHash || '',
+      currentBlockAuthors: currentBlockAuthors || [],
+      parentBlockHash: parentBlockHash || '',
+      previousBlockNumber: previousBlockNumber || '',
+      activeAccountIds: newActiveAccountIds || {}
     });
   }
 

@@ -112,7 +112,8 @@ export default function sketch(p){
         birdColor = 255;
       }, 1000);
     }
-    p.bird.goUp();
+
+    p.bird && p.bird.goUp();
     // prevent default
     // To prevent any default behavior for this event, add "return false" to the end of the method.
     // See https://github.com/processing/p5.js/blob/1.0.0/src/events/touch.js#L10
