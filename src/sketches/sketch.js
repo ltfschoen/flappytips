@@ -123,7 +123,7 @@ export default function sketch(p){
   p.myCustomRedrawAccordingToNewPropsHandler = (newProps) => {
     if (canvas) { // Make sure the canvas has been created
       birdColor = newProps.color;
-      console.log('activeAccountIds', JSON.stringify(activeAccountIds));
+      // console.log('activeAccountIds', JSON.stringify(activeAccountIds));
       activeAccountIds = newProps.activeAccountIds;
       chain = newProps.chain;
       if (newProps.currentBlockNumber !== newProps.previousBlockNumber) {

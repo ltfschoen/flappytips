@@ -94,6 +94,11 @@ class Game extends Component {
     });
   }
 
+  componentWillUnmount() {
+    clearInterval(this.timer);
+    this.timer = null;
+  }
+
   setupApi = async (currentEndpoint, currentEndpointName) => {
     if (currentEndpoint === "https://siastats.info") {
       currentEndpoint = ENDPOINTS['Edgeware Mainnet']
@@ -146,18 +151,28 @@ class Game extends Component {
     let provider, keyring, types, api;
 
     if (currentEndpoint === "https://siastats.info") {
-      const response = await getNetworkStatus(currentEndpoint);
-      if (!response && response.status !== 200) {
-        console.error('Unable to connect to Sia');
-        return;
-      }
-      console.log('Received Sia network status');
-      const currentBlockNumber = (response && response.data && response.data.block_height) || '';
-      console.log('Sia current block number', currentBlockNumber);
       currentEndpointName = "Sia Stats";
-      this.handleReceiveNewHead(currentBlockNumber, '', [], '', {});
       chain = 'Sia';
       let provider, keyring, types, api = await this.setupApi(currentEndpoint, currentEndpointName);
+
+      const updateBlockNumber = async () => {
+        const response = await getNetworkStatus(currentEndpoint);
+        if (!response && response.status !== 200) {
+          console.error('Unable to connect to Sia at interval');
+          return;
+        }
+        console.log('Received Sia network status at interval');
+        const currentBlockNumber = (response && response.data && response.data.block_height) || '';
+        console.log('Sia current block number', currentBlockNumber);
+        this.handleReceiveNewHead(currentBlockNumber, '', [], '', {});
+      }
+
+      updateBlockNumber();
+
+      this.timer = setInterval(async () => {
+        updateBlockNumber();
+      }, 10000);
+    
     } else {
       let provider, keyring, types, api = await this.setupApi(currentEndpoint, currentEndpointName);
       [chain, nodeName, nodeVersion] = await Promise.all([
