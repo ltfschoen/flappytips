@@ -15,7 +15,7 @@ import sketch from './sketches/sketch';
 import { ENDPOINTS } from './constants';
 import merge from './helpers/merge';
 import moment from 'moment';
-import { getCurrentBlockInfo, getPreviousBlockInfo } from './api/siaStats';
+import { getCurrentBlockInfo, getPreviousBlockInfo, getBlocksLast24Hours } from './api/siaStats';
 
 class Game extends Component {
   constructor(){
@@ -29,7 +29,9 @@ class Game extends Component {
       currentBlockTimestamp: null,
       previousBlockNumber: '',
       previousBlockTimestamp: null,
+      previousBlocktime: '',
       estimatedNextBlocktime: '',
+      blocksLast24Hours: [],
       currentEndpoint: '',
       currentEndpointName: '',
       errorMessage: '',
@@ -151,15 +153,17 @@ class Game extends Component {
           {
             previousBlockNumber,
             previousBlockTimestamp
-          }
+          },
+          blocksLast24Hours
         ] = await Promise.all([
           getCurrentBlockInfo(currentEndpoint),
-          getPreviousBlockInfo(currentEndpoint)
+          getPreviousBlockInfo(currentEndpoint),
+          getBlocksLast24Hours(currentEndpoint)
         ]);
 
         this.handleReceiveNewHead(
           currentBlockNumber, currentBlockTimestamp, previousBlockNumber,
-          previousBlockTimestamp, '', [], '', {}
+          previousBlockTimestamp, blocksLast24Hours, '', [], '', {}
         );
       }
 
@@ -272,7 +276,7 @@ class Game extends Component {
 
         this.handleReceiveNewHead(
           currentBlockNumber, '', '',
-          '', currentBlockHash, currentBlockAuthors,
+          '', [], currentBlockHash, currentBlockAuthors,
           parentBlockHash, newActiveAccountIds
         );
       });
@@ -290,28 +294,56 @@ class Game extends Component {
     });
   }
 
-  calculateNextBlocktime = (currentBlockTimestamp, previousBlockTimestamp) => {
-    const diff = moment.duration(moment(currentBlockTimestamp).diff(moment(previousBlockTimestamp)));
+  calculatePreviousBlocktime = (currentBlockTimestamp, previousBlockTimestamp) => {
+    const convertUnixTimestampToDateObject = (unixTimestamp) => {
+      const milliseconds = unixTimestamp * 1000;
+      return new Date(milliseconds);
+    };
 
-    console.log('currentBlockTimestamp Unix', moment(currentBlockTimestamp));
-    console.log('previousBlockTimestamp Unix', moment(previousBlockTimestamp));
+    const diff = moment.duration(moment(convertUnixTimestampToDateObject(currentBlockTimestamp)).diff(moment(convertUnixTimestampToDateObject(previousBlockTimestamp))));
 
-    console.log('currentBlockTimestamp ISO', moment(currentBlockTimestamp).toISOString());
-    console.log('previousBlockTimestamp ISO', moment(previousBlockTimestamp).toISOString());
+    console.log('currentBlockTimestamp Date Object', moment(convertUnixTimestampToDateObject(currentBlockTimestamp)).toISOString());
+    console.log('previousBlockTimestamp Date Object', moment(convertUnixTimestampToDateObject(previousBlockTimestamp)).toISOString());
     console.log('Time difference is: ', diff.asMinutes() + ' minutes');
 
-    return diff.asMinutes();
+    return `${Number.parseFloat(diff.asMinutes()).toFixed(2)} minutes`;
+  }
+
+  estimatedNextBlocktime = (blocksLast24Hours) => {
+    let blocktimes = [];
+    let currentBlockTimestamp;
+    let lastBlockTimestamp;
+    let lastBlocktime;
+    for (const block of blocksLast24Hours) {
+      currentBlockTimestamp = block.timestamp;
+      if (lastBlockTimestamp) {
+        lastBlocktime = (currentBlockTimestamp - lastBlockTimestamp) / 60;
+        blocktimes.push(lastBlocktime);
+      }
+      lastBlockTimestamp = currentBlockTimestamp;
+      // console.log(block.height + ' ' + lastBlocktime); 
+    }
+    // console.log('blocktimes: ', blocktimes);
+    const sum = blocktimes.reduce((a, b) => {
+      return a + b;
+    }, 0);
+    let average = sum / (blocksLast24Hours.length);
+    console.log('Average blocktime over past 24 hrs: ', average);
+
+    return `${Number.parseFloat(average).toFixed(2)} minutes`;
   }
 
   handleReceiveNewHead = (currentBlockNumber, currentBlockTimestamp, previousBlockNumber,
-    previousBlockTimestamp, currentBlockHash, currentBlockAuthors, parentBlockHash, newActiveAccountIds
+    previousBlockTimestamp, blocksLast24Hours, currentBlockHash, currentBlockAuthors, parentBlockHash, newActiveAccountIds
   ) => {
     
     previousBlockNumber = previousBlockNumber !== '' ? previousBlockNumber : this.state.currentBlockNumber;
 
-    const estimatedNextBlocktime = this.calculateNextBlocktime(currentBlockTimestamp, previousBlockTimestamp);
+    const previousBlocktime = this.calculatePreviousBlocktime(currentBlockTimestamp, previousBlockTimestamp);
+    const estimatedNextBlocktime = this.estimatedNextBlocktime(blocksLast24Hours);
 
     this.setState({
+      previousBlocktime: previousBlocktime || '',
       estimatedNextBlocktime: estimatedNextBlocktime || '',
       currentBlockNumber: currentBlockNumber || '',
       currentBlockTimestamp: currentBlockTimestamp || null,
@@ -524,7 +556,7 @@ class Game extends Component {
   render() {
     const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, currentBlockNumber, currentBlockHash,
       currentBlockAuthors, currentEndpoint, currentEndpointName, errorMessage, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList, isGameOver,
-      parentBlockHash, previousBlockNumber, estimatedNextBlocktime, reason, showModal, showModalChain, showModalMobile } = this.state;
+      parentBlockHash, previousBlockNumber, previousBlocktime, estimatedNextBlocktime, reason, showModal, showModalChain, showModalMobile } = this.state;
     const reasonForTweet = 'I just ' + reason + ' @polkadotnetwork #buildPolkadot';
 
     return (
@@ -555,6 +587,7 @@ class Game extends Component {
           currentBlockAuthors={currentBlockAuthors}
           parentBlockHash={parentBlockHash}
           previousBlockNumber={previousBlockNumber}
+          previousBlocktime={previousBlocktime}
           estimatedNextBlocktime={estimatedNextBlocktime}
           activeAccountIds={activeAccountIds}
         ></P5Wrapper>

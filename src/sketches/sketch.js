@@ -7,6 +7,7 @@ export default function sketch(p){
   let activeAccountIds = {};
   let chain = '';
   let currentBlockNumber = '';
+  let previousBlocktime = '';
   let estimatedNextBlocktime = '';
   let currentSpeed = 3;
   let didChangeBlockNumber = 0;
@@ -51,7 +52,8 @@ export default function sketch(p){
     // }
     // p.text('Parent Block Hash: ' + parentBlockHash, 20, 120);
     p.text('Blocks Cleared: ' + blocksCleared, 20, 100);
-    p.text('Next Block Due: ' + estimatedNextBlocktime, 20, 120);
+    p.text('Previous Blocktime: ' + previousBlocktime, 20, 120);
+    p.text('Next Blocktime (Estimate): ' + estimatedNextBlocktime, 20, 140);
     // p.text('Block Collisions Damage: ' + obstaclesHit, 20, 120);
     // p.text('Current Block Active Account IDs: ' + JSON.stringify(activeAccountIds), 20, 180)
     // p.text('Play Quality: ' + String(1 + (blocksCleared / obstaclesHit) || 4).substring(0, 4) + '/5', 20, 140);
@@ -137,7 +139,8 @@ export default function sketch(p){
       currentBlockAuthors = newProps.currentBlockAuthors;
       gameOver = newProps.gameOver;
       parentBlockHash = newProps.parentBlockHash;
-      estimatedNextBlocktime = newProps.estimatedNextBlocktime
+      previousBlocktime = newProps.previousBlocktime;
+      estimatedNextBlocktime = newProps.estimatedNextBlocktime;
     }
   }
 

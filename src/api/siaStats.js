@@ -15,7 +15,7 @@ const getCurrentBlockInfo = async (currentEndpoint) => {
             currentBlockTimestamp: null
           });
         }
-        console.log('Response from fetching network status: ', response);
+        // console.log('Response from fetching network status: ', response);
 
         console.log('Received Sia network status');
         let currentBlockNumber, currentBlockTimestamp;
@@ -57,7 +57,7 @@ const getPreviousBlockInfo = async (currentEndpoint) => {
             previousBlockTimestamp: null
           });
         }
-        console.log('Response from fetching network 24 hr stats: ', response);
+        // console.log('Response from fetching network 24 hr stats: ', response);
 
         console.log('Received Sia network 24 hr stats');
         let previousBlockNumber, previousBlockTimestamp;
@@ -84,9 +84,42 @@ const getPreviousBlockInfo = async (currentEndpoint) => {
         reject(error);
       });
   });
-}
+};
+
+const getBlocksLast24Hours = async (currentEndpoint) => {
+  return new Promise((resolve, reject) => {
+    axios
+      .get(`${currentEndpoint}/dbs/stats24h.json`,
+        { headers: { 'Accept': 'application/json' }}
+      )
+      .then((response) => {
+        if (!response && response.status !== 200) {
+          console.error('Unable to connect to Sia');
+
+          resolve([]);
+        }
+        console.log('Response from fetching all network 24 hr stats: ', response);
+
+        console.log('Received Sia all network 24 hr stats');
+        let blocksLast24Hours;
+        if (response && response.data.length) {
+          blocksLast24Hours = response.data;
+        } else {
+          blocksLast24Hours = [];
+        }
+        // console.log('Sia blocks last 24 hrs', blocksLast24Hours);
+
+        resolve(blocksLast24Hours);
+      })
+      .catch((error) => {
+        console.error('Error fetching all network 24 hr stats: ', error);
+        reject(error);
+      });
+  });
+};
 
 export {
   getCurrentBlockInfo,
-  getPreviousBlockInfo
+  getPreviousBlockInfo,
+  getBlocksLast24Hours
 }
