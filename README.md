@@ -15,6 +15,7 @@
 * After each block appears, the speed that it moves increases each time.
 * After about 10 blocks the gap may becomes larger but it still becomes more difficult as the blocks move faster
 * If you click "Request Tip?" button after each game and enter your "Mnemonic Seed" that corresponds to the chain that you chose to connected to in the game, along with an optional identifer (i.e. your Twitter handle), it then will submit an extrinsic to the chain that will report your awesomeness for clearing some blocks as a Tip, and should appear in the "Tip" section here https://polkadot.js.org/apps/#/treasury. To obtain an account for that chain and an associated "Mnemonic Seed", go to https://polkadot.js.org/apps/#/accounts and create an account at "Add Account", and remember and use the "Mnemonic Seed".
+* Deploy to a Handshake decentralized domain name with DNS settings configured to load a Sia Skynet Skylink where FlappyTips is deployed. e.g. https://siasky.net/hns/flappy
 
 **Future**:
 * Add support for adding accounts by scanning QR code on mobile devices
@@ -22,7 +23,7 @@
 
 ### Play
 
-* Go to https://flappytips.herokuapp.com
+* Go to https://flappytips.herokuapp.com or https://siasky.net/hns/flappy
 * Press space bar to make your dot fly and try to navigate through the obstacles.
 
 ### Develop Environment
@@ -39,6 +40,23 @@ yarn run start-dev
 * Press space bar to make your dot fly and try to navigate through the obstacles.
 
 Additional planned functionality and deployment to production is dependent on whether help is obtained from Riot channels in response to technical support enquiries.
+
+### Deploy to Skylink (on Sia Skynet)
+
+Modify the `uploadDirectory` function in ./node_modules/@nebulous/skynet/src/upload to avoid encountering error `Error: Request body larger than maxBodyLength limit` by changing this line https://github.com/NebulousLabs/nodejs-skynet/blob/master/src/upload.js#L75 to instead be `.post(url, formData, { headers: formData.getHeaders(), params: params, 'maxContentLength': Infinity, 'maxBodyLength': Infinity })`. This will not be necessary when this PR is merged https://github.com/NebulousLabs/nodejs-skynet/issues/49
+
+Deploy FlappyTips to a Skylink hash that is shown in the terminal output.
+e.g. https://siasky.net/AADhTfgZns00r6rYpyThLQwLDxAea57EegdNN-leYGf07w/
+
+```
+yarn deploy:sia-skynet
+```
+
+Update DNS settings of Handshake domain (e.g. https://siasky.net/hns/flappy) as follows (or manually update the link at https://www.namebase.io/domain-manager) so it loads the Skylink. Note: Where flappy/ is the Handshake domain name.
+
+```
+yarn configure:handshake
+```
 
 ### Deploy to Heroku
 
