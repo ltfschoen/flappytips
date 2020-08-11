@@ -10,28 +10,12 @@ import { Alert, Button } from "react-bootstrap";
 // import Input from "react-bootstrap/Input";
 import Modal from "react-bootstrap/Modal";
 import Form from "react-bootstrap/Form";
-import axios from "axios";
 import pkg from '../package.json';
 import sketch from './sketches/sketch';
 import { ENDPOINTS } from './constants';
 import merge from './helpers/merge';
-
-const getNetworkStatus = async (currentEndpoint) => {
-  return new Promise((resolve, reject) => {
-    axios
-      .get(`${currentEndpoint}/dbs/network_status.json`,
-        { headers: { 'Accept': 'application/json' }}
-      )
-      .then((response) => {
-        console.log('Response from fetching network status: ', response);
-        resolve(response);
-      })
-      .catch((error) => {
-        console.error('Error fetching network status: ', error);
-        reject(error);
-      });
-  });
-} 
+import moment from 'moment';
+import { getCurrentBlockInfo, getPreviousBlockInfo } from './api/siaStats';
 
 class Game extends Component {
   constructor(){
@@ -42,10 +26,13 @@ class Game extends Component {
       blocksCleared: 0,
       chain: '',
       currentBlockNumber: '',
+      currentBlockTimestamp: null,
+      previousBlockNumber: '',
+      previousBlockTimestamp: null,
+      estimatedNextBlocktime: '',
       currentEndpoint: '',
       currentEndpointName: '',
       errorMessage: '',
-      previousBlockNumber: '',
       currentBlockHash: '',
       currentBlockAuthors: [],
       extensionAllInjected: '',
@@ -155,22 +142,31 @@ class Game extends Component {
       chain = 'Sia';
       let provider, keyring, types, api = await this.setupApi(currentEndpoint, currentEndpointName);
 
-      const updateBlockNumber = async () => {
-        const response = await getNetworkStatus(currentEndpoint);
-        if (!response && response.status !== 200) {
-          console.error('Unable to connect to Sia at interval');
-          return;
-        }
-        console.log('Received Sia network status at interval');
-        const currentBlockNumber = (response && response.data && response.data.block_height) || '';
-        console.log('Sia current block number', currentBlockNumber);
-        this.handleReceiveNewHead(currentBlockNumber, '', [], '', {});
+      const updateSiaBlockInfo = async () => {
+        const [
+          { 
+            currentBlockNumber,
+            currentBlockTimestamp
+          },
+          {
+            previousBlockNumber,
+            previousBlockTimestamp
+          }
+        ] = await Promise.all([
+          getCurrentBlockInfo(currentEndpoint),
+          getPreviousBlockInfo(currentEndpoint)
+        ]);
+
+        this.handleReceiveNewHead(
+          currentBlockNumber, currentBlockTimestamp, previousBlockNumber,
+          previousBlockTimestamp, '', [], '', {}
+        );
       }
 
-      updateBlockNumber();
+      updateSiaBlockInfo();
 
       this.timer = setInterval(async () => {
-        updateBlockNumber();
+        updateSiaBlockInfo();
       }, 10000);
     
     } else {
@@ -274,7 +270,11 @@ class Game extends Component {
           currentBlockAuthors = validators && validators.map((item, index) => item.toString());
         }
 
-        this.handleReceiveNewHead(currentBlockNumber, currentBlockHash, currentBlockAuthors, parentBlockHash, newActiveAccountIds);
+        this.handleReceiveNewHead(
+          currentBlockNumber, '', '',
+          '', currentBlockHash, currentBlockAuthors,
+          parentBlockHash, newActiveAccountIds
+        );
       });
     }
 
@@ -290,10 +290,33 @@ class Game extends Component {
     });
   }
 
-  handleReceiveNewHead = (currentBlockNumber, currentBlockHash, currentBlockAuthors, parentBlockHash, newActiveAccountIds) => {
-    let previousBlockNumber = this.state.currentBlockNumber;
+  calculateNextBlocktime = (currentBlockTimestamp, previousBlockTimestamp) => {
+    const diff = moment.duration(moment(currentBlockTimestamp).diff(moment(previousBlockTimestamp)));
+
+    console.log('currentBlockTimestamp Unix', moment(currentBlockTimestamp));
+    console.log('previousBlockTimestamp Unix', moment(previousBlockTimestamp));
+
+    console.log('currentBlockTimestamp ISO', moment(currentBlockTimestamp).toISOString());
+    console.log('previousBlockTimestamp ISO', moment(previousBlockTimestamp).toISOString());
+    console.log('Time difference is: ', diff.asMinutes() + ' minutes');
+
+    return diff.asMinutes();
+  }
+
+  handleReceiveNewHead = (currentBlockNumber, currentBlockTimestamp, previousBlockNumber,
+    previousBlockTimestamp, currentBlockHash, currentBlockAuthors, parentBlockHash, newActiveAccountIds
+  ) => {
+    
+    previousBlockNumber = previousBlockNumber !== '' ? previousBlockNumber : this.state.currentBlockNumber;
+
+    const estimatedNextBlocktime = this.calculateNextBlocktime(currentBlockTimestamp, previousBlockTimestamp);
+
     this.setState({
+      estimatedNextBlocktime: estimatedNextBlocktime || '',
       currentBlockNumber: currentBlockNumber || '',
+      currentBlockTimestamp: currentBlockTimestamp || null,
+      previousBlockNumber: previousBlockNumber || '',
+      previousBlockTimestamp: previousBlockTimestamp || null,
       currentBlockHash: currentBlockHash || '',
       currentBlockAuthors: currentBlockAuthors || [],
       parentBlockHash: parentBlockHash || '',
@@ -501,7 +524,7 @@ class Game extends Component {
   render() {
     const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, currentBlockNumber, currentBlockHash,
       currentBlockAuthors, currentEndpoint, currentEndpointName, errorMessage, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList, isGameOver,
-      parentBlockHash, previousBlockNumber, reason, showModal, showModalChain, showModalMobile } = this.state;
+      parentBlockHash, previousBlockNumber, estimatedNextBlocktime, reason, showModal, showModalChain, showModalMobile } = this.state;
     const reasonForTweet = 'I just ' + reason + ' @polkadotnetwork #buildPolkadot';
 
     return (
@@ -532,6 +555,7 @@ class Game extends Component {
           currentBlockAuthors={currentBlockAuthors}
           parentBlockHash={parentBlockHash}
           previousBlockNumber={previousBlockNumber}
+          estimatedNextBlocktime={estimatedNextBlocktime}
           activeAccountIds={activeAccountIds}
         ></P5Wrapper>
         <Modal show={showModal} onHide={() => this.closeModal()}>
