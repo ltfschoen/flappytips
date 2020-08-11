@@ -15,6 +15,8 @@ export default function sketch(p){
   let currentBlockAuthors = [];
   let gameOver;
   let isGameOver = 0;
+  let isNewSiaBlock = false;
+  let isPartialBlock = false;
   let parentBlockHash = '';
   let obstacles = [];
   let blocksCleared;
@@ -51,9 +53,11 @@ export default function sketch(p){
     //   p.text('Current Block Authors: ' + currentBlockAuthors.join(', '), 20, 100);
     // }
     // p.text('Parent Block Hash: ' + parentBlockHash, 20, 120);
-    p.text('Blocks Cleared: ' + blocksCleared, 20, 100);
-    p.text('Previous Blocktime: ' + previousBlocktime, 20, 120);
-    p.text('Next Blocktime (Estimate): ' + estimatedNextBlocktime, 20, 140);
+    p.text('Blocks Cleared: ' + Number.parseFloat(blocksCleared).toFixed(2), 20, 100);
+    if (chain == "Sia Mainnet") {
+      p.text('Previous Blocktime: ' + previousBlocktime, 20, 120);
+      p.text('Next Blocktime (Estimate): ' + estimatedNextBlocktime, 20, 140);
+    }
     // p.text('Block Collisions Damage: ' + obstaclesHit, 20, 120);
     // p.text('Current Block Active Account IDs: ' + JSON.stringify(activeAccountIds), 20, 180)
     // p.text('Play Quality: ' + String(1 + (blocksCleared / obstaclesHit) || 4).substring(0, 4) + '/5', 20, 140);
@@ -81,8 +85,12 @@ export default function sketch(p){
     // }  
 
     if (p.frameCount % 100 === 0 && currentBlockNumber !== '' && didChangeBlockNumber === 1) {
-      obstacles.push(new Obstacle(p, currentBlockNumber, currentSpeed, customFont));
+      obstacles.push(new Obstacle(p, currentBlockNumber, currentSpeed, customFont, false));
       didChangeBlockNumber = 0;
+    }
+
+    if (p.frameCount % 100 === 0 && currentBlockNumber !== '' && isPartialBlock === true) {
+      obstacles.push(new Obstacle(p, `${currentBlockNumber}.X`, currentSpeed, customFont, isPartialBlock));
     }
     
     for (var i = obstacles.length - 1; i >= 0; i--){
@@ -95,7 +103,11 @@ export default function sketch(p){
 
       if (obstacles[i].offscreen()){
         obstacles.splice(i, 1);
-        blocksCleared++;
+        if (isPartialBlock) {
+          blocksCleared = blocksCleared + 0.01;
+        } else {
+          blocksCleared++;
+        }
       }      
     }
   }
@@ -130,9 +142,19 @@ export default function sketch(p){
       // console.log('activeAccountIds', JSON.stringify(activeAccountIds));
       activeAccountIds = newProps.activeAccountIds;
       chain = newProps.chain;
+      isNewSiaBlock = newProps.isNewSiaBlock;
       if (newProps.currentBlockNumber !== newProps.previousBlockNumber) {
-        didChangeBlockNumber = 1;
-        p.changeSpeed();
+        if (chain == "Sia Mainnet") {
+          if (isNewSiaBlock) {
+            didChangeBlockNumber = 1;
+            p.changeSpeed();
+          } else {
+            isPartialBlock = true;
+          }
+        } else {
+          didChangeBlockNumber = 1;
+          p.changeSpeed();   
+        }
       }
       currentBlockNumber = newProps.currentBlockNumber;
       currentBlockHash = newProps.currentBlockHash;

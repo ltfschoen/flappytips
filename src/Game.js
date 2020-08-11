@@ -40,6 +40,8 @@ class Game extends Component {
       extensionAllInjected: '',
       extensionAllAccountsList: [],
       isGameStart: false,
+      isPolk: false,
+      isNewSiaBlock: false,
       parentBlockHash: '',
       birdColor: 255,
       api: undefined,
@@ -47,6 +49,7 @@ class Game extends Component {
       keyring: undefined,
       reason: '',
       showModal: false,
+      showModalSia: false,
       showModalChain: false,
       showModalMobile: isMobile
     };
@@ -56,9 +59,6 @@ class Game extends Component {
     this.chainAccount = React.createRef();
     this.customEndpoint = React.createRef();
     this.tweet = React.createRef();
-
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.handleSubmitChain = this.handleSubmitChain.bind(this);
   }
 
   async componentDidMount() {
@@ -88,20 +88,22 @@ class Game extends Component {
     this.timer = null;
   }
 
-  setupApi = async (currentEndpoint, currentEndpointName) => {
-    if (currentEndpoint === "https://siastats.info") {
-      currentEndpoint = ENDPOINTS['Edgeware Mainnet']
-    }
-    if (currentEndpointName === "Sia") {
-      currentEndpointName = 'Edgeware Mainnet'
+  setupApi = async (customEndpoint, customEndpointName) => {
+    let currentEndpoint = customEndpoint;
+    let currentEndpointName = customEndpointName;
+
+    if (customEndpoint === "https://siastats.info" && customEndpointName === "Sia Mainnet") {
+      currentEndpoint = ENDPOINTS['Edgeware Mainnet'].url;
+      currentEndpointName = 'Edgeware Mainnet';
     }
     const provider = new WsProvider(currentEndpoint);
     // Create a keyring instance. https://polkadot.js.org/api/start/keyring.html
     const keyring = new Keyring({ type: 'sr25519' });
-    const types = Object.values(edgewareDefinitions).reduce((res, { types }) => ({ ...res, ...types }), {});
+    let types;
     let api;
     if (currentEndpointName === 'Edgeware Mainnet') {
       console.log('Setting up Edgeware');
+      types = Object.values(edgewareDefinitions).reduce((res, { types }) => ({ ...res, ...types }), {});
       api = await ApiPromise.create({
         provider,
         // Reference: https://www.npmjs.com/package/edgeware-node-types#usage
@@ -123,10 +125,11 @@ class Game extends Component {
     } else {
       api = await ApiPromise.create({ provider });
     }
+
     return { provider, keyring, types, api };
   }
 
-  setup = async (customEndpoint) => {
+  setup = async (customEndpoint, customEndpointName, isPolk) => {
     // // IMPORTANT: This does not appear to work so we've used @polkadot-js/api's WsProvider instead
     // // retrieve all the RPC providers from a particular source
     // const allProviders = await web3ListRpcProviders('polkadot-js');
@@ -134,17 +137,26 @@ class Game extends Component {
     // // assuming one of the keys in `allProviders` is 'kusama-cc3', we can then use that provider
     // const { provider } = web3UseRpcProvider('polkadot-js', 'kusama-cc3');
 
-    const currentEndpoint = customEndpoint || ENDPOINTS['Edgeware Mainnet'];
-    let currentEndpointName = Object.keys(ENDPOINTS)[Object.values(ENDPOINTS).indexOf(currentEndpoint)];
+    let currentEndpoint = customEndpoint;
+    let currentEndpointName = customEndpointName;
+    // Fallback to default chains if necessary
+    if (!customEndpoint && isPolk) {
+      currentEndpoint = ENDPOINTS['Edgeware Mainnet'].url;
+      currentEndpointName = 'Edgeware Mainnet';
+    } else if (!customEndpoint && !isPolk) {
+      currentEndpoint = ENDPOINTS['Sia Mainnet'].url;
+      currentEndpointName = 'Sia Mainnet';
+    }
+
     let chain, nodeName, nodeVersion;
-    let provider, keyring, types, api;
+    let { provider, keyring, types, api } = await this.setupApi(currentEndpoint, currentEndpointName);
 
     if (currentEndpoint === "https://siastats.info") {
-      currentEndpointName = "Sia Stats";
-      chain = 'Sia';
-      let provider, keyring, types, api = await this.setupApi(currentEndpoint, currentEndpointName);
+      currentEndpointName = "Sia Mainnet";
+      chain = 'Sia Mainnet';
 
       const updateSiaBlockInfo = async () => {
+        const { currentBlockNumber: asCurrent } = this.state;
         const [
           { 
             currentBlockNumber,
@@ -161,6 +173,10 @@ class Game extends Component {
           getBlocksLast24Hours(currentEndpoint)
         ]);
 
+        this.setState({
+          isNewSiaBlock: currentBlockNumber !== asCurrent,
+        });
+
         this.handleReceiveNewHead(
           currentBlockNumber, currentBlockTimestamp, previousBlockNumber,
           previousBlockTimestamp, blocksLast24Hours, '', [], '', {}
@@ -170,11 +186,14 @@ class Game extends Component {
       updateSiaBlockInfo();
 
       this.timer = setInterval(async () => {
-        updateSiaBlockInfo();
+        this.setState({
+          isNewSiaBlock: false,
+        }, () => {
+          updateSiaBlockInfo();
+        });
       }, 10000);
     
     } else {
-      let provider, keyring, types, api = await this.setupApi(currentEndpoint, currentEndpointName);
       [chain, nodeName, nodeVersion] = await Promise.all([
         api.rpc.system.chain(),
         api.rpc.system.name(),
@@ -190,11 +209,15 @@ class Game extends Component {
         ]);
         let currentBlockHash = blockHash.toString();
 
-        const [signedBlock] = await Promise.all([
-          api.rpc.chain.getBlock(blockHash)
-        ]);
-        // console.log('signedBlock', signedBlock);
-        console.log('signedBlock', signedBlock.block.header.parentHash.toHex());
+        // FIXME - triggers error on Kusama:
+        // Unable to decode Vec on index 3 createType(ExtrinsicV4):: createType(Call):: Struct: failed on 'args':: Bytes: required length less than remainder, expected at least 324453603, found 512
+        // RPC-CORE: getBlock(hash?: BlockHash): SignedBlock:: createType(SignedBlock):: Struct: failed on 'block':: Struct: failed on 'extrinsics':: createType(ExtrinsicV4):: createType(Call):: Struct: failed on 'args':: Bytes: required length less than remainder, expected at least 324453603, found 512
+
+        // const [signedBlock] = await Promise.all([
+        //   api.rpc.chain.getBlock(blockHash)
+        // ]);
+        // // console.log('signedBlock', signedBlock);
+        // console.log('signedBlock', signedBlock.block.header.parentHash.toHex());
 
         // // Hash for each extrinsic in the block
         // signedBlock.block.extrinsics.forEach((ex, index) => {
@@ -336,11 +359,14 @@ class Game extends Component {
   handleReceiveNewHead = (currentBlockNumber, currentBlockTimestamp, previousBlockNumber,
     previousBlockTimestamp, blocksLast24Hours, currentBlockHash, currentBlockAuthors, parentBlockHash, newActiveAccountIds
   ) => {
-    
+    const { currentEndpointName } = this.state;
     previousBlockNumber = previousBlockNumber !== '' ? previousBlockNumber : this.state.currentBlockNumber;
 
-    const previousBlocktime = this.calculatePreviousBlocktime(currentBlockTimestamp, previousBlockTimestamp);
-    const estimatedNextBlocktime = this.estimatedNextBlocktime(blocksLast24Hours);
+    let previousBlocktime, estimatedNextBlocktime;
+    if (currentEndpointName == "Sia Mainnet") {
+      previousBlocktime = this.calculatePreviousBlocktime(currentBlockTimestamp, previousBlockTimestamp);
+      estimatedNextBlocktime = this.estimatedNextBlocktime(blocksLast24Hours);
+    }
 
     this.setState({
       previousBlocktime: previousBlocktime || '',
@@ -363,7 +389,7 @@ class Game extends Component {
 
   gameOver = (blocksCleared) => {
     const { currentBlockNumber, currentEndpointName } = this.state;
-    const reason = `played https://flappytips.herokuapp.com v${pkg.version} (${isMobile ? 'Mobile' : 'Desktop'}) on ${currentEndpointName} and cleared ${blocksCleared} blocks from #${currentBlockNumber}!`;
+    const reason = `played https://siasky.net/hns/flappy v${pkg.version} (${isMobile ? 'Mobile' : 'Desktop'}) on ${currentEndpointName} and cleared ${Number.parseFloat(blocksCleared).toFixed(2)} blocks from #${currentBlockNumber}!`;
     this.setState({
       blocksCleared,
       isGameOver: true,
@@ -375,7 +401,12 @@ class Game extends Component {
     window.location.reload();
   }
 
-  async handleSubmit(event) {
+  handleSubmitSia = async (event) => {
+    console.log('handleSubmitSia');
+    event.preventDefault(); // Prevent page refreshing when click submit
+  }
+
+  handleSubmit = async (event) => {
     console.log('handleSubmit');
     event.preventDefault(); // Prevent page refreshing when click submit
 
@@ -483,20 +514,25 @@ class Game extends Component {
     }
   }
 
-  async handleSubmitChain(event) {
+  handleSubmitChain = async (event) => {
     console.log('handleSubmitChain');
     event.preventDefault(); // Prevent page refreshing when click submit
 
     this.closeModalChainWindow();
     this.closeModalMobile();
+
     const currentEndpoint = this.customEndpoint.current && this.customEndpoint.current.value;
-    const currentEndpointName = Object.keys(ENDPOINTS)[Object.values(ENDPOINTS).indexOf(currentEndpoint)];
+    const foundValue = Object.values(ENDPOINTS).filter(obj => obj.url === currentEndpoint)[0];
+    const currentEndpointName = Object.keys(ENDPOINTS)[Object.values(ENDPOINTS).indexOf(foundValue)];
+    const isPolk = foundValue.isPolk ? true : false;
+
     this.setState({
       currentEndpoint,
-      currentEndpointName
+      currentEndpointName,
+      isPolk
     });
 
-    this.setup(currentEndpoint);
+    this.setup(currentEndpoint, currentEndpointName, isPolk);
   }
 
   closeModalMobile = () => {
@@ -511,9 +547,21 @@ class Game extends Component {
     });
   }
 
+  closeModalSia = () => {
+    this.setState({
+      showModalSia: false,
+    });
+  }
+
   openModal = () => {
     this.setState({
       showModal: true,
+    });
+  }
+
+  openModalSia = () => {
+    this.setState({
+      showModalSia: true,
     });
   }
 
@@ -527,7 +575,7 @@ class Game extends Component {
   // If the user clicks outside the chain modal, we want to setup but with the default chain endpoint
   closeModalChain = () => {
     this.closeModalChainWindow();
-    this.setup(undefined);
+    this.setup(undefined, undefined, undefined);
   }
 
   openModalChain = () => {
@@ -556,8 +604,15 @@ class Game extends Component {
   render() {
     const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, currentBlockNumber, currentBlockHash,
       currentBlockAuthors, currentEndpoint, currentEndpointName, errorMessage, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList, isGameOver,
-      parentBlockHash, previousBlockNumber, previousBlocktime, estimatedNextBlocktime, reason, showModal, showModalChain, showModalMobile } = this.state;
-    const reasonForTweet = 'I just ' + reason + ' @polkadotnetwork #buildPolkadot';
+      isNewSiaBlock, isPolk, parentBlockHash, previousBlockNumber, previousBlocktime, estimatedNextBlocktime, reason, showModal, showModalSia, showModalChain, showModalMobile } = this.state;
+    let reasonForTweet;
+    if (isPolk) {
+      reasonForTweet = 'I just ' + reason + ' @polkadotnetwork #buildPolkadot';
+    } else if (!isPolk && currentEndpointName == "Sia Mainnet") {
+      reasonForTweet = 'I just ' + reason + ' @MySiacoin #Siacoin'
+    } else {
+      reasonForTweet = 'I just ' + reason;
+    }
 
     return (
       <div>
@@ -573,7 +628,12 @@ class Game extends Component {
             <div>
               <div className={`game-state white`}>Game over! You're awesome for clearing {blocksCleared} blocks on {currentEndpointName}!</div>
               <Button variant="primary" className="play-again btn btn-lg" onTouchStart={() => this.playAgain()} onClick={() => this.playAgain()}>Play Again?</Button>
-              <Button variant="success" className="report-awesomeness btn btn-lg" onTouchStart={() => this.openModal()} onClick={() => this.openModal()}>Share & Request Tip?</Button>
+              { isPolk ? (
+                  <Button variant="success" className="report-awesomeness btn btn-lg" onTouchStart={() => this.openModal()} onClick={() => this.openModal()}>Share & Request Tip?</Button>
+                ) : (
+                  <Button variant="success" className="report-awesomeness btn btn-lg" onTouchStart={() => this.openModalSia()} onClick={() => this.openModalSia()}>Share?</Button>
+                )
+              }
             </div>
           )
         }
@@ -585,6 +645,7 @@ class Game extends Component {
           currentBlockNumber={currentBlockNumber}
           currentBlockHash={currentBlockHash}
           currentBlockAuthors={currentBlockAuthors}
+          isNewSiaBlock={isNewSiaBlock}
           parentBlockHash={parentBlockHash}
           previousBlockNumber={previousBlockNumber}
           previousBlocktime={previousBlocktime}
@@ -644,13 +705,46 @@ class Game extends Component {
               }
               <script async src="https://platform.twitter.com/widgets.js" charSet="utf-8"></script>
               <TwitterShareButton
-                url={`https://flappytips.herokuapp.com`}
+                url={`https://siasky.net/hns/flappy`}
                 options={{ text: reasonForTweet, via: 'ltfschoen' }}
               />
               {/* <Button variant="secondary" className="btn btn-primary btn-large btn-block" onTouchStart={() => this.closeModal()} onClick={() => this.closeModal()} >Close</Button> */}
             </Modal.Footer>
           </Form>
         </Modal>
+
+        <Modal show={showModalSia} onHide={() => this.closeModalSia()}>
+          <Form onSubmit={this.handleSubmitSia}>
+            <Modal.Header closeButton>
+              <Modal.Title>Share <br /> <h6><i>Chain Endpoint: <span style={{color: '#007bff'}}>{currentEndpoint}</span></i></h6></Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <Form.Group controlId="formTwitterHandle">
+                <Form.Label>Twitter Handle:</Form.Label>
+                <Form.Control type="text" ref={this.twitterHandle} name="twitterHandle" placeholder="Twitter Handle" />
+                <Form.Text className="text-muted">
+                  Enter your Twitter handle or other form of nickname
+                </Form.Text>
+              </Form.Group>
+            </Modal.Body>
+            <Modal.Footer className="justify-content-between">
+              {/* <Button variant="success" className="btn btn-primary btn-large mr-auto btn-block" type="submit">Send Request</Button>
+              { errorMessage ? (
+                  <Alert variant="danger">
+                    { errorMessage }
+                  </Alert>
+                ) : null
+              } */}
+              <script async src="https://platform.twitter.com/widgets.js" charSet="utf-8"></script>
+              <TwitterShareButton
+                url={`https://siasky.net/hns/flappy`}
+                options={{ text: reasonForTweet, via: 'ltfschoen' }}
+              />
+              {/* <Button variant="secondary" className="btn btn-primary btn-large btn-block" onTouchStart={() => this.closeModal()} onClick={() => this.closeModal()} >Close</Button> */}
+            </Modal.Footer>
+          </Form>
+        </Modal>
+
         <Modal show={showModalMobile || showModalChain} onHide={() => this.closeModalChain()}>
           <Form onSubmit={this.handleSubmitChain}>
             <Modal.Header closeButton>
@@ -668,8 +762,8 @@ class Game extends Component {
                 {Object.keys(ENDPOINTS).map((key, i) => {
                   return (
                     key === 'DataHighway Harbour Testnet' || key === 'Westend Testnet'
-                      ? <option disabled="disabled" key={i} value={ENDPOINTS[key]}>{key}</option>
-                      : <option key={i} value={ENDPOINTS[key]}>{key}</option>
+                      ? <option disabled="disabled" key={i} value={ENDPOINTS[key].url}>{key}</option>
+                      : <option key={i} value={ENDPOINTS[key].url}>{key}</option>
                   )
                 })}
               </Form.Control>
@@ -681,7 +775,7 @@ class Game extends Component {
           </Form>
         </Modal>
 
-        <Modal show={extensionNotInstalled && !isMobile} onHide={() => console.log('Polkadot.js Extension required on Desktop')}>
+        <Modal show={isPolk && extensionNotInstalled && !isMobile} onHide={() => console.log('Polkadot.js Extension required on Desktop')}>
           <Modal.Header>
             <Modal.Title>FlappyTips on Desktop: Install and enable Polkadot.js Extension</Modal.Title>
           </Modal.Header>
@@ -700,7 +794,7 @@ class Game extends Component {
           </Modal.Body>
         </Modal>
 
-        <Modal show={showModalMobile && extensionNotInstalled && isMobile} onHide={() => console.log('Mobile device detected')}>
+        <Modal show={isPolk && showModalMobile && extensionNotInstalled && isMobile} onHide={() => console.log('Mobile device detected')}>
           <Modal.Header>
             <Modal.Title>FlappyTips on Mobile</Modal.Title>
           </Modal.Header>
