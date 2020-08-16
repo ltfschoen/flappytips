@@ -25,6 +25,7 @@ yarn-error.log*
 .wasm
 
 .env
+.secrets
 
 public/index-temp.html
 
