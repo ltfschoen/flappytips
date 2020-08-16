@@ -20,6 +20,16 @@ const nodeClient = new NodeClient(clientOptions);
 const walletClient = new WalletClient(walletOptions);
 const wallet = walletClient.wallet('primary');
 
+// Reference: https://www.w3resource.com/javascript-exercises/javascript-string-exercise-28.php
+const hex_to_ascii = (str1) => {
+  var hex  = str1.toString();
+  var str = '';
+  for (var n = 0; n < hex.length; n += 2) {
+    str += String.fromCharCode(parseInt(hex.substr(n, 2), 16));
+  }
+  return str;
+}
+
 (async () => {
   let result;
 
@@ -49,10 +59,46 @@ const wallet = walletClient.wallet('primary');
   const peerInfo = await nodeClient.execute('getpeerinfo');
   console.log('Peer Info: ', peerInfo);
 
-  // Get Name Info
+  // Get Blockchain Name DNS Info
+  //
+  // https://hsd-dev.org/api-docs/?javascript#getnameinfo
+  // https://github.com/handshake-org/hsd/blob/master/lib/covenants/namestate.js#L671
   const domainName = 'epiphysitis';
   const nameInfo = await nodeClient.execute('getnameinfo', [ domainName ]);
-  console.log(nameInfo);
+  console.log('Name info: ', nameInfo);
+  // Data e.g.
+  // X_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX/index.html ns1 <DOMAIN_NAME>,ç·À>
+  //
+  // The `X_XXXX.../index.html` value appears to be the Skylink of Sia Skynet,
+  // and I thought you should be able to paste that value here to load the page that
+  // https://siasky.net/hns/<DOMAIN_NAME>/ directs you to
+  // e.g. https://siasky.net/hns/X_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX/index.html
+  // However, nothing loads using `X_XXXX.../index.html`.
+  // So use `getnameresource` instead to get the Sia Skynet Skylink
+  // 
+  // Note: The 'data' corresponds to that shown if you go to
+  // https://www.namebase.io/domain-manager/<DOMAIN_NAME> in the
+  // Blockchain DNS Records. If you then click "Use advanced settings" it will
+  // show the raw data hex string that is returned from the `getnameinfo` query
+  console.log('data deserialized hex: ', hex_to_ascii(nameInfo.info.data));
+
+  // Get Domain Records
+  //
+  // e.g.
+  // resource: {
+  //   records: [
+  //     { type: 'TXT', txt: [Array] },
+  //     { type: 'GLUE4', ns: 'ns1.<DOMAIN_NAME>.', address: <IP_ADDRESS> },
+  //     { type: 'NS', ns: 'ns1.<DOMAIN_NAME>.' }
+  //   ]
+  // }
+  result = await nodeClient.execute('getnameresource', [ domainName ]);
+  console.log('Name resource: ', result);
+  // The output of the following should match the TXT value that's shown when you
+  // go to https://www.namebase.io/domain-manager/<DOMAIN_NAME> and view the
+  // Blockchain DNS Records. Paste the output of the following here:
+  // e.g. https://siasky.net/hns/Y_YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY/index.html
+  console.log('Name resource Sia Skynet Skylink: ', result.records[0].txt);
 
   // Get Wallets
   result = await walletClient.getWallets();
