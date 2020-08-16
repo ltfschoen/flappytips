@@ -92,13 +92,13 @@ const hex_to_ascii = (str1) => {
   //     { type: 'NS', ns: 'ns1.<DOMAIN_NAME>.' }
   //   ]
   // }
-  result = await nodeClient.execute('getnameresource', [ domainName ]);
-  console.log('Name resource: ', result);
-  // The output of the following should match the TXT value that's shown when you
+  //
+  // The output of the `txt` value should match the TXT value that's shown when you
   // go to https://www.namebase.io/domain-manager/<DOMAIN_NAME> and view the
-  // Blockchain DNS Records. Paste the output of the following here:
+  // Blockchain DNS Records. Paste the output Sia Skynet Skylink here:
   // e.g. https://siasky.net/hns/Y_YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY/index.html
-  console.log('Name resource Sia Skynet Skylink: ', result.records[0].txt);
+  result = await nodeClient.execute('getnameresource', [ domainName ]);
+  console.log('Name resource: ', JSON.stringify(result, null, 2));
 
   // Get Wallets
   result = await walletClient.getWallets();
