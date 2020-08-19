@@ -9,7 +9,7 @@ require('dotenv').config()
 const fs = require('fs');
 const path = require('path');
 const { execute } = require('../helpers/execute');
-const { uploadDirectoryToSkynet } = require('../server/helpers/uploadToSkynet');
+const { uploadDirectoryToSkynet } = require('../server/uploadToSkynet');
 const { BUILD_SKYNET_SUBDIRECTORY } = require('../constants');
 
 const PATH_SOURCE_CODE = path.join(__dirname, '..', 'build');

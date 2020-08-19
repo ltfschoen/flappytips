@@ -31,14 +31,13 @@
 Clone the repository, install Yarn and Node.js, and then run the following in terminal:
 ```
 npm install -g nodemon &&
-yarn &&
-yarn run build &&
-yarn run start-dev
+yarn add node-gyp
+yarn run dev
 ```
 
-* Go to http://localhost:3000
+* Go to http://localhost:4000
 * Press space bar to make your dot fly and try to navigate through the obstacles.
-
+* Access the API endpoints at http://localhost:5000/api 
 Additional planned functionality and deployment to production is dependent on whether help is obtained from Riot channels in response to technical support enquiries.
 
 ### Interact with Handshake API
