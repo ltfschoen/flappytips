@@ -124,6 +124,7 @@ yarn configure:handshake
 ```
 heroku login
 heroku apps:create flappytips
+heroku git:remote -a flappytips
 git push -f heroku master
 heroku local web
 heroku ps:scale web=1:free
