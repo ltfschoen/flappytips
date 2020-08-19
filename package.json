@@ -13,13 +13,17 @@
     "@testing-library/user-event": "^7.1.2",
     "axios": "^0.19.2",
     "bootstrap": "^4.5.0",
+    "cors": "^2.8.5",
     "cross-env": "^7.0.2",
     "dotenv": "^8.2.0",
     "edgeware-node-types": "^2.3.3",
     "express": "^4.17.1",
+    "hs-client": "^0.0.8",
+    "hsd": "^2.1.5",
     "internet-available": "^1.0.0",
     "jquery": "^3.5.1",
     "moment": "^2.27.0",
+    "node-gyp": "^7.1.0",
     "p5": "^1.0.0",
     "popper.js": "^1.16.1",
     "react": "^16.13.1",
@@ -29,6 +33,7 @@
     "react-p5-wrapper": "^2.0.0",
     "react-scripts": "3.4.1",
     "react-twitter-embed": "^3.0.3",
+    "regtest": "^0.0.3",
     "websocket-extensions": "^0.1.4",
     "yarn": "^1.22.4"
   },
@@ -38,8 +43,9 @@
     "yarn": "1.x"
   },
   "scripts": {
-    "start": "node server.js",
-    "start-dev": "react-scripts start",
+    "dev:client": "PORT=4000 react-scripts start",
+    "dev:server": "node server.js",
+    "dev": "yarn && yarn build && concurrently --kill-others-on-fail \"cross-env yarn dev:server\" \"yarn dev:client\"",
     "build": "react-scripts build",
     "deploy:sia-skynet": "yarn && ./scripts/index_remove_public.sh && yarn build && ./scripts/index_remove_static_slash.sh && node ./scripts/siaSkynet.js && ./scripts/index_restore_public.sh",
     "configure:handshake": "node ./scripts/handshakeDomainSetSkynetPortalRecord.js",
@@ -60,5 +66,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "proxy": "http://localhost:5000/"
 }

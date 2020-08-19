@@ -31,15 +31,75 @@
 Clone the repository, install Yarn and Node.js, and then run the following in terminal:
 ```
 npm install -g nodemon &&
-yarn &&
-yarn run build &&
-yarn run start-dev
+yarn add node-gyp
+yarn run dev
 ```
 
-* Go to http://localhost:3000
+* Go to http://localhost:4000
 * Press space bar to make your dot fly and try to navigate through the obstacles.
-
+* Access the API endpoints at http://localhost:5000/api 
 Additional planned functionality and deployment to production is dependent on whether help is obtained from Riot channels in response to technical support enquiries.
+
+### Interact with Handshake API
+
+Install dependencies
+```
+yarn add node-gyp
+yarn
+```
+
+Generate HSD API Key. Paste into .env as value for `HSD_API_KEY`. See https://hsd-dev.org/api-docs/#authentication
+```
+node -e "bcrypto=require('bcrypto'); console.log(bcrypto.random.randomBytes(32).toString('hex'))"
+```
+
+Create a Wallet. See https://hsd-dev.org/guides/wallet.html. Clone https://github.com/handshake-org/faucet-tool
+```
+yarn
+./bin/faucet-tool --help
+./bin/faucet-tool createaddress \
+  -n "main" \
+  -l "english" \
+  -b 256 \
+  --backup \
+  --show-keys
+```
+
+Run Mining node. By default the Chain DB is store in ~/.hsd/main. See https://hsd-dev.org/guides/config.html, and https://github.com/handshake-org/hsd#mining
+
+* Note: Always use `--wallet-wallet-auth` set `true` and to set a unique api-key so a wallet's token to be submitted with every request, even for local development or local wallets, otherwise other applications on your system could theoretically access your wallet through the HTTP server without any authentication barriers.
+
+```
+./node_modules/.bin/hsd --network=main \
+  --prefix=~/.hsd \
+  --config=~/.hsd/main/hsd.conf \
+  --port 12038 \
+  --http-host 127.0.0.1 \
+  --http-port 12037 \
+  --ssl false \
+  --wallet-http-host=127.0.0.1 \
+  --wallet-api-key='...' \
+  --wallet-wallet-auth=true \
+  --log-level=debug \
+  --max-outbound=8 \
+  --api-key '...' \
+  --coinbase-address '...' \
+  --node-api-key '...' \
+  --node-ssl false
+```
+
+Run script. Choose network from either: main on port 12037 (default), testnet 13037, regtest 14037, or simnet15037
+```
+HSD_NETWORK=main \
+  node ./scripts/handshakeDomain.js
+```
+
+Optional: Use HSD via CLI
+```
+./node_modules/.bin/hsd --help
+```
+
+View Handshake Transaction History: https://hnscan.com
 
 ### Deploy to Skylink (on Sia Skynet)
 
@@ -64,6 +124,7 @@ yarn configure:handshake
 ```
 heroku login
 heroku apps:create flappytips
+heroku git:remote -a flappytips
 git push -f heroku master
 heroku local web
 heroku ps:scale web=1:free
