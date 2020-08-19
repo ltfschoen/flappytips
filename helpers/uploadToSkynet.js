@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const skynet = require('@nebulous/skynet');
 const internetAvailable = require('internet-available');
-const { HANDSHAKE_DOMAIN_NAME } = require('../../constants');
+const { HANDSHAKE_DOMAIN_NAME } = require('../constants');
 
 const getSkylinkFromUrl = (url) => {
   return url.substring(url.lastIndexOf("/") + 1);
