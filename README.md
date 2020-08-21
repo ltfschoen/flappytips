@@ -193,7 +193,7 @@ cd flipper
 * Build smart contract to convert ink! project into Wasm binary for deployment to chain.
 Access in ./target/<CONTRACT_NAME>.wasm
 ```
-cargo +nightly contract build
+cargo +nightly build
 ```
 
 * Test smart contract
