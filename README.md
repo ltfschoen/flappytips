@@ -103,8 +103,6 @@ View Handshake Transaction History: https://hnscan.com
 
 ### Deploy to Skylink (on Sia Skynet)
 
-Modify the `uploadDirectory` function in ./node_modules/@nebulous/skynet/src/upload to avoid encountering error `Error: Request body larger than maxBodyLength limit` by changing this line https://github.com/NebulousLabs/nodejs-skynet/blob/master/src/upload.js#L75 to instead be `.post(url, formData, { headers: formData.getHeaders(), params: params, 'maxContentLength': Infinity, 'maxBodyLength': Infinity })`. This will not be necessary when this PR is merged https://github.com/NebulousLabs/nodejs-skynet/issues/49
-
 Deploy FlappyTips to a Skylink hash that is shown in the terminal output.
 e.g. https://siasky.net/AADhTfgZns00r6rYpyThLQwLDxAea57EegdNN-leYGf07w/
 
