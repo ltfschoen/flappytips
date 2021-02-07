@@ -4,7 +4,7 @@ import { isMobile } from "react-device-detect";
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 import { web3Accounts, web3Enable, web3FromAddress, web3ListRpcProviders, web3UseRpcProvider } from '@polkadot/extension-dapp';
 import { bufferToU8a, u8aToBuffer, u8aToString, stringToU8a, u8aToHex } from '@polkadot/util';
-import * as edgewareDefinitions from 'edgeware-node-types/interfaces/definitions';
+import { spec } from '@edgeware/node-types';
 import { TwitterShareButton } from 'react-twitter-embed';
 import { Alert, Button } from "react-bootstrap";
 // import Input from "react-bootstrap/Input";
@@ -106,21 +106,8 @@ class Game extends Component {
       types = Object.values(edgewareDefinitions).reduce((res, { types }) => ({ ...res, ...types }), {});
       api = await ApiPromise.create({
         provider,
-        // Reference: https://www.npmjs.com/package/edgeware-node-types#usage
-        types: {
-          ...types,
-          // aliases that don't do well as part of interfaces
-          'voting::VoteType': 'VoteType',
-          'voting::TallyType': 'TallyType',
-          // chain-specific overrides
-          Address: 'GenericAddress',
-          Keys: 'SessionKeys4',
-          StakingLedger: 'StakingLedgerTo223',
-          Votes: 'VotesTo230',
-          ReferendumInfo: 'ReferendumInfoTo239',
-        },
-        // override duplicate type name
-        typesAlias: { voting: { Tally: 'VotingTally' } },
+        // https://www.npmjs.com/package/@edgeware/node-types/v/3.3.1-newyork.0
+        ...spec,
       });
     } else {
       api = await ApiPromise.create({ provider });

@@ -1,14 +1,15 @@
+// https://github.com/polkadot-js/apps/blob/master/packages/apps-config/src/endpoints/production.ts
 const ENDPOINTS = {
   'Kusama': {
-    url: 'wss://cc3-5.kusama.network/',
+    url: 'wss://kusama-rpc.polkadot.io',
     isPolk: true
   },
   'Polkadot-CC1': {
-    url: 'wss://cc1-1.polkadot.network',
+    url: 'wss://rpc.polkadot.io',
     isPolk: true
   },
   'Edgeware Mainnet': {
-    url: 'wss://mainnet1.edgewa.re',
+    url: 'wss://mainnet4.edgewa.re',
     isPolk: true
   },
   'Sia Mainnet': {
