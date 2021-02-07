@@ -40,6 +40,15 @@ yarn run dev
 * Access the API endpoints at http://localhost:5000/api 
 Additional planned functionality and deployment to production is dependent on whether help is obtained from Riot channels in response to technical support enquiries.
 
+### Maintenance
+
+```
+npm outdated
+npm update --save
+rm -rf node_modules
+npm install
+```
+
 ### Interact with Handshake API
 
 Install dependencies
