@@ -59,6 +59,10 @@ const hex_to_ascii = (str1) => {
   const peerInfo = await nodeClient.execute('getpeerinfo');
   console.log('Peer Info: ', peerInfo);
 
+  // Get Blockchain Domain Names
+  const names = await nodeClient.execute('getnames');
+  console.log('Names: ', names);
+
   // Get Blockchain Name DNS Info
   //
   // https://hsd-dev.org/api-docs/?javascript#getnameinfo
