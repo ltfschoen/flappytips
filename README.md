@@ -104,7 +104,7 @@ View Handshake Transaction History: https://hnscan.com
 ### Deploy to Skylink (on Sia Skynet)
 
 Deploy FlappyTips to a Skylink hash that is shown in the terminal output.
-e.g. https://siasky.net/AADhTfgZns00r6rYpyThLQwLDxAea57EegdNN-leYGf07w/
+e.g. https://siasky.net/AAA_drG9QqdvXXkVxLJxhyFIGseAnkhEQXPGUAWWjfQYfw/
 
 ```
 yarn deploy:sia-skynet
