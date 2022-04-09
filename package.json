@@ -23,7 +23,7 @@
     "hsd": "^2.3.0",
     "internet-available": "^1.0.0",
     "jquery": "^3.5.1",
-    "moment": "^2.29.1",
+    "moment": "^2.29.2",
     "node-gyp": "^7.1.2",
     "p5": "^1.2.0",
     "popper.js": "^1.16.1",
