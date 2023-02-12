@@ -27,7 +27,6 @@ yarn-error.log*
 .env
 .secrets
 
-public/index-temp.html
+/.yarn
 
-skylink.txt
-skylink-website.txt
+public/index-temp.html

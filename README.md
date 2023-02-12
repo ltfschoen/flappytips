@@ -1,4 +1,4 @@
-## FlappyTips
+## FlappyTips 2
 
 **Objective:** Fly the DOT character between the gaps as many blocks as possible. 
 
@@ -15,7 +15,7 @@
 * After each block appears, the speed that it moves increases each time.
 * After about 10 blocks the gap may becomes larger but it still becomes more difficult as the blocks move faster
 * If you click "Request Tip?" button after each game and enter your "Mnemonic Seed" that corresponds to the chain that you chose to connected to in the game, along with an optional identifer (i.e. your Twitter handle), it then will submit an extrinsic to the chain that will report your awesomeness for clearing some blocks as a Tip, and should appear in the "Tip" section here https://polkadot.js.org/apps/#/treasury. To obtain an account for that chain and an associated "Mnemonic Seed", go to https://polkadot.js.org/apps/#/accounts and create an account at "Add Account", and remember and use the "Mnemonic Seed".
-* Deploy to a Handshake decentralized domain name with DNS settings configured to load a Sia Skynet Skylink where FlappyTips is deployed. e.g. https://siasky.net/hns/flappy
+* Deploy to Heroku
 
 **Future**:
 * Add support for adding accounts by scanning QR code on mobile devices
@@ -23,19 +23,27 @@
 
 ### Play
 
-* Go to https://flappytips.herokuapp.com or https://siasky.net/hns/flappy
+* Go to https://flappytips.herokuapp.com
 * Press space bar to make your dot fly and try to navigate through the obstacles.
 
 ### Develop Environment
 
-Clone the repository, install Yarn and Node.js, and then run the following in terminal:
+Install the latest [polkadot-js/extension](https://github.com/polkadot-js/extension)
+
+Clone the repository, install Yarn 3.x and Node.js, and then run the following in terminal:
 ```
+nvm use 19.6.0
+npm i -g yarn
+corepack enable && corepack prepare yarn@stable --activate && yarn set version 3.4.1 \
+yarn \
 npm install -g nodemon &&
+npm install -g concurrently &&
 yarn add node-gyp
 yarn run dev
 ```
 
 * Go to http://localhost:4000
+* Click the polkadot-js/extension and allow it to use FlappyTips
 * Press space bar to make your dot fly and try to navigate through the obstacles.
 * Access the API endpoints at http://localhost:5000/api 
 Additional planned functionality and deployment to production is dependent on whether help is obtained from Riot channels in response to technical support enquiries.
@@ -47,82 +55,6 @@ npm outdated
 npm update --save
 rm -rf node_modules
 npm install
-```
-
-### Interact with Handshake API
-
-Install dependencies
-```
-yarn add node-gyp
-yarn
-```
-
-Generate HSD API Key. Paste into .env as value for `HSD_API_KEY`. See https://hsd-dev.org/api-docs/#authentication
-```
-node -e "bcrypto=require('bcrypto'); console.log(bcrypto.random.randomBytes(32).toString('hex'))"
-```
-
-Create a Wallet. See https://hsd-dev.org/guides/wallet.html. Clone https://github.com/handshake-org/faucet-tool
-```
-yarn
-./bin/faucet-tool --help
-./bin/faucet-tool createaddress \
-  -n "main" \
-  -l "english" \
-  -b 256 \
-  --backup \
-  --show-keys
-```
-
-Run Mining node. By default the Chain DB is store in ~/.hsd/main. See https://hsd-dev.org/guides/config.html, and https://github.com/handshake-org/hsd#mining
-
-* Note: Always use `--wallet-wallet-auth` set `true` and to set a unique api-key so a wallet's token to be submitted with every request, even for local development or local wallets, otherwise other applications on your system could theoretically access your wallet through the HTTP server without any authentication barriers.
-
-```
-./node_modules/.bin/hsd --network=main \
-  --prefix=~/.hsd \
-  --config=~/.hsd/main/hsd.conf \
-  --port 12038 \
-  --http-host 127.0.0.1 \
-  --http-port 12037 \
-  --ssl false \
-  --wallet-http-host=127.0.0.1 \
-  --wallet-api-key='...' \
-  --wallet-wallet-auth=true \
-  --log-level=debug \
-  --max-outbound=8 \
-  --api-key '...' \
-  --coinbase-address '...' \
-  --node-api-key '...' \
-  --node-ssl false
-```
-
-Run script. Choose network from either: main on port 12037 (default), testnet 13037, regtest 14037, or simnet15037
-```
-HSD_NETWORK=main \
-  node ./scripts/handshakeDomain.js
-```
-
-Optional: Use HSD via CLI
-```
-./node_modules/.bin/hsd --help
-```
-
-View Handshake Transaction History: https://hnscan.com
-
-### Deploy to Skylink (on Sia Skynet)
-
-Deploy FlappyTips to a Skylink hash that is shown in the terminal output.
-e.g. https://siasky.net/AAA_drG9QqdvXXkVxLJxhyFIGseAnkhEQXPGUAWWjfQYfw/
-
-```
-yarn deploy:sia-skynet
-```
-
-Update DNS settings of Handshake domain (e.g. https://siasky.net/hns/flappy) as follows (or manually update the link at https://www.namebase.io/domain-manager) so it loads the Skylink. Note: Where flappy/ is the Handshake domain name.
-
-```
-yarn configure:handshake
 ```
 
 ### Deploy to Heroku

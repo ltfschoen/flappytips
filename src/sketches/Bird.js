@@ -1,13 +1,13 @@
-function Bird(p){
-  this.y = p.height / 2;
+function Bird(p5){
+  this.y = p5.height / 2;
   this.x = 64;
   this.gravity = 0.5;
   this.lift = -10;
   this.velocity = 0;
   
   this.show = function(color){
-    p.fill(color);
-    p.ellipse(this.x, this.y, 32, 32);
+    p5.fill(color);
+    p5.ellipse(this.x, this.y, 32, 32);
   }
   
   this.goUp = function(){
@@ -20,8 +20,8 @@ function Bird(p){
     this.velocity *= 0.9;
     this.y += this.velocity;
     
-    if (this.y > p.height) {
-      this.y = p.height;
+    if (this.y > p5.height) {
+      this.y = p5.height;
       this.velocity = 0;
     }
     

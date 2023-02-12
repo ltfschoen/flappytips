@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
-import P5Wrapper from 'react-p5-wrapper';
+import { ReactP5Wrapper } from 'react-p5-wrapper';
 import { isMobile } from "react-device-detect";
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 import { web3Accounts, web3Enable, web3FromAddress, web3ListRpcProviders, web3UseRpcProvider } from '@polkadot/extension-dapp';
 import { bufferToU8a, u8aToBuffer, u8aToString, stringToU8a, u8aToHex } from '@polkadot/util';
-import { spec } from '@edgeware/node-types';
 import { TwitterShareButton } from 'react-twitter-embed';
 import { Alert, Button } from "react-bootstrap";
 // import Input from "react-bootstrap/Input";
@@ -15,7 +14,6 @@ import sketch from './sketches/sketch';
 import { ENDPOINTS } from './constants';
 import merge from './helpers/merge';
 import moment from 'moment';
-import { getCurrentBlockInfo, getPreviousBlockInfo, getBlocksLast24Hours } from './api/siaStats';
 
 class Game extends Component {
   constructor(){
@@ -29,9 +27,6 @@ class Game extends Component {
       currentBlockTimestamp: null,
       previousBlockNumber: '',
       previousBlockTimestamp: null,
-      previousBlocktime: '',
-      estimatedNextBlocktime: '',
-      blocksLast24Hours: [],
       currentEndpoint: '',
       currentEndpointName: '',
       errorMessage: '',
@@ -40,8 +35,6 @@ class Game extends Component {
       extensionAllInjected: '',
       extensionAllAccountsList: [],
       isGameStart: false,
-      isPolk: false,
-      isNewSiaBlock: false,
       parentBlockHash: '',
       birdColor: 255,
       api: undefined,
@@ -49,9 +42,11 @@ class Game extends Component {
       keyring: undefined,
       reason: '',
       showModal: false,
-      showModalSia: false,
       showModalChain: false,
-      showModalMobile: isMobile
+      showModalMobile: isMobile,
+      width: 0,
+      height: 0,
+      deviceOrientation: undefined,
     };
 
     this.twitterHandle = React.createRef();
@@ -75,48 +70,48 @@ class Game extends Component {
     allAccounts = allAccounts.map(({ address }) => allAccountsList.push(`${address}`));
     console.log('allAccounts', allAccountsList);
 
+    // window.screen.orientation.addEventListener('change', this.setScreenOrientation);
+    this.getDimensions();
+
     this.setState({
       extensionNotInstalled: allInjected.length === 0,
       extensionAllInjected: allInjected,
       extensionAllAccountsList: allAccountsList,
-      showModalChain: true
+      showModalChain: true,
+    });
+    window.addEventListener('resize', this.getDimensions);
+  }
+
+  getDimensions = () => {
+    const deviceOrientation = window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
+    this.setState({
+      width: window.innerWidth,
+      height: window.innerHeight,
+      deviceOrientation: deviceOrientation
     });
   }
 
   componentWillUnmount() {
     clearInterval(this.timer);
     this.timer = null;
+    window.removeEventListener('resize', this.getDimensions);
   }
 
   setupApi = async (customEndpoint, customEndpointName) => {
     let currentEndpoint = customEndpoint;
     let currentEndpointName = customEndpointName;
 
-    if (customEndpoint === "https://siastats.info" && customEndpointName === "Sia Mainnet") {
-      currentEndpoint = ENDPOINTS['Edgeware Mainnet'].url;
-      currentEndpointName = 'Edgeware Mainnet';
-    }
     const provider = new WsProvider(currentEndpoint);
     // Create a keyring instance. https://polkadot.js.org/api/start/keyring.html
     const keyring = new Keyring({ type: 'sr25519' });
     let types;
     let api;
-    if (currentEndpointName === 'Edgeware Mainnet') {
-      console.log('Setting up Edgeware');
-      types = Object.values(edgewareDefinitions).reduce((res, { types }) => ({ ...res, ...types }), {});
-      api = await ApiPromise.create({
-        provider,
-        // https://www.npmjs.com/package/@edgeware/node-types/v/3.3.1-newyork.0
-        ...spec,
-      });
-    } else {
-      api = await ApiPromise.create({ provider });
-    }
+    api = await ApiPromise.create({ provider });
 
     return { provider, keyring, types, api };
   }
 
-  setup = async (customEndpoint, customEndpointName, isPolk) => {
+  setup = async (customEndpoint, customEndpointName) => {
     // // IMPORTANT: This does not appear to work so we've used @polkadot-js/api's WsProvider instead
     // // retrieve all the RPC providers from a particular source
     // const allProviders = await web3ListRpcProviders('polkadot-js');
@@ -127,170 +122,125 @@ class Game extends Component {
     let currentEndpoint = customEndpoint;
     let currentEndpointName = customEndpointName;
     // Fallback to default chains if necessary
-    if (!customEndpoint && isPolk) {
-      currentEndpoint = ENDPOINTS['Edgeware Mainnet'].url;
-      currentEndpointName = 'Edgeware Mainnet';
-    } else if (!customEndpoint && !isPolk) {
-      currentEndpoint = ENDPOINTS['Sia Mainnet'].url;
-      currentEndpointName = 'Sia Mainnet';
+    if (!customEndpoint) {
+      currentEndpoint = ENDPOINTS['Zeitgeist Mainnet'].url;
+      currentEndpointName = 'Zeitgeist Mainnet';
     }
 
     let chain, nodeName, nodeVersion;
     let { provider, keyring, types, api } = await this.setupApi(currentEndpoint, currentEndpointName);
 
-    if (currentEndpoint === "https://siastats.info") {
-      currentEndpointName = "Sia Mainnet";
-      chain = 'Sia Mainnet';
+    [chain, nodeName, nodeVersion] = await Promise.all([
+      api.rpc.system.chain(),
+      api.rpc.system.name(),
+      api.rpc.system.version(),
+    ]);
+    await api.rpc.chain.subscribeNewHeads(async (header) => {
+      let currentBlockNumber = header.number.toString();
+      let parentBlockHash = header.parentHash.toString();
 
-      const updateSiaBlockInfo = async () => {
-        const { currentBlockNumber: asCurrent } = this.state;
-        const [
-          { 
-            currentBlockNumber,
-            currentBlockTimestamp
-          },
-          {
-            previousBlockNumber,
-            previousBlockTimestamp
-          },
-          blocksLast24Hours
-        ] = await Promise.all([
-          getCurrentBlockInfo(currentEndpoint),
-          getPreviousBlockInfo(currentEndpoint),
-          getBlocksLast24Hours(currentEndpoint)
-        ]);
+      // const [blockHash, validators] = await Promise.all([
+      //   api.rpc.chain.getBlockHash(currentBlockNumber),
+      //   api.query.session.validators()
+      // ]);
+      const [blockHash] = await Promise.all([
+        api.rpc.chain.getBlockHash(currentBlockNumber),
+      ]);
+      let currentBlockHash = blockHash.toString();
 
-        this.setState({
-          isNewSiaBlock: currentBlockNumber !== asCurrent,
-        });
+      // FIXME - triggers error on Kusama:
+      // Unable to decode Vec on index 3 createType(ExtrinsicV4):: createType(Call):: Struct: failed on 'args':: Bytes: required length less than remainder, expected at least 324453603, found 512
+      // RPC-CORE: getBlock(hash?: BlockHash): SignedBlock:: createType(SignedBlock):: Struct: failed on 'block':: Struct: failed on 'extrinsics':: createType(ExtrinsicV4):: createType(Call):: Struct: failed on 'args':: Bytes: required length less than remainder, expected at least 324453603, found 512
 
-        this.handleReceiveNewHead(
-          currentBlockNumber, currentBlockTimestamp, previousBlockNumber,
-          previousBlockTimestamp, blocksLast24Hours, '', [], '', {}
-        );
+      // const [signedBlock] = await Promise.all([
+      //   api.rpc.chain.getBlock(blockHash)
+      // ]);
+      // // console.log('signedBlock', signedBlock);
+      // console.log('signedBlock', signedBlock.block.header.parentHash.toHex());
+
+      // // Hash for each extrinsic in the block
+      // signedBlock.block.extrinsics.forEach((ex, index) => {
+      //   console.log('Hash for extrinsic in the block', index, ex.hash.toHex());
+      //   // FIXME
+      //   console.log('Hash for extrinsic in the block', index, bufferToU8a(ex.data.buffer).toHex());
+      //   // console.log('Hash for extrinsic in the block', index, u8aToString(bufferToU8a(ex.data)));
+      // });
+
+      // Digest of current block
+      const [currentDigest] = await Promise.all([
+        api.query.system.digest() 
+      ]);
+      // console.log('currentDigest', currentDigest);
+
+      // Extrinsic data
+      const [extrinsicData] = await Promise.all([
+        api.query.system.extrinsicData(header.number) 
+      ]);
+      // console.log('extrinsicData', extrinsicData);
+
+      // // ExtrinsicsRoot
+      // const [extrinsicsRoot] = await Promise.all([
+      //   api.query.system.extrinsicsRoot() 
+      // ]);
+      // FIXME - not working anymore
+      // console.log('extrinsicsRoot', extrinsicsRoot.toString());
+
+      // Event topics
+      const [eventTopics] = await Promise.all([
+        api.query.system.eventTopics(currentBlockHash) 
+      ]);
+      // console.log('eventTopics', eventTopics);
+
+      const { activeAccountIds } = this.state;
+      let newActiveAccountIds = activeAccountIds;
+
+      // TODO - https://polkadot.js.org/docs/api/cookbook/blocks#how-do-i-map-extrinsics-to-their-events
+      let [currentBlockEvents] = [];
+      [currentBlockEvents] = await Promise.all([
+        api.query.system.events.at(currentBlockHash) 
+      ]);
+
+      // console.log('currentBlockEvents', currentBlockEvents);
+      if (currentBlockEvents.length) {
+        console.log(`\nReceived ${currentBlockEvents.length} events:`);
       }
 
-      updateSiaBlockInfo();
+      // TODO - fix this
+      // let foundAccountIds = {};
+      // currentBlockEvents.forEach((record) => {
+      //   const { event, phase } = record;
+      //   const types = event.typeDef;
 
-      this.timer = setInterval(async () => {
-        this.setState({
-          isNewSiaBlock: false,
-        }, () => {
-          updateSiaBlockInfo();
-        });
-      }, 10000);
-    
-    } else {
-      [chain, nodeName, nodeVersion] = await Promise.all([
-        api.rpc.system.chain(),
-        api.rpc.system.name(),
-        api.rpc.system.version(),
-      ]);
-      await api.rpc.chain.subscribeNewHeads(async (header) => {
-        let currentBlockNumber = header.number.toString();
-        let parentBlockHash = header.parentHash.toString();
+      //   console.log('Event record: ', record);
+      //   console.log(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
+      //   console.log(`\t\t${event.meta.documentation.toString()}`);
 
-        const [blockHash, validators] = await Promise.all([
-          api.rpc.chain.getBlockHash(currentBlockNumber),
-          api.query.session.validators()
-        ]);
-        let currentBlockHash = blockHash.toString();
+      //   event.data.forEach((data, index) => {
+      //     console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
+      //     console.log('types[index].type: ', types[index].type, typeof types[index].type, types[index].type === 'AccountId');
+      //     if (types[index].type === 'AccountId') {
+      //       activeAccountIds.hasOwnProperty(data.toString()) ? foundAccountIds[data.toString()] += 1 : foundAccountIds[data.toString()] = 1;
+      //     }
+      //     console.log('foundAccountIds: ', foundAccountIds);
+      //   });
+      //   if (foundAccountIds.length !== 0) {
+      //     newActiveAccountIds = merge(activeAccountIds, foundAccountIds);
+      //   }
+      //   // FIXME - its getting the validators account id that authored the block, but i want the account id that
+      //   // sent the Deposit extrinsic instead
+      //   console.log('newActiveAccountIds: ', newActiveAccountIds);
+      // });
 
-        // FIXME - triggers error on Kusama:
-        // Unable to decode Vec on index 3 createType(ExtrinsicV4):: createType(Call):: Struct: failed on 'args':: Bytes: required length less than remainder, expected at least 324453603, found 512
-        // RPC-CORE: getBlock(hash?: BlockHash): SignedBlock:: createType(SignedBlock):: Struct: failed on 'block':: Struct: failed on 'extrinsics':: createType(ExtrinsicV4):: createType(Call):: Struct: failed on 'args':: Bytes: required length less than remainder, expected at least 324453603, found 512
+      let currentBlockAuthors = [];
+      // FIXME - Game.js:125 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'validators')
+      // currentBlockAuthors = validators && validators.map((item, index) => item.toString());
 
-        // const [signedBlock] = await Promise.all([
-        //   api.rpc.chain.getBlock(blockHash)
-        // ]);
-        // // console.log('signedBlock', signedBlock);
-        // console.log('signedBlock', signedBlock.block.header.parentHash.toHex());
-
-        // // Hash for each extrinsic in the block
-        // signedBlock.block.extrinsics.forEach((ex, index) => {
-        //   console.log('Hash for extrinsic in the block', index, ex.hash.toHex());
-        //   // FIXME
-        //   console.log('Hash for extrinsic in the block', index, bufferToU8a(ex.data.buffer).toHex());
-        //   // console.log('Hash for extrinsic in the block', index, u8aToString(bufferToU8a(ex.data)));
-        // });
-
-        // Digest of current block
-        const [currentDigest] = await Promise.all([
-          api.query.system.digest() 
-        ]);
-        console.log('currentDigest', currentDigest);
-
-        // Extrinsic data
-        const [extrinsicData] = await Promise.all([
-          api.query.system.extrinsicData(header.number) 
-        ]);
-        console.log('extrinsicData', extrinsicData);
-
-        // ExtrinsicsRoot
-        const [extrinsicsRoot] = await Promise.all([
-          api.query.system.extrinsicsRoot() 
-        ]);
-        console.log('extrinsicsRoot', extrinsicsRoot.toString());
-
-        // Event topics
-        const [eventTopics] = await Promise.all([
-          api.query.system.eventTopics(currentBlockHash) 
-        ]);
-        console.log('eventTopics', eventTopics);
-
-        const { activeAccountIds } = this.state;
-        let newActiveAccountIds = activeAccountIds;
-
-        // Only update the newActiveAccountIds if we're not using Edgeware
-        // until this issue is resolved: https://github.com/hicommonwealth/edgeware-node/issues/176
-        if (currentEndpointName !== 'Edgeware Mainnet') {
-          let [currentBlockEvents] = [];
-          [currentBlockEvents] = await Promise.all([
-            api.query.system.events.at(currentBlockHash) 
-          ]);
-          // console.log('currentBlockEvents', currentBlockEvents);
-          if (currentBlockEvents.length) {
-            console.log(`\nReceived ${currentBlockEvents.length} events:`);
-          }
-
-          let foundAccountIds = {};
-          currentBlockEvents.forEach((record) => {
-            const { event, phase } = record;
-            const types = event.typeDef;
-
-            console.log('Event record: ', record);
-            console.log(`\t${event.section}:${event.method}:: (phase=${phase.toString()})`);
-            console.log(`\t\t${event.meta.documentation.toString()}`);
-
-            event.data.forEach((data, index) => {
-              console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
-              console.log('types[index].type: ', types[index].type, typeof types[index].type, types[index].type === 'AccountId');
-              if (types[index].type === 'AccountId') {
-                activeAccountIds.hasOwnProperty(data.toString()) ? foundAccountIds[data.toString()] += 1 : foundAccountIds[data.toString()] = 1;
-              }
-              console.log('foundAccountIds: ', foundAccountIds);
-            });
-            if (foundAccountIds.length !== 0) {
-              newActiveAccountIds = merge(activeAccountIds, foundAccountIds);
-            }
-            // FIXME - its getting the validators account id that authored the block, but i want the account id that
-            // sent the Deposit extrinsic instead
-            console.log('newActiveAccountIds: ', newActiveAccountIds);
-          });
-        }
-
-        let currentBlockAuthors = [];
-        if (currentEndpointName !== 'Edgeware Mainnet') {
-          currentBlockAuthors = validators && validators.map((item, index) => item.toString());
-        }
-
-        this.handleReceiveNewHead(
-          currentBlockNumber, '', '',
-          '', [], currentBlockHash, currentBlockAuthors,
-          parentBlockHash, newActiveAccountIds
-        );
-      });
-    }
+      this.handleReceiveNewHead(
+        currentBlockNumber, '', '',
+        '', [], currentBlockHash, currentBlockAuthors,
+        parentBlockHash, newActiveAccountIds
+      );
+    });
 
     this.setState({
       chain: chain.toString(),
@@ -304,60 +254,12 @@ class Game extends Component {
     });
   }
 
-  calculatePreviousBlocktime = (currentBlockTimestamp, previousBlockTimestamp) => {
-    const convertUnixTimestampToDateObject = (unixTimestamp) => {
-      const milliseconds = unixTimestamp * 1000;
-      return new Date(milliseconds);
-    };
-
-    const diff = moment.duration(moment(convertUnixTimestampToDateObject(currentBlockTimestamp)).diff(moment(convertUnixTimestampToDateObject(previousBlockTimestamp))));
-
-    console.log('currentBlockTimestamp Date Object', moment(convertUnixTimestampToDateObject(currentBlockTimestamp)).toISOString());
-    console.log('previousBlockTimestamp Date Object', moment(convertUnixTimestampToDateObject(previousBlockTimestamp)).toISOString());
-    console.log('Time difference is: ', diff.asMinutes() + ' minutes');
-
-    return `${Number.parseFloat(diff.asMinutes()).toFixed(2)} minutes`;
-  }
-
-  estimatedNextBlocktime = (blocksLast24Hours) => {
-    let blocktimes = [];
-    let currentBlockTimestamp;
-    let lastBlockTimestamp;
-    let lastBlocktime;
-    for (const block of blocksLast24Hours) {
-      currentBlockTimestamp = block.timestamp;
-      if (lastBlockTimestamp) {
-        lastBlocktime = (currentBlockTimestamp - lastBlockTimestamp) / 60;
-        blocktimes.push(lastBlocktime);
-      }
-      lastBlockTimestamp = currentBlockTimestamp;
-      // console.log(block.height + ' ' + lastBlocktime); 
-    }
-    // console.log('blocktimes: ', blocktimes);
-    const sum = blocktimes.reduce((a, b) => {
-      return a + b;
-    }, 0);
-    let average = sum / (blocksLast24Hours.length);
-    console.log('Average blocktime over past 24 hrs: ', average);
-
-    return `${Number.parseFloat(average).toFixed(2)} minutes`;
-  }
-
   handleReceiveNewHead = (currentBlockNumber, currentBlockTimestamp, previousBlockNumber,
-    previousBlockTimestamp, blocksLast24Hours, currentBlockHash, currentBlockAuthors, parentBlockHash, newActiveAccountIds
+    previousBlockTimestamp, currentBlockHash, currentBlockAuthors, parentBlockHash, newActiveAccountIds
   ) => {
-    const { currentEndpointName } = this.state;
     previousBlockNumber = previousBlockNumber !== '' ? previousBlockNumber : this.state.currentBlockNumber;
 
-    let previousBlocktime, estimatedNextBlocktime;
-    if (currentEndpointName == "Sia Mainnet") {
-      previousBlocktime = this.calculatePreviousBlocktime(currentBlockTimestamp, previousBlockTimestamp);
-      estimatedNextBlocktime = this.estimatedNextBlocktime(blocksLast24Hours);
-    }
-
     this.setState({
-      previousBlocktime: previousBlocktime || '',
-      estimatedNextBlocktime: estimatedNextBlocktime || '',
       currentBlockNumber: currentBlockNumber || '',
       currentBlockTimestamp: currentBlockTimestamp || null,
       previousBlockNumber: previousBlockNumber || '',
@@ -365,7 +267,6 @@ class Game extends Component {
       currentBlockHash: currentBlockHash || '',
       currentBlockAuthors: currentBlockAuthors || [],
       parentBlockHash: parentBlockHash || '',
-      previousBlockNumber: previousBlockNumber || '',
       activeAccountIds: newActiveAccountIds || {}
     });
   }
@@ -376,7 +277,8 @@ class Game extends Component {
 
   gameOver = (blocksCleared) => {
     const { currentBlockNumber, currentEndpointName } = this.state;
-    const reason = `played https://siasky.net/hns/flappy v${pkg.version} (${isMobile ? 'Mobile' : 'Desktop'}) on ${currentEndpointName} and cleared ${Number.parseFloat(blocksCleared).toFixed(2)} blocks from #${currentBlockNumber}!`;
+    // TODO
+    const reason = `played https://flappytips.herokuapp.com v${pkg.version} (${isMobile ? 'Mobile' : 'Desktop'}) on ${currentEndpointName} and cleared ${Number.parseFloat(blocksCleared).toFixed(2)} blocks from #${currentBlockNumber}!`;
     this.setState({
       blocksCleared,
       isGameOver: true,
@@ -386,11 +288,6 @@ class Game extends Component {
 
   playAgain = () => {
     window.location.reload();
-  }
-
-  handleSubmitSia = async (event) => {
-    console.log('handleSubmitSia');
-    event.preventDefault(); // Prevent page refreshing when click submit
   }
 
   handleSubmit = async (event) => {
@@ -502,7 +399,7 @@ class Game extends Component {
   }
 
   handleSubmitChain = async (event) => {
-    console.log('handleSubmitChain');
+    // console.log('handleSubmitChain');
     event.preventDefault(); // Prevent page refreshing when click submit
 
     this.closeModalChainWindow();
@@ -511,15 +408,13 @@ class Game extends Component {
     const currentEndpoint = this.customEndpoint.current && this.customEndpoint.current.value;
     const foundValue = Object.values(ENDPOINTS).filter(obj => obj.url === currentEndpoint)[0];
     const currentEndpointName = Object.keys(ENDPOINTS)[Object.values(ENDPOINTS).indexOf(foundValue)];
-    const isPolk = foundValue.isPolk ? true : false;
 
     this.setState({
       currentEndpoint,
       currentEndpointName,
-      isPolk
     });
 
-    this.setup(currentEndpoint, currentEndpointName, isPolk);
+    this.setup(currentEndpoint, currentEndpointName);
   }
 
   closeModalMobile = () => {
@@ -534,21 +429,9 @@ class Game extends Component {
     });
   }
 
-  closeModalSia = () => {
-    this.setState({
-      showModalSia: false,
-    });
-  }
-
   openModal = () => {
     this.setState({
       showModal: true,
-    });
-  }
-
-  openModalSia = () => {
-    this.setState({
-      showModalSia: true,
     });
   }
 
@@ -590,17 +473,10 @@ class Game extends Component {
 
   render() {
     const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, currentBlockNumber, currentBlockHash,
-      currentBlockAuthors, currentEndpoint, currentEndpointName, errorMessage, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList, isGameOver,
-      isNewSiaBlock, isPolk, parentBlockHash, previousBlockNumber, previousBlocktime, estimatedNextBlocktime, reason, showModal, showModalSia, showModalChain, showModalMobile } = this.state;
+      currentBlockAuthors, currentEndpoint, currentEndpointName, deviceOrientation, errorMessage, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList, isGameOver,
+      parentBlockHash, previousBlockNumber, reason, showModal, showModalChain, showModalMobile, width, height } = this.state;
     let reasonForTweet;
-    if (isPolk) {
-      reasonForTweet = 'I just ' + reason + ' @polkadotnetwork #buildPolkadot';
-    } else if (!isPolk && currentEndpointName == "Sia Mainnet") {
-      reasonForTweet = 'I just ' + reason + ' @MySiacoin #Siacoin'
-    } else {
-      reasonForTweet = 'I just ' + reason;
-    }
-
+    reasonForTweet = 'I just ' + reason + ' @polkadotnetwork #buildPolkadot';
     return (
       <div>
         {/* <button onClick={this.randomColor}>Random Color</button> */}
@@ -615,30 +491,25 @@ class Game extends Component {
             <div>
               <div className={`game-state white`}>Game over! You're awesome for clearing {blocksCleared} blocks on {currentEndpointName}!</div>
               <Button variant="primary" className="play-again btn btn-lg" onTouchStart={() => this.playAgain()} onClick={() => this.playAgain()}>Play Again?</Button>
-              { isPolk ? (
-                  <Button variant="success" className="report-awesomeness btn btn-lg" onTouchStart={() => this.openModal()} onClick={() => this.openModal()}>Share & Request Tip?</Button>
-                ) : (
-                  <Button variant="success" className="report-awesomeness btn btn-lg" onTouchStart={() => this.openModalSia()} onClick={() => this.openModalSia()}>Share?</Button>
-                )
-              }
+              <Button variant="success" className="report-awesomeness btn btn-lg" onTouchStart={() => this.openModal()} onClick={() => this.openModal()}>Share & Request Tip?</Button>
             </div>
           )
         }
-        <P5Wrapper
+        <ReactP5Wrapper
           sketch={sketch}
-          gameOver={(blocksCleared) => this.gameOver(blocksCleared)}
-          color={birdColor}
+          activeAccountIds={activeAccountIds}
+          birdColor={birdColor}
           chain={chain}
-          currentBlockNumber={currentBlockNumber}
-          currentBlockHash={currentBlockHash}
           currentBlockAuthors={currentBlockAuthors}
-          isNewSiaBlock={isNewSiaBlock}
+          currentBlockHash={currentBlockHash}
+          currentBlockNumber={currentBlockNumber}
+          deviceOrientation={deviceOrientation}
+          gameOver={(blocksCleared) => this.gameOver(blocksCleared)}
+          height={height}
           parentBlockHash={parentBlockHash}
           previousBlockNumber={previousBlockNumber}
-          previousBlocktime={previousBlocktime}
-          estimatedNextBlocktime={estimatedNextBlocktime}
-          activeAccountIds={activeAccountIds}
-        ></P5Wrapper>
+          width={width}
+        />
         <Modal show={showModal} onHide={() => this.closeModal()}>
           <Form onSubmit={this.handleSubmit}>
             <Modal.Header closeButton>
@@ -692,39 +563,7 @@ class Game extends Component {
               }
               <script async src="https://platform.twitter.com/widgets.js" charSet="utf-8"></script>
               <TwitterShareButton
-                url={`https://siasky.net/hns/flappy`}
-                options={{ text: reasonForTweet, via: 'ltfschoen' }}
-              />
-              {/* <Button variant="secondary" className="btn btn-primary btn-large btn-block" onTouchStart={() => this.closeModal()} onClick={() => this.closeModal()} >Close</Button> */}
-            </Modal.Footer>
-          </Form>
-        </Modal>
-
-        <Modal show={showModalSia} onHide={() => this.closeModalSia()}>
-          <Form onSubmit={this.handleSubmitSia}>
-            <Modal.Header closeButton>
-              <Modal.Title>Share <br /> <h6><i>Chain Endpoint: <span style={{color: '#007bff'}}>{currentEndpoint}</span></i></h6></Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <Form.Group controlId="formTwitterHandle">
-                <Form.Label>Twitter Handle:</Form.Label>
-                <Form.Control type="text" ref={this.twitterHandle} name="twitterHandle" placeholder="Twitter Handle" />
-                <Form.Text className="text-muted">
-                  Enter your Twitter handle or other form of nickname
-                </Form.Text>
-              </Form.Group>
-            </Modal.Body>
-            <Modal.Footer className="justify-content-between">
-              {/* <Button variant="success" className="btn btn-primary btn-large mr-auto btn-block" type="submit">Send Request</Button>
-              { errorMessage ? (
-                  <Alert variant="danger">
-                    { errorMessage }
-                  </Alert>
-                ) : null
-              } */}
-              <script async src="https://platform.twitter.com/widgets.js" charSet="utf-8"></script>
-              <TwitterShareButton
-                url={`https://siasky.net/hns/flappy`}
+                url={`https://flappytips.herokuapp.com`}
                 options={{ text: reasonForTweet, via: 'ltfschoen' }}
               />
               {/* <Button variant="secondary" className="btn btn-primary btn-large btn-block" onTouchStart={() => this.closeModal()} onClick={() => this.closeModal()} >Close</Button> */}
@@ -762,7 +601,7 @@ class Game extends Component {
           </Form>
         </Modal>
 
-        <Modal show={isPolk && extensionNotInstalled && !isMobile} onHide={() => console.log('Polkadot.js Extension required on Desktop')}>
+        <Modal show={extensionNotInstalled && !isMobile} onHide={() => console.log('Polkadot.js Extension required on Desktop')}>
           <Modal.Header>
             <Modal.Title>FlappyTips on Desktop: Install and enable Polkadot.js Extension</Modal.Title>
           </Modal.Header>
@@ -781,7 +620,7 @@ class Game extends Component {
           </Modal.Body>
         </Modal>
 
-        <Modal show={isPolk && showModalMobile && extensionNotInstalled && isMobile} onHide={() => console.log('Mobile device detected')}>
+        <Modal show={showModalMobile && extensionNotInstalled && isMobile} onHide={() => console.log('Mobile device detected')}>
           <Modal.Header>
             <Modal.Title>FlappyTips on Mobile</Modal.Title>
           </Modal.Header>

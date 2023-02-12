@@ -2,32 +2,17 @@
 const ENDPOINTS = {
   'Kusama': {
     url: 'wss://kusama-rpc.polkadot.io',
-    isPolk: true
   },
   'Polkadot-CC1': {
     url: 'wss://rpc.polkadot.io',
-    isPolk: true
   },
-  'Edgeware Mainnet': {
-    url: 'wss://mainnet4.edgewa.re',
-    isPolk: true
-  },
-  'Sia Mainnet': {
-    url: 'https://siastats.info',
-    isPolk: false
-  },
-  'DataHighway Harbour Testnet': {
-    url: 'wss://testnet-harbour.datahighway.com',
-    isPolk: true
+  'Zeitgeist Mainnet': {
+    url: 'wss://zeitgeist.api.onfinality.io/public-ws',
   },
   // Note: Westend not supported as it does not use Treasury, which is required for using Tips
   'Westend Testnet': {
     url: 'wss://westend-rpc.polkadot.io',
-    isPolk: true
   },
-  // Note: Kulupu not supported as it returns error
-  // `Unhandled Rejection (TypeError): Cannot read property 'validators' of undefined`
-  // 'Kulupu Mainnet': 'wss://rpc.kulupu.network/ws',
 }
 
 const COLOURS = {
