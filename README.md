@@ -174,3 +174,7 @@ cargo +nightly contract generate-metadata
 ### Documentation for ink!
 
 https://paritytech.github.io/ink/
+
+### References
+
+* https://medium.com/geekculture/multiplayer-interaction-with-p5js-f04909e13b87

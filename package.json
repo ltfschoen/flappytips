@@ -31,6 +31,8 @@
     "react-scripts": "5.0.1",
     "react-twitter-embed": "^4.0.4",
     "regtest": "^0.0.3",
+    "socket.io": "^4.6.0",
+    "socket.io-client": "^4.6.0",
     "websocket-extensions": "^0.1.4"
   },
   "engines": {

@@ -42,6 +42,11 @@
   margin-top: 5%
 }
 
+canvas {
+  display: block;
+  width: 100vw;
+}
+
 .game-state {
   font-size: 1.5em;
   position: fixed;

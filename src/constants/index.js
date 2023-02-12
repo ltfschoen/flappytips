@@ -17,6 +17,8 @@ const ENDPOINTS = {
 
 const COLOURS = {
   pink: '#FF0863',
+  orange: '#FFA500',
+  purple: '#33338F',
   grey: '#EE4499'
 };
 

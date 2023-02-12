@@ -5,11 +5,16 @@ const cors = require('cors');
 const { IS_PROD } = require('./constants');
 
 const app = express();
+const http = require('http').Server(app);
+const io = require("socket.io")(http, {
+  transports: ["websocket"] // set to use websocket only
+}); // this loads socket.io and connects it to the server.
 const port = process.env.PORT || 5000;
 const staticPath = path.join(__dirname, './', 'build');
 const corsWhitelist = [
   'http://localhost:3000',
-  'http://localhost:5000',
+  'http://localhost:4000', // frontend
+  'http://localhost:5000', // proxy
 ];
 // https://www.npmjs.com/package/cors#configuration-options
 const corsOptions = {
@@ -62,6 +67,49 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 
-app.listen(port, () => {
+http.listen(port, () => {
    console.log(`CORS-enabled web server listening on port ${port}`);
 });
+
+//store the positions of each client in this object.
+//It would be safer to connect it to a database as well so the data doesn't get destroyed when the server restarts
+//but we'll just use an object for simplicity.
+const gameDataPlayers = {};
+
+//Socket configuration
+io.on("connection", (socket) => {
+  //each time someone visits the site and connect to socket.io this function  gets called
+  //it includes the socket object from which you can get the id, useful for identifying each client
+  console.log(`${socket.id} connected`);
+
+  // lets add a starting position when the client connects
+  gameDataPlayers[socket.id] = {
+    x: 0.08,
+    y: 1,
+    chain: "",
+    blocksCleared: 0,
+    obstaclesHit: 0,
+  };
+
+  socket.on("disconnect", () => {
+    //when this client disconnects, lets delete its position from the object.
+    delete gameDataPlayers[socket.id];
+    console.log(`${socket.id} disconnected`);
+  });
+
+  //client can send a message 'updatePosition' each time the clients position changes
+  socket.on("updateGameDataPlayers", (data) => {
+    gameDataPlayers[socket.id].x = data.x;
+    gameDataPlayers[socket.id].y = data.y;
+    gameDataPlayers[socket.id].chain = data.chain;
+    gameDataPlayers[socket.id].blocksCleared = data.blocksCleared;
+    gameDataPlayers[socket.id].obstaclesHit = data.obstaclesHit;
+    console.log(`socket.on updateGameDataPlayers: ${socket.id}`, gameDataPlayers[socket.id]);
+  });
+});
+
+// send gameDataPlayers every framerate to each client
+const frameRate = 30;
+setInterval(() => {
+  io.emit("gameDataPlayers", gameDataPlayers);
+}, 1000 / frameRate);

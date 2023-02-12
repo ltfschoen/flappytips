@@ -1,17 +1,29 @@
+import io from 'socket.io-client';
 import Bird from './Bird';
 import Obstacle from './Obstacle';
 import { COLOURS } from '../constants';
+
+// get socket which only uses websockets as a means of communication
+// ws://localhost:5000/socket.io/?EIO=4&transport=websocket
+const socket = io("ws://localhost:5000", {
+  transports: ["websocket"]
+});
+console.log('socket in sketch', socket);
 
 export default function sketch(p5) {
   let canvas;
   let currentSpeed = 3;
   let didChangeBlockNumber = 0;
+  let enemyOffset = 5;
   let isGameOver = 0;
   let obstacles = [];
   let blocksCleared;
   let obstaclesHit;
   let playQuality;
   let customFont;
+
+  // Sockets
+  let gameDataPlayers = {};
 
   // Props
   let activeAccountIds = {};
@@ -33,11 +45,34 @@ export default function sketch(p5) {
 
   p5.setup = () => {
     canvas = p5.createCanvas(800, 400);
+    p5.noStroke();
     p5.bird = new Bird(p5);
     blocksCleared = 0;
     obstaclesHit = 0;
     playQuality = 10;
     // obstacles.push(new Obstacle(p5));
+
+    canvas.mousePressed(() => {
+      // when you click on the canvas, update your position
+      socket.emit("updateGameDataPlayers", {
+        x: p5.bird.x / p5.width, // always send relative number of position between 0 and 1
+        y: p5.bird.y / p5.height, // so it positions are the relatively the same on different screen sizes.
+        chain: chain,
+        blocksCleared: blocksCleared,
+        obstaclesHit: obstaclesHit,
+      });
+    });
+
+    p5.frameRate(30); //set framerate to 30, same as server
+
+    socket.on('connect', () => {
+      console.log('socket connected', socket);
+    });
+
+    socket.on("gameDataPlayers", (data) => {
+      // get the data from the server to continually update the positions
+      gameDataPlayers = data;
+    });
   }
 
   // note: function updateWithProps replaces deprecated
@@ -69,6 +104,19 @@ export default function sketch(p5) {
     // console.log('p5', p5);
     p5.clear();
     p5.background('#000000');
+    // draw a circle for opponent position
+    for (const id in gameDataPlayers) {
+      // console.log('id', id);
+      // console.log('current player socket.id', socket.id);
+      if (id !== socket.id) {
+        const gameDataPlayer = gameDataPlayers[id];
+        console.log('enemy gameDataPlayer', gameDataPlayer);
+
+        p5.fill(COLOURS.purple);
+        // give enemy slight offset so can see them behind current player icon
+        p5.circle(gameDataPlayer.x * p5.width + enemyOffset, gameDataPlayer.y * p5.height + enemyOffset, 30);
+      }
+    }
     p5.fill(COLOURS.pink);
     p5.textSize(16);
     p5.textFont(customFont);
@@ -94,6 +142,15 @@ export default function sketch(p5) {
       return;
     }
     if (obstaclesHit > 0) {
+      // update server that of obstaclesHit value that caused gameover
+      socket.emit("updateGameDataPlayers", {
+        x: p5.bird.x / p5.width, // always send relative number of position between 0 and 1
+        y: p5.bird.y / p5.height, // so it positions are the relatively the same on different screen sizes.
+        chain: chain,
+        blocksCleared: blocksCleared,
+        obstaclesHit: obstaclesHit,
+      });
+
       console.log('game over');
       isGameOver = 1;
       gameOver(blocksCleared);
