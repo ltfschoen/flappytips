@@ -28,5 +28,3 @@ yarn-error.log*
 .secrets
 
 /.yarn
-
-public/index-temp.html

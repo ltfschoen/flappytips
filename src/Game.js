@@ -202,7 +202,7 @@ class Game extends Component {
 
       // console.log('currentBlockEvents', currentBlockEvents);
       if (currentBlockEvents.length) {
-        console.log(`\nReceived ${currentBlockEvents.length} events:`);
+        // console.log(`\nReceived ${currentBlockEvents.length} events:`);
       }
 
       // TODO - fix this
