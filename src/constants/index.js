@@ -7,7 +7,8 @@ const ENDPOINTS = {
     url: 'wss://rpc.polkadot.io',
   },
   'Zeitgeist Mainnet': {
-    url: 'wss://zeitgeist.api.onfinality.io/public-ws',
+    // url: 'wss://zeitgeist.api.onfinality.io/public-ws',
+    url: 'wss://zeitgeist-rpc.dwellir.com',
   },
   // Note: Westend not supported as it does not use Treasury, which is required for using Tips
   'Westend Testnet': {

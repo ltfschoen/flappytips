@@ -23,6 +23,7 @@ class Game extends Component {
       activeAccountIds: {},
       blocksCleared: 0,
       chain: '',
+      chainAccountResult: '',
       currentBlockNumber: '',
       currentBlockTimestamp: null,
       previousBlockNumber: '',
@@ -34,6 +35,8 @@ class Game extends Component {
       currentBlockAuthors: [],
       extensionAllInjected: '',
       extensionAllAccountsList: [],
+      innerHeight: 0,
+      innerWidth: 0,
       isGameStart: false,
       parentBlockHash: '',
       birdColor: 255,
@@ -44,9 +47,10 @@ class Game extends Component {
       showModal: false,
       showModalChain: false,
       showModalMobile: isMobile,
-      width: 0,
-      height: 0,
       deviceOrientation: undefined,
+      ipData: {},
+      opponentChainAccount: '',
+      opponentBlocksCleared: 0
     };
 
     this.twitterHandle = React.createRef();
@@ -66,17 +70,18 @@ class Game extends Component {
     // returns an array of { address, meta: { name, source } }
     // meta.source contains the name of the extension that provides this account
     let allAccounts = await web3Accounts();
-    let allAccountsList = [];
-    allAccounts = allAccounts.map(({ address }) => allAccountsList.push(`${address}`));
-    console.log('allAccounts', allAccountsList);
+    console.log('allAccounts orig: ', allAccounts);
+    // let allAccountsList = [];
+    // allAccounts = allAccounts.map(({ address }) => allAccountsList.push(`${address}`));
+    // console.log('allAccounts', allAccountsList);
 
-    // window.screen.orientation.addEventListener('change', this.setScreenOrientation);
     this.getDimensions();
+    this.getIpData();
 
     this.setState({
       extensionNotInstalled: allInjected.length === 0,
       extensionAllInjected: allInjected,
-      extensionAllAccountsList: allAccountsList,
+      extensionAllAccountsList: allAccounts,
       showModalChain: true,
     });
     window.addEventListener('resize', this.getDimensions);
@@ -85,16 +90,48 @@ class Game extends Component {
   getDimensions = () => {
     const deviceOrientation = window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
     this.setState({
-      width: window.innerWidth,
-      height: window.innerHeight,
+      innerHeight: window.innerHeight,
+      innerWidth: window.innerWidth,
       deviceOrientation: deviceOrientation
     });
+  }
+
+  shouldComponentUpdate(nextProps){
+    return true;
+  }
+
+  componentDidUpdate(prevProps){
+    if(prevProps.opponentChainAccount !== this.props.opponentChainAccount){
+        this.setState({          
+          opponentChainAccount: this.props.opponentChainAccount
+        });
+    }
+
+    if(prevProps.opponentBlocksCleared !== this.props.opponentBlocksCleared){
+      this.setState({          
+        opponentBlocksCleared: this.props.opponentBlocksCleared
+      });
+    }
+
+    if(prevProps.chainAccountResult !== this.props.chainAccountResult){
+      this.setState({          
+        chainAccountResult: this.props.chainAccountResult
+      });
+  }
   }
 
   componentWillUnmount() {
     clearInterval(this.timer);
     this.timer = null;
     window.removeEventListener('resize', this.getDimensions);
+  }
+
+  getIpData = async () => {
+    const response = await fetch('https://ipapi.co/json/');
+    const data = await response.json();
+    this.setState({
+      ipData: data
+    });
   }
 
   setupApi = async (customEndpoint, customEndpointName) => {
@@ -286,6 +323,34 @@ class Game extends Component {
     })
   }
 
+  updatePlayerFromSockets = (playerData) => {
+    const { chainAccountResult } = this.state;
+
+    if (chainAccountResult !== 'winner') {
+      if (playerData.chainAccountResult == this.state.chainAccount) {
+        this.setState({
+          chainAccountResult: this.state.chainAccount
+        })
+      // draw or lose
+      } else {
+        this.setState({
+          chainAccountResult: (
+            playerData.chainAccountResult !== chainAccountResult
+          ) ? playerData.chainAccountResult : chainAccountResult
+        })
+      }
+    }
+  }
+
+  updateOpponentFromSockets = (opponentData) => {
+    const { opponentChainAccount, opponentBlocksCleared } = this.state;
+    // console.log('updateOpponentFromSockets: ', opponentData);
+    this.setState({
+      opponentChainAccount: (opponentData.opponentChainAccount !== opponentChainAccount) ? opponentData.opponentChainAccount : opponentChainAccount,
+      opponentBlocksCleared: (opponentData.opponentBlocksCleared !== opponentBlocksCleared) ? opponentData.opponentBlocksCleared : opponentBlocksCleared
+    })
+  }
+
   playAgain = () => {
     window.location.reload();
   }
@@ -472,10 +537,12 @@ class Game extends Component {
   }
 
   render() {
-    const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, currentBlockNumber, currentBlockHash,
-      currentBlockAuthors, currentEndpoint, currentEndpointName, deviceOrientation, errorMessage, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList, isGameOver,
-      parentBlockHash, previousBlockNumber, reason, showModal, showModalChain, showModalMobile, width, height } = this.state;
+    const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, chainAccountResult, currentBlockNumber, currentBlockHash,
+      currentBlockAuthors, currentEndpoint, currentEndpointName, deviceOrientation, errorMessage, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList,
+      isGameOver, innerHeight, innerWidth, opponentChainAccount, opponentBlocksCleared,
+      parentBlockHash, previousBlockNumber, reason, showModal, showModalChain, showModalMobile, ipData } = this.state;
     let reasonForTweet;
+    // console.log('ip: ', ipData.ip);
     reasonForTweet = 'I just ' + reason + ' @polkadotnetwork #buildPolkadot';
     return (
       <div>
@@ -500,15 +567,21 @@ class Game extends Component {
           activeAccountIds={activeAccountIds}
           birdColor={birdColor}
           chain={chain}
+          chainAccount={this.chainAccount && this.chainAccount.current && this.chainAccount.current.value}
+          chainAccountResult={chainAccountResult}
           currentBlockAuthors={currentBlockAuthors}
           currentBlockHash={currentBlockHash}
           currentBlockNumber={currentBlockNumber}
           deviceOrientation={deviceOrientation}
           gameOver={(blocksCleared) => this.gameOver(blocksCleared)}
-          height={height}
+          innerHeight={innerHeight}
+          innerWidth={innerWidth}
+          opponentChainAccount={opponentChainAccount}
+          opponentBlocksCleared={opponentBlocksCleared}
           parentBlockHash={parentBlockHash}
           previousBlockNumber={previousBlockNumber}
-          width={width}
+          updatePlayerFromSockets={(playerData) => this.updatePlayerFromSockets(playerData)}
+          updateOpponentFromSockets={(opponentData) => this.updateOpponentFromSockets(opponentData)}
         />
         <Modal show={showModal} onHide={() => this.closeModal()}>
           <Form onSubmit={this.handleSubmit}>
@@ -523,7 +596,7 @@ class Game extends Component {
                     <Form.Label>Select an account for this chain</Form.Label>
                     <Form.Control as="select" ref={this.chainAccount} name="chainAccount">
                       {extensionAllAccountsList.map((value, i) => {
-                        return <option key={i} value={value}>{value}</option>
+                        return <option key={i} value={value.address}>{value.meta.name} | {value.address}</option>
                       })}
                     </Form.Control>
                     <Form.Text className="text-muted">
@@ -574,25 +647,39 @@ class Game extends Component {
         <Modal show={showModalMobile || showModalChain} onHide={() => this.closeModalChain()}>
           <Form onSubmit={this.handleSubmitChain}>
             <Modal.Header closeButton>
-              <Modal.Title>{isMobile ? 'FlappyTips on Mobile' : 'FlappyTips on Desktop'}: <br /><i>Choose a blockchain to play!</i></Modal.Title>
+              <Modal.Title>
+                {isMobile ? 'FlappyTips on Mobile' : 'FlappyTips on Desktop'}: <br />
+                {/* <i>Choose a blockchain to play!</i> */}
+              </Modal.Title>
             </Modal.Header>
             {!isMobile
-              ? <span style={{color: "#AAAAAA"}}><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extension detected: {extensionAllInjected}</b></span>
+              ? <span style={{color: "#AAAAAA"}}>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Extension detected: {extensionAllInjected}</span>
               : null
             }
             <Modal.Body>
+            <Form.Group controlId="formChainAccount">
+              {/* <h5>Chain Account:</h5> */}
+              <Form.Label>Select an account to play with:</Form.Label>
+              <Form.Control as="select" ref={this.chainAccount} name="chainAccount">
+                {extensionAllAccountsList.map((value, i) => {
+                  return <option key={i} value={value.address}>{value.meta.name} | {value.address}</option>
+                })}
+              </Form.Control>
+            </Form.Group>
             <Form.Group controlId="customEndpoint">
-              <h5>Chain Endpoint:</h5>
-              <Form.Label>Select a chain endpoint</Form.Label>
-              <Form.Control as="select" ref={this.customEndpoint} name="customEndpoint">
+              {/* <h5>Chain Endpoint:</h5> */}
+              <Form.Label>Chain endpoint:</Form.Label>
+              <Form.Control hidden="hidden" as="select" ref={this.customEndpoint} name="customEndpoint">
                 {Object.keys(ENDPOINTS).map((key, i) => {
+                  // disabled="disabled"
                   return (
-                    key === 'DataHighway Harbour Testnet' || key === 'Westend Testnet'
-                      ? <option disabled="disabled" key={i} value={ENDPOINTS[key].url}>{key}</option>
-                      : <option key={i} value={ENDPOINTS[key].url}>{key}</option>
+                    key === 'Zeitgeist Mainnet'
+                      ? <option key={i} value={ENDPOINTS[key].url}>{key}</option>
+                      : null
                   )
                 })}
               </Form.Control>
+              <span style={{color: "#AAAAAA"}}>&nbsp;Zeitgeist Mainnet</span>
             </Form.Group>
             </Modal.Body>
             <Modal.Footer>

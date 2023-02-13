@@ -178,3 +178,16 @@ https://paritytech.github.io/ink/
 ### References
 
 * https://medium.com/geekculture/multiplayer-interaction-with-p5js-f04909e13b87
+
+## Debugging Notes
+
+Key debugging console logs:
+
+* frontend
+chainAccount
+opponent gameDataPlayer
+gameDataPlayers received
+
+* server
+socket.on updateGameDataPlayers
+

@@ -2,6 +2,7 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const moment = require('moment');
 const { IS_PROD } = require('./constants');
 
 const app = express();
@@ -64,6 +65,8 @@ app.get('/api/test', cors(corsOptions),
 
 // Incase user requests a resource not in the public folder
 app.get('*', (req, res) => {
+  let ip = (req.headers['x-forwarded-for'] || '').split(',')[0];
+  console.log('ip connected: ', ip);
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 
@@ -87,8 +90,11 @@ io.on("connection", (socket) => {
     x: 0.08,
     y: 1,
     chain: "",
+    chainAccount: "",
+    chainAccountResult: null,
     blocksCleared: 0,
     obstaclesHit: 0,
+    obstaclesHitAt: null
   };
 
   socket.on("disconnect", () => {
@@ -102,9 +108,65 @@ io.on("connection", (socket) => {
     gameDataPlayers[socket.id].x = data.x;
     gameDataPlayers[socket.id].y = data.y;
     gameDataPlayers[socket.id].chain = data.chain;
+    gameDataPlayers[socket.id].chainAccount = data.chainAccount;
+    gameDataPlayers[socket.id].chainAccountResult = data.chainAccountResult;
     gameDataPlayers[socket.id].blocksCleared = data.blocksCleared;
     gameDataPlayers[socket.id].obstaclesHit = data.obstaclesHit;
-    console.log(`socket.on updateGameDataPlayers: ${socket.id}`, gameDataPlayers[socket.id]);
+    gameDataPlayers[socket.id].obstaclesHitAt = data.obstaclesHitAt;
+    console.log('data.obstaclesHitAt', data.obstaclesHitAt);
+    console.log('data.chainAccountResult: ', data.chainAccountResult);
+
+    // console.log(`socket.on updateGameDataPlayers: ${socket.id}`, gameDataPlayers[socket.id]);
+
+    if (!data.chainAccount) {
+      // ignore connections that haven't chosen an account id to play with 
+      return;
+    }
+    if (data.chainAccountResult) {
+      // game already over early exit
+      return;
+    }
+    // game over event to determine winner
+    let winner = {
+      id: null,
+      obstaclesHitAt: null
+    };
+    if (data.obstaclesHitAt) {
+      for (const [socketId, value] of Object.entries(gameDataPlayers)) {
+        // only compare with players other than the current player
+        if (socket.id !== socketId) {
+          console.log(`processing: ${socketId}: ${value}`);
+          // we are in a nested if where we have already checked that player socket.id has a defined obstaclesHitAt. 
+          // if there is at least one other player account socketId who has an earlier obstaclesHitAt
+          // then that other player account lost in comparison with the player socket.id.
+          // note: we do not declare the 'winner' here, we only assign the account address that won later on the server.
+          // and determine what player to display as the winner in sketch.js.
+          if (value.obstaclesHitAt && data.obstaclesHitAt > value.obstaclesHitAt) {
+            // player with older timestamp of hitting obstacle is loser
+            winner.id = socket.id;
+            winner.obstaclesHitAt = data.obstaclesHitAt;
+            gameDataPlayers[socketId]['chainAccountResult'] = 'loser';
+            console.log('loser: ', socketId, moment.unix(value.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
+          } else if (value.obstaclesHitAt && data.obstaclesHitAt < value.obstaclesHitAt) {
+            winner.id = socketId;
+            winner.obstaclesHitAt = value.obstaclesHitAt;
+          } else if (value.obstaclesHitAt && data.obstaclesHitAt == value.obstaclesHitAt) {
+            // draw is not supported. if you do not win then you lose
+            gameDataPlayers[socket.id]['chainAccountResult'] = 'loser';
+            gameDataPlayers[socketId]['chainAccountResult'] = 'loser';
+            console.log('draw: ', socket.id, moment.unix(data.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
+            console.log('draw: ', socketId, moment.unix(value.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
+          }
+        }
+      }
+      if (winner.id) {
+        gameDataPlayers[winner.id]['chainAccountResult'] = data.chainAccount;
+        console.log('winner: ', winner.id, moment.unix(winner.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
+      } else {
+        console.log('no winner');
+      }
+    }
+    console.log('finished processing: ', gameDataPlayers);
   });
 });
 
