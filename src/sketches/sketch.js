@@ -11,14 +11,6 @@ const socket = io("ws://localhost:5000", {
 });
 console.log('socket in sketch', socket);
 
-function startTimer() {
-
-}
-
-function stopTimer() {
-  
-}
-
 export default function sketch(p5) {
   let canvas;
   let currentSpeed = 3;
@@ -56,6 +48,23 @@ export default function sketch(p5) {
   let opponentBlocksCleared = 0;
   let opponentChainAccount = '';
 
+  function updateServerWithPlayerViaSockets(obstaclesHitAt) {
+    if (!chain || !chainAccount) {
+      return;
+    }
+    // update server that of obstaclesHit value that caused gameover
+    socket.emit("updateGameDataPlayers", {
+      x: p5.bird.x / p5.width, // always send relative number of position between 0 and 1
+      y: p5.bird.y / p5.height, // so it positions are the relatively the same on different screen sizes.
+      chain: chain,
+      chainAccount: chainAccount,
+      chainAccountResult: chainAccountResult,
+      blocksCleared: blocksCleared,
+      obstaclesHit: obstaclesHit,
+      obstaclesHitAt: obstaclesHitAt
+    });
+  }
+
   p5.preload = () => {
     customFont = p5.loadFont('assets/LemonMilkMedium.otf');
   }
@@ -75,16 +84,7 @@ export default function sketch(p5) {
     // });
 
     interval = setInterval(() => {
-      socket.emit("updateGameDataPlayers", {
-        x: p5.bird.x / p5.width, // always send relative number of position between 0 and 1
-        y: p5.bird.y / p5.height, // so it positions are the relatively the same on different screen sizes.
-        chain: chain,
-        chainAccount: chainAccount,
-        chainAccountResult: chainAccountResult,
-        blocksCleared: blocksCleared,
-        obstaclesHit: obstaclesHit,
-        obstaclesHitAt: obstaclesHitAt
-      });
+      updateServerWithPlayerViaSockets(obstaclesHitAt);
     }, 10); // update player position every x seconds so opponent can see them
 
     p5.frameRate(30); //set framerate to 30, same as server
@@ -206,17 +206,7 @@ export default function sketch(p5) {
     if (obstaclesHit > 0) {
       let currentDateUnixTimestamp = moment().unix();
       console.log('time: ', moment.unix(currentDateUnixTimestamp).format("YYYY-MM-DD HH:mm"));
-      // update server that of obstaclesHit value that caused gameover
-      socket.emit("updateGameDataPlayers", {
-        x: p5.bird.x / p5.innerWidth, // always send relative number of position between 0 and 1
-        y: p5.bird.y / p5.innerHeight, // so it positions are the relatively the same on different screen sizes.
-        chain: chain,
-        chainAccount: chainAccount,
-        chainAccountResult: chainAccountResult,
-        blocksCleared: blocksCleared,
-        obstaclesHit: obstaclesHit,
-        obstaclesHitAt: currentDateUnixTimestamp
-      });
+      updateServerWithPlayerViaSockets(currentDateUnixTimestamp);
       clearInterval(interval);
 
       console.log('game over');

@@ -85,18 +85,6 @@ io.on("connection", (socket) => {
   //it includes the socket object from which you can get the id, useful for identifying each client
   console.log(`${socket.id} connected`);
 
-  // lets add a starting position when the client connects
-  gameDataPlayers[socket.id] = {
-    x: 0.08,
-    y: 1,
-    chain: "",
-    chainAccount: "",
-    chainAccountResult: null,
-    blocksCleared: 0,
-    obstaclesHit: 0,
-    obstaclesHitAt: null
-  };
-
   socket.on("disconnect", () => {
     //when this client disconnects, lets delete its position from the object.
     delete gameDataPlayers[socket.id];
@@ -105,6 +93,25 @@ io.on("connection", (socket) => {
 
   //client can send a message 'updatePosition' each time the clients position changes
   socket.on("updateGameDataPlayers", (data) => {
+    if (!data.chainAccount || !data.chain) {
+      // ignore connections that haven't chosen an account id to play with 
+      return;
+    }
+
+    // initialize
+    if (!gameDataPlayers[socket.id]) {
+      gameDataPlayers[socket.id] = {
+        x: 0.08,
+        y: 1,
+        chain: "",
+        chainAccount: "",
+        chainAccountResult: null,
+        blocksCleared: 0,
+        obstaclesHit: 0,
+        obstaclesHitAt: null
+      };  
+    }
+
     gameDataPlayers[socket.id].x = data.x;
     gameDataPlayers[socket.id].y = data.y;
     gameDataPlayers[socket.id].chain = data.chain;
@@ -118,10 +125,6 @@ io.on("connection", (socket) => {
 
     // console.log(`socket.on updateGameDataPlayers: ${socket.id}`, gameDataPlayers[socket.id]);
 
-    if (!data.chainAccount) {
-      // ignore connections that haven't chosen an account id to play with 
-      return;
-    }
     if (data.chainAccountResult) {
       // game already over early exit
       return;
