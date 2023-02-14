@@ -11,9 +11,11 @@ const socket = io("ws://localhost:5000", {
 });
 console.log('socket in sketch', socket);
 
+const DEFAULT_SPEED = 3;
+
 export default function sketch(p5) {
   let canvas;
-  let currentSpeed = 3;
+  let currentSpeed = DEFAULT_SPEED;
   let didChangeBlockNumber = 0;
   let opponentOffset = 5;
   let isGameOver = 0;
@@ -47,9 +49,8 @@ export default function sketch(p5) {
   let parentBlockHash = '';
   let previousBlockNumber = '';
   let updatePlayerFromSockets;
-  let updateOpponentFromSockets;
-  let opponentBlocksCleared = 0;
-  let opponentChainAccount;
+  let updateOpponentsFromSockets;
+  let opponents = {};
 
   function updateServerWithPlayerViaSockets(obstaclesHitAt) {
     if (!chain || !chainAccount) {
@@ -117,7 +118,7 @@ export default function sketch(p5) {
       }
       if (
         currentBlockNumber !== newProps.currentBlockNumber &&
-        currentBlockNumber == newProps.previousBlockNumber && 
+        currentBlockNumber === newProps.previousBlockNumber && 
         newProps.currentBlockNumber !== newProps.previousBlockNumber
       ) {
         didChangeBlockNumber = 1;
@@ -136,9 +137,12 @@ export default function sketch(p5) {
       parentBlockHash = newProps.parentBlockHash;
       previousBlockNumber = newProps.previousBlockNumber;
       updatePlayerFromSockets = newProps.updatePlayerFromSockets;
-      updateOpponentFromSockets = newProps.updateOpponentFromSockets;
-      opponentChainAccount = newProps.opponentChainAccount;
-      opponentBlocksCleared = newProps.opponentBlocksCleared;
+      updateOpponentsFromSockets = newProps.updateOpponentsFromSockets;
+      opponents = newProps.opponents;
+
+      if (gameStartRequestedAtBlock === currentBlockNumber) {
+        currentSpeed = DEFAULT_SPEED;
+      }
     }
   }
 
@@ -148,19 +152,22 @@ export default function sketch(p5) {
     p5.background('#000000');
     // draw a circle for opponent position
     // console.log('gameDataPlayers received: ', gameDataPlayers);
-    for (const id in gameDataPlayers) {
+
+    // update opponent state
+    if (updateOpponentsFromSockets) {
+      updateOpponentsFromSockets({
+        opponentsData: gameDataPlayers,
+        playerSocketId: socket.id
+      });
+    }
+
+    // for (const id in gameDataPlayers) {
+    for (const [socketId, value] of Object.entries(gameDataPlayers)) {
       // console.log('id', id);
       // console.log('current player socket.id', socket.id);
-      if (id !== socket.id) {
-        const gameDataPlayer = gameDataPlayers[id];
+      if (socketId !== socket.id) {
+        const gameDataPlayer = gameDataPlayers[socketId];
         // console.log('opponent gameDataPlayer', gameDataPlayer);
-        // update opponent state
-        if (updateOpponentFromSockets) {
-          updateOpponentFromSockets({
-            opponentChainAccount: gameDataPlayer['chainAccount'],
-            opponentBlocksCleared: gameDataPlayer['blocksCleared']
-          });
-        }
         p5.fill(COLOURS.purple);
         // give opponent slight offset so can see them behind current player icon
         p5.circle(gameDataPlayer.x * p5.width + opponentOffset, gameDataPlayer.y * p5.height + opponentOffset, 30);
@@ -174,26 +181,42 @@ export default function sketch(p5) {
       }
     }
     p5.fill(COLOURS.pink);
-    p5.textSize(16);
+    p5.textSize(12);
     p5.textFont(customFont);
     // p5.text('Date: ' + new Date().toLocaleTimeString(), 20, 20);
     p5.text('Game Speed: ' + currentSpeed, 20, 40);
     p5.text('Chain Name: ' + chain || isLoadingMsg, 20, 80);
-    p5.text('Game Start Block: ' + gameStartRequestedAtBlock || isLoadingMsg, 20, 100);
-    p5.text('Current Block: ' + currentBlockNumber || isLoadingMsg, 20, 120);
+    let result = (chainAccountResult === chainAccount) ? 'winner' : chainAccountResult;
+    p5.text('Game Result: ' + result, 20, 100);
+    p5.text('Game Start Block: ' + gameStartRequestedAtBlock || isLoadingMsg, 20, 120);
+    p5.text('Current Block: ' + currentBlockNumber || isLoadingMsg, 20, 140);
     // p5.text('Current Block Hash: ' + currentBlockHash, 20, 80);
     // if (currentBlockAuthors.length > 0) {
     //   p5.text('Current Block Authors: ' + currentBlockAuthors.join(', '), 20, 100);
     // }
     // p5.text('Parent Block Hash: ' + parentBlockHash, 20, 120);
-    p5.text('Player Chain Account: ' + chainAccount, 20, 140);
-    p5.text('Player Blocks Cleared: ' + Number.parseFloat(blocksCleared).toFixed(2), 20, 160);
+    p5.text('Player Chain Account: ' + chainAccount, 20, 160);
+    p5.text('Player Blocks Cleared: ' + Number.parseFloat(blocksCleared).toFixed(2), 20, 180);
     
-    p5.text('Opponent Chain Account: ' + opponentChainAccount || isWaitingMsg, 20, 200);
-    p5.text('Opponent Blocks Cleared: ' + Number.parseFloat(opponentBlocksCleared).toFixed(2), 20, 220);    
-    
-    let result = (chainAccountResult === chainAccount) ? 'winner' : chainAccountResult;
-    p5.text('Game Result: ' + result, 20, 240);
+    let lv = 180;
+    let vs = 20;
+    let addVertSpace = () => {
+      lv = lv + vs;
+      return lv + vs;
+    };
+    p5.fill(COLOURS.blue);
+    p5.textSize(10);
+    let maxOpponentToDisplay = 2;
+    let count = 0;
+    for (const [socketId, value] of Object.entries(opponents)) {
+      // only compare with players other than the current player
+      if (socket.id !== socketId && count < maxOpponentToDisplay) {
+        count = count + 1;
+        p5.text('Opponent Chain Account: ' + value.chainAccount || isWaitingMsg, 20, addVertSpace());
+        p5.text('Opponent Blocks Cleared: ' + Number.parseFloat(value.blocksCleared).toFixed(2), 20, addVertSpace());   
+        p5.text('', 20, addVertSpace());
+      }
+    }
 
     // p5.text('Block Collisions Damage: ' + obstaclesHit, 20, 120);
     // p5.text('Current Block Active Account IDs: ' + JSON.stringify(activeAccountIds), 20, 180)

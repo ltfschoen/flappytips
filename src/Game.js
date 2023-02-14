@@ -26,6 +26,7 @@ class Game extends Component {
       chain: '',
       chainAccountResult: '',
       chainAccount: '',
+      clearedOldSocketsOpponents: false,
       currentBlockNumber: '',
       currentBlockTimestamp: null,
       previousBlockNumber: '',
@@ -43,7 +44,6 @@ class Game extends Component {
       isGameStart: false,
       parentBlockHash: '',
       birdColor: 255,
-      api: undefined,
       provider: undefined,
       keyring: undefined,
       reason: '',
@@ -52,8 +52,7 @@ class Game extends Component {
       showModalMobile: isMobile,
       deviceOrientation: undefined,
       ipData: {},
-      opponentChainAccount: '',
-      opponentBlocksCleared: 0
+      opponents: {}
     };
 
     this.twitterHandle = React.createRef();
@@ -98,7 +97,7 @@ class Game extends Component {
       extensionAllInjected: allInjected,
       extensionAllAccountsList: allAccounts,
       chainAccount: initialChainAccount,
-      showModalChain: true,
+      showModalChain: true
     });
 
     window.addEventListener('resize', this.getDimensions);
@@ -121,29 +120,19 @@ class Game extends Component {
 
   componentDidUpdate(prevProps){
     const val = this.chainAccount && this.chainAccount.current && this.chainAccount.current.value;
-    if(val && prevProps.chainAccount && prevProps.chainAccount !== val) {
-      console.log('componentDidUpdate updating chainAccount: ', val, prevProps.chainAccount);
-      this.setState({          
-        chainAccount: val
-      });
-    }
-    if(prevProps.opponentChainAccount !== this.props.opponentChainAccount){
-        this.setState({          
-          opponentChainAccount: this.props.opponentChainAccount
-        });
-    }
+    // // note: this may not be required
+    // if (val && prevProps.chainAccount && prevProps.chainAccount !== val) {
+    //   console.log('componentDidUpdate updating chainAccount: ', val, prevProps.chainAccount);
+    //   this.setState({          
+    //     chainAccount: val
+    //   });
+    // }
 
-    if(prevProps.opponentBlocksCleared !== this.props.opponentBlocksCleared){
-      this.setState({          
-        opponentBlocksCleared: this.props.opponentBlocksCleared
-      });
-    }
-
-    if(prevProps.chainAccountResult !== this.props.chainAccountResult){
+    if (prevProps.chainAccountResult !== this.props.chainAccountResult){
       this.setState({          
         chainAccountResult: this.props.chainAccountResult
       });
-  }
+    }
   }
 
   componentWillUnmount() {
@@ -367,7 +356,7 @@ class Game extends Component {
     const { chainAccountResult } = this.state;
 
     if (chainAccountResult !== 'winner') {
-      if (playerData.chainAccountResult == this.state.chainAccount) {
+      if (playerData.chainAccountResult === this.state.chainAccount) {
         this.setState({
           chainAccountResult: this.state.chainAccount
         })
@@ -382,14 +371,29 @@ class Game extends Component {
     }
   }
 
-  updateOpponentFromSockets = (opponentData) => {
-    const { opponentChainAccount, opponentBlocksCleared } = this.state;
-    // console.log('updateOpponentFromSockets: ', opponentData);
-    
+  updateOpponentsFromSockets = (data) => {
+    const { clearedOldSocketsOpponents, opponents } = this.state;
+    const { opponentsData, playerSocketId } = data;
+    if (clearedOldSocketsOpponents === false) {
+      this.setState({
+        clearedOldSocketsOpponents: true
+      });
+    }
+    let updatedOpponents = {};
+    for (const [socketId, value] of Object.entries(opponentsData)) {
+      // only compare with players other than the current player
+      if (value && playerSocketId !== socketId) {
+        console.log(`processing opponent: ${socketId}: ${value}`);
+        console.log('data', socketId, opponents[socketId], opponentsData[socketId])
+        if (opponents[socketId] !== opponentsData[socketId]) {
+          updatedOpponents[socketId] = value;
+        }
+      }
+    }
+ 
     this.setState({
-      opponentChainAccount: (opponentData.opponentChainAccount !== opponentChainAccount) ? opponentData.opponentChainAccount : opponentChainAccount,
-      opponentBlocksCleared: (opponentData.opponentBlocksCleared !== opponentBlocksCleared) ? opponentData.opponentBlocksCleared : opponentBlocksCleared
-    })
+      opponents: updatedOpponents
+    });
   }
 
   playAgain = () => {
@@ -555,7 +559,7 @@ class Game extends Component {
 
       this.setState({
         // only set this up once, not if they call handleSubmitChain again to change the chain
-        gameStartRequestedAtBlock: gameStartRequestedAtBlock == '' ? startBlock : gameStartRequestedAtBlock,
+        gameStartRequestedAtBlock: gameStartRequestedAtBlock === '' ? startBlock : gameStartRequestedAtBlock,
       });
     }
   }
@@ -637,7 +641,7 @@ class Game extends Component {
   render() {
     const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, chainAccountResult, chainAccount, currentBlockNumber, currentBlockHash, gameStartRequestedAtBlock,
       currentBlockAuthors, currentEndpoint, currentEndpointName, deviceOrientation, errorMessage, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList,
-      isGameOver, innerHeight, innerWidth, opponentChainAccount, opponentBlocksCleared,
+      isGameOver, innerHeight, innerWidth, opponents,
       parentBlockHash, previousBlockNumber, reason, showModal, showModalChain, showModalMobile, ipData } = this.state;
     let reasonForTweet;
     // console.log('ip: ', ipData.ip);
@@ -682,12 +686,11 @@ class Game extends Component {
           gameOver={(blocksCleared) => this.gameOver(blocksCleared)}
           innerHeight={innerHeight}
           innerWidth={innerWidth}
-          opponentChainAccount={opponentChainAccount}
-          opponentBlocksCleared={opponentBlocksCleared}
+          opponents={opponents}
           parentBlockHash={parentBlockHash}
           previousBlockNumber={previousBlockNumber}
           updatePlayerFromSockets={(playerData) => this.updatePlayerFromSockets(playerData)}
-          updateOpponentFromSockets={(opponentData) => this.updateOpponentFromSockets(opponentData)}
+          updateOpponentsFromSockets={(opponentsData) => this.updateOpponentsFromSockets(opponentsData)}
         />
         <Modal show={showModal} onHide={() => this.closeModal()}>
           <Form onSubmit={this.handleSubmit}>

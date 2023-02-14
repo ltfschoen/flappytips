@@ -20,7 +20,8 @@ const COLOURS = {
   pink: '#FF0863',
   orange: '#FFA500',
   purple: '#33338F',
-  grey: '#EE4499'
+  grey: '#EE4499',
+  blue: '#4169e1'
 };
 
 export {
