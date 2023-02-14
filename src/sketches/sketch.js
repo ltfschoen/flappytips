@@ -24,6 +24,8 @@ export default function sketch(p5) {
   let playQuality;
   let customFont;
   let interval;
+  let isLoadingMsg = 'Loading...';
+  let isWaitingMsg = 'Waiting...';
 
   // Sockets
   let gameDataPlayers = {};
@@ -31,13 +33,14 @@ export default function sketch(p5) {
   // Props
   let activeAccountIds = {};
   let birdColor = 255;
-  let chain = '';
+  let chain;
   let chainAccount = '';
   let chainAccountResult = '';
   let currentBlockAuthors = [];
   let currentBlockHash = '';
-  let currentBlockNumber = '';
+  let currentBlockNumber;
   let deviceOrientation;
+  let gameStartRequestedAtBlock = '';
   let gameOver;
   let innerHeight = 0;
   let innerWidth = 0;
@@ -46,7 +49,7 @@ export default function sketch(p5) {
   let updatePlayerFromSockets;
   let updateOpponentFromSockets;
   let opponentBlocksCleared = 0;
-  let opponentChainAccount = '';
+  let opponentChainAccount;
 
   function updateServerWithPlayerViaSockets(obstaclesHitAt) {
     if (!chain || !chainAccount) {
@@ -59,6 +62,7 @@ export default function sketch(p5) {
       chain: chain,
       chainAccount: chainAccount,
       chainAccountResult: chainAccountResult,
+      gameStartRequestedAtBlock: gameStartRequestedAtBlock,
       blocksCleared: blocksCleared,
       obstaclesHit: obstaclesHit,
       obstaclesHitAt: obstaclesHitAt
@@ -125,6 +129,7 @@ export default function sketch(p5) {
       currentBlockNumber = newProps.currentBlockNumber;
       deviceOrientation = newProps.deviceOrientation;
       p5.deviceOrientation = deviceOrientation;
+      gameStartRequestedAtBlock = newProps.gameStartRequestedAtBlock;
       gameOver = newProps.gameOver;
       innerHeight = newProps.innerHeight;
       innerWidth = newProps.innerWidth;
@@ -173,21 +178,22 @@ export default function sketch(p5) {
     p5.textFont(customFont);
     // p5.text('Date: ' + new Date().toLocaleTimeString(), 20, 20);
     p5.text('Game Speed: ' + currentSpeed, 20, 40);
-    p5.text('Chain Name: ' + chain, 20, 80);
-    p5.text('Current Block: ' + currentBlockNumber, 20, 100);
+    p5.text('Chain Name: ' + chain || isLoadingMsg, 20, 80);
+    p5.text('Game Start Block: ' + gameStartRequestedAtBlock || isLoadingMsg, 20, 100);
+    p5.text('Current Block: ' + currentBlockNumber || isLoadingMsg, 20, 120);
     // p5.text('Current Block Hash: ' + currentBlockHash, 20, 80);
     // if (currentBlockAuthors.length > 0) {
     //   p5.text('Current Block Authors: ' + currentBlockAuthors.join(', '), 20, 100);
     // }
     // p5.text('Parent Block Hash: ' + parentBlockHash, 20, 120);
-    p5.text('Player Chain Account: ' + chainAccount, 20, 120);
-    p5.text('Player Blocks Cleared: ' + Number.parseFloat(blocksCleared).toFixed(2), 20, 140);
+    p5.text('Player Chain Account: ' + chainAccount, 20, 140);
+    p5.text('Player Blocks Cleared: ' + Number.parseFloat(blocksCleared).toFixed(2), 20, 160);
     
-    p5.text('Opponent Chain Account: ' + opponentChainAccount, 20, 180);
-    p5.text('Opponent Blocks Cleared: ' + Number.parseFloat(opponentBlocksCleared).toFixed(2), 20, 200);    
+    p5.text('Opponent Chain Account: ' + opponentChainAccount || isWaitingMsg, 20, 200);
+    p5.text('Opponent Blocks Cleared: ' + Number.parseFloat(opponentBlocksCleared).toFixed(2), 20, 220);    
     
     let result = (chainAccountResult === chainAccount) ? 'winner' : chainAccountResult;
-    p5.text('Game Result: ' + result, 20, 220);
+    p5.text('Game Result: ' + result, 20, 240);
 
     // p5.text('Block Collisions Damage: ' + obstaclesHit, 20, 120);
     // p5.text('Current Block Active Account IDs: ' + JSON.stringify(activeAccountIds), 20, 180)
@@ -223,7 +229,13 @@ export default function sketch(p5) {
     //   obstacles.push(new Obstacle(p5));
     // }  
 
-    if (p5.frameCount % 100 === 0 && currentBlockNumber !== '' && didChangeBlockNumber === 1) {
+    if (
+      p5.frameCount % 100 === 0 &&
+      gameStartRequestedAtBlock &&
+      currentBlockNumber >= gameStartRequestedAtBlock &&
+      currentBlockNumber !== '' &&
+      didChangeBlockNumber === 1
+    ) {
       obstacles.push(new Obstacle(p5, currentBlockNumber, currentSpeed, customFont, false));
       didChangeBlockNumber = 0;
     }

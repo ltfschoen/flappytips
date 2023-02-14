@@ -103,9 +103,10 @@ io.on("connection", (socket) => {
       gameDataPlayers[socket.id] = {
         x: 0.08,
         y: 1,
-        chain: "",
-        chainAccount: "",
+        chain: null,
+        chainAccount: null,
         chainAccountResult: null,
+        gameStartRequestedAtBlock: null,
         blocksCleared: 0,
         obstaclesHit: 0,
         obstaclesHitAt: null
@@ -117,6 +118,7 @@ io.on("connection", (socket) => {
     gameDataPlayers[socket.id].chain = data.chain;
     gameDataPlayers[socket.id].chainAccount = data.chainAccount;
     gameDataPlayers[socket.id].chainAccountResult = data.chainAccountResult;
+    gameDataPlayers[socket.id].gameStartRequestedAtBlock = data.gameStartRequestedAtBlock;
     gameDataPlayers[socket.id].blocksCleared = data.blocksCleared;
     gameDataPlayers[socket.id].obstaclesHit = data.obstaclesHit;
     gameDataPlayers[socket.id].obstaclesHitAt = data.obstaclesHitAt;

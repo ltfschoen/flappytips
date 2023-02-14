@@ -19,11 +19,13 @@ class Game extends Component {
   constructor(){
     super();
     this.state = {
+      api: undefined,
       accountAddress: undefined,
       activeAccountIds: {},
       blocksCleared: 0,
       chain: '',
       chainAccountResult: '',
+      chainAccount: '',
       currentBlockNumber: '',
       currentBlockTimestamp: null,
       previousBlockNumber: '',
@@ -32,6 +34,7 @@ class Game extends Component {
       currentEndpointName: '',
       errorMessage: '',
       currentBlockHash: '',
+      gameStartRequestedAtBlock: '',
       currentBlockAuthors: [],
       extensionAllInjected: '',
       extensionAllAccountsList: [],
@@ -78,13 +81,29 @@ class Game extends Component {
     this.getDimensions();
     this.getIpData();
 
+    const initialChainAccount = allAccounts[0].address;
+
+    // initialise value of the ref
+    this.chainAccount.current = initialChainAccount;
+    console.log('set this.chainAccount.current: ', this.chainAccount.current);
+
+    const initialEndpointName = 'Zeitgeist Mainnet';
+    const initialEndpoint = ENDPOINTS['Zeitgeist Mainnet'].url;
+    this.customEndpoint.current = initialEndpoint;
+
     this.setState({
+      currentEndpoint: initialEndpoint,
+      currentEndpointName: initialEndpointName,
       extensionNotInstalled: allInjected.length === 0,
       extensionAllInjected: allInjected,
       extensionAllAccountsList: allAccounts,
+      chainAccount: initialChainAccount,
       showModalChain: true,
     });
+
     window.addEventListener('resize', this.getDimensions);
+
+    this.setup(initialEndpoint, initialEndpointName);
   }
 
   getDimensions = () => {
@@ -101,6 +120,13 @@ class Game extends Component {
   }
 
   componentDidUpdate(prevProps){
+    const val = this.chainAccount && this.chainAccount.current && this.chainAccount.current.value;
+    if(val && prevProps.chainAccount && prevProps.chainAccount !== val) {
+      console.log('componentDidUpdate updating chainAccount: ', val, prevProps.chainAccount);
+      this.setState({          
+        chainAccount: val
+      });
+    }
     if(prevProps.opponentChainAccount !== this.props.opponentChainAccount){
         this.setState({          
           opponentChainAccount: this.props.opponentChainAccount
@@ -145,6 +171,10 @@ class Game extends Component {
     let api;
     api = await ApiPromise.create({ provider });
 
+    this.setState({
+      api
+    });
+  
     return { provider, keyring, types, api };
   }
 
@@ -192,8 +222,9 @@ class Game extends Component {
       // const [signedBlock] = await Promise.all([
       //   api.rpc.chain.getBlock(blockHash)
       // ]);
-      // // console.log('signedBlock', signedBlock);
+      // console.log('signedBlock', signedBlock);
       // console.log('signedBlock', signedBlock.block.header.parentHash.toHex());
+      // console.log('signedBlock number', signedBlock.block.header.number.toString());
 
       // // Hash for each extrinsic in the block
       // signedBlock.block.extrinsics.forEach((ex, index) => {
@@ -286,15 +317,24 @@ class Game extends Component {
       api,
       keyring,
       provider: provider || '',
-      showModalChain: false,
-      showModalMobile: false
+      // showModalChain: false,
+      // showModalMobile: false
     });
   }
 
-  handleReceiveNewHead = (currentBlockNumber, currentBlockTimestamp, previousBlockNumber,
+  handleReceiveNewHead = async (currentBlockNumber, currentBlockTimestamp, previousBlockNumber,
     previousBlockTimestamp, currentBlockHash, currentBlockAuthors, parentBlockHash, newActiveAccountIds
   ) => {
+    const { gameStartRequestedAtBlock } = this.state;
     previousBlockNumber = previousBlockNumber !== '' ? previousBlockNumber : this.state.currentBlockNumber;
+
+    if (gameStartRequestedAtBlock && currentBlockNumber) {
+      if (currentBlockNumber === gameStartRequestedAtBlock) {
+        // starting the game for the current player
+        this.closeModalChainWindow();
+        this.closeModalMobile();
+      }
+    }
 
     this.setState({
       currentBlockNumber: currentBlockNumber || '',
@@ -345,6 +385,7 @@ class Game extends Component {
   updateOpponentFromSockets = (opponentData) => {
     const { opponentChainAccount, opponentBlocksCleared } = this.state;
     // console.log('updateOpponentFromSockets: ', opponentData);
+    
     this.setState({
       opponentChainAccount: (opponentData.opponentChainAccount !== opponentChainAccount) ? opponentData.opponentChainAccount : opponentChainAccount,
       opponentBlocksCleared: (opponentData.opponentBlocksCleared !== opponentBlocksCleared) ? opponentData.opponentBlocksCleared : opponentBlocksCleared
@@ -464,22 +505,59 @@ class Game extends Component {
   }
 
   handleSubmitChain = async (event) => {
-    // console.log('handleSubmitChain');
+    console.log('handleSubmitChain');
     event.preventDefault(); // Prevent page refreshing when click submit
+    const { api, chainAccount, currentBlockNumber, currentEndpoint, gameStartRequestedAtBlock } = this.state;
+    if (!chainAccount) {
+      console.log('Error: cannot start game without account selected');
+      return;
+    }
+    if (!currentBlockNumber) {
+      console.log('Error: cannot start game without first fetching block for default chain');
+      return;
+    }
 
-    this.closeModalChainWindow();
-    this.closeModalMobile();
+    // this.closeModalChainWindow();
+    // this.closeModalMobile();
 
-    const currentEndpoint = this.customEndpoint.current && this.customEndpoint.current.value;
-    const foundValue = Object.values(ENDPOINTS).filter(obj => obj.url === currentEndpoint)[0];
-    const currentEndpointName = Object.keys(ENDPOINTS)[Object.values(ENDPOINTS).indexOf(foundValue)];
+    // check if customEndpoint submitted using the form differs from the one that loaded in componentDidMount
+    const formCurrentEndpoint = this.customEndpoint.current && this.customEndpoint.current.value;
+    if (formCurrentEndpoint !== currentEndpoint) {
+      const foundValue = Object.values(ENDPOINTS).filter(obj => obj.url === formCurrentEndpoint)[0];
+      const formCurrentEndpointName = Object.keys(ENDPOINTS)[Object.values(ENDPOINTS).indexOf(foundValue)];
+  
+      this.setState({
+        formCurrentEndpoint,
+        formCurrentEndpointName
+      });
+  
+      this.setup(formCurrentEndpoint, formCurrentEndpointName);
+    }
 
-    this.setState({
-      currentEndpoint,
-      currentEndpointName,
-    });
+    // record that users clicked 'Play' and wants to start a game in future ahead of current block hash
+    // const signedBlock = await api.rpc.chain.getBlock(currentBlockHash);
+    // const currentBlockNumber = signedBlock.block.header.number.toString();
+    // const gameStartRequestedAtBlock = ((signedBlock.block.header.number.toString()).toNumber() + 100).toString();
+    // console.log('currentBlock', currentBlockNumber);
+    // console.log('gameStartRequestedAtBlock', gameStartRequestedAtBlock);
+    
+    let startBlock;
+    if (!gameStartRequestedAtBlock) {
 
-    this.setup(currentEndpoint, currentEndpointName);
+      // if less than 5 blocks before next 100th block, the wait for game at next 100th block after that
+      // i.e. 24199 + (100 - (24199 % 100)) == 24200 (so game would start in only 1 block!)
+      if (Number(currentBlockNumber) % 100 > 95) {
+        startBlock = (Number(currentBlockNumber) + (100 - (Number(currentBlockNumber) % 100)) + 100).toString();
+      } else {
+        startBlock = (Number(currentBlockNumber) + (100 - (Number(currentBlockNumber) % 100))).toString();
+      }
+      console.log('startBlock: ', startBlock);
+
+      this.setState({
+        // only set this up once, not if they call handleSubmitChain again to change the chain
+        gameStartRequestedAtBlock: gameStartRequestedAtBlock == '' ? startBlock : gameStartRequestedAtBlock,
+      });
+    }
   }
 
   closeModalMobile = () => {
@@ -507,10 +585,20 @@ class Game extends Component {
     });
   }
 
-  // If the user clicks outside the chain modal, we want to setup but with the default chain endpoint
+  // // If the user clicks outside the chain modal, we want to setup but with the default chain endpoint
   closeModalChain = () => {
-    this.closeModalChainWindow();
-    this.setup(undefined, undefined, undefined);
+    // this.closeModalChainWindow();
+    // this.setup(undefined, undefined, undefined);
+
+    const { currentBlockNumber, gameStartRequestedAtBlock } = this.state;
+
+    if (gameStartRequestedAtBlock && currentBlockNumber) {
+      if (currentBlockNumber === gameStartRequestedAtBlock) {
+        // starting the game for the current player
+        this.closeModalChainWindow();
+        this.closeModalMobile();
+      }
+    }
   }
 
   openModalChain = () => {
@@ -536,14 +624,31 @@ class Game extends Component {
     });
   }
 
+  onChangeChainAccount = (event) => {
+    const chainAccount = this.chainAccount && this.chainAccount.current && this.chainAccount.current.value;
+    if (chainAccount) {
+      console.log('changed chainAccount to:', chainAccount);
+      this.setState({
+        chainAccount
+      });
+    }
+  }
+
   render() {
-    const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, chainAccountResult, currentBlockNumber, currentBlockHash,
+    const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, chainAccountResult, chainAccount, currentBlockNumber, currentBlockHash, gameStartRequestedAtBlock,
       currentBlockAuthors, currentEndpoint, currentEndpointName, deviceOrientation, errorMessage, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList,
       isGameOver, innerHeight, innerWidth, opponentChainAccount, opponentBlocksCleared,
       parentBlockHash, previousBlockNumber, reason, showModal, showModalChain, showModalMobile, ipData } = this.state;
     let reasonForTweet;
     // console.log('ip: ', ipData.ip);
     reasonForTweet = 'I just ' + reason + ' @polkadotnetwork #buildPolkadot';
+
+
+    let remainingBlocksUntilPlay;
+    if (gameStartRequestedAtBlock) {
+      remainingBlocksUntilPlay = (Number(gameStartRequestedAtBlock) - Number(currentBlockNumber)).toString();
+    }
+
     return (
       <div>
         {/* <button onClick={this.randomColor}>Random Color</button> */}
@@ -567,12 +672,13 @@ class Game extends Component {
           activeAccountIds={activeAccountIds}
           birdColor={birdColor}
           chain={chain}
-          chainAccount={this.chainAccount && this.chainAccount.current && this.chainAccount.current.value}
+          chainAccount={chainAccount}
           chainAccountResult={chainAccountResult}
           currentBlockAuthors={currentBlockAuthors}
           currentBlockHash={currentBlockHash}
           currentBlockNumber={currentBlockNumber}
           deviceOrientation={deviceOrientation}
+          gameStartRequestedAtBlock={gameStartRequestedAtBlock}
           gameOver={(blocksCleared) => this.gameOver(blocksCleared)}
           innerHeight={innerHeight}
           innerWidth={innerWidth}
@@ -660,7 +766,10 @@ class Game extends Component {
             <Form.Group controlId="formChainAccount">
               {/* <h5>Chain Account:</h5> */}
               <Form.Label>Select an account to play with:</Form.Label>
-              <Form.Control as="select" ref={this.chainAccount} name="chainAccount">
+              <Form.Control
+                as="select" ref={this.chainAccount} name="chainAccount"
+                onChange={() => this.onChangeChainAccount(this)}
+              >
                 {extensionAllAccountsList.map((value, i) => {
                   return <option key={i} value={value.address}>{value.meta.name} | {value.address}</option>
                 })}
@@ -683,7 +792,26 @@ class Game extends Component {
             </Form.Group>
             </Modal.Body>
             <Modal.Footer>
-              <Button variant="success" className="btn btn-primary btn-large btn-block" type="submit">Play</Button>
+              { remainingBlocksUntilPlay
+                ? (
+                    <Button variant="warning" className="btn btn-warning btn-large btn-block" type="button">
+                      Please wait... <b>{remainingBlocksUntilPlay}</b> blocks remaining for opponents to join before game starts
+                    </Button>
+                  )
+                : (
+                  currentBlockNumber
+                  ? (
+                      <Button variant="success" className="btn btn-primary btn-large btn-block" type="submit">
+                        Play
+                      </Button>
+                    )
+                  : (
+                      <Button variant="warning" className="btn btn-warning btn-large btn-block" type="button">
+                        Loading...
+                      </Button>
+                  )
+                ) 
+              }
             </Modal.Footer>
           </Form>
         </Modal>
