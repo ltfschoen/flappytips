@@ -151,6 +151,20 @@ class Game extends Component {
     });
   }
 
+  setupTempApi = async (customEndpoint, customEndpointName) => {
+    let currentEndpoint = customEndpoint;
+    let currentEndpointName = customEndpointName;
+
+    const provider = new WsProvider(currentEndpoint);
+    // Create a keyring instance. https://polkadot.js.org/api/start/keyring.html
+    const keyring = new Keyring({ type: 'sr25519' });
+    let types;
+    let api;
+    api = await ApiPromise.create({ provider });
+  
+    return { provider, keyring, types, api };
+  }  
+
   setupApi = async (customEndpoint, customEndpointName) => {
     let currentEndpoint = customEndpoint;
     let currentEndpointName = customEndpointName;
@@ -344,9 +358,8 @@ class Game extends Component {
   }
 
   gameOver = (blocksCleared) => {
-    const { currentBlockNumber, currentEndpointName } = this.state;
-    // TODO
-    const reason = `played https://flappytips.herokuapp.com v${pkg.version} (${isMobile ? 'Mobile' : 'Desktop'}) on ${currentEndpointName} and cleared ${Number.parseFloat(blocksCleared).toFixed(2)} blocks from #${currentBlockNumber}!`;
+    const { currentEndpointName, chainAccount, chainAccountResult, gameStartRequestedAtBlock, gameEndedAtBlock, opponents } = this.state;
+    const reason = `Played https://flappytips.herokuapp.com v${pkg.version} (${isMobile ? 'Mobile' : 'Desktop'}) on ${currentEndpointName} and ${chainAccountResult === chainAccount ? 'won' : 'lost'} against ${Object.keys(opponents).length} opponents, clearing ${Number.parseFloat(blocksCleared).toFixed(2)} blocks obstacles from #${gameStartRequestedAtBlock} to #${gameEndedAtBlock}!`;
     this.setState({
       blocksCleared,
       isGameOver: true,
@@ -416,7 +429,13 @@ class Game extends Component {
     console.log('handleSubmit');
     event.preventDefault(); // Prevent page refreshing when click submit
 
-    const { api, keyring, reason } = this.state;
+    // only do tips on polkadot or kusama network
+    let currentEndpoint = ENDPOINTS['Polkadot-CC1'].url;
+    let currentEndpointName = 'Polkadot-CC1';
+
+    let { keyring, api } = await this.setupTempApi(currentEndpoint, currentEndpointName);
+
+    const { reason } = this.state;
     const twitterHandle = (this.twitterHandle.current && this.twitterHandle.current.value) || 'unknown';
     const reasonWithHandle = `${twitterHandle} ${reason}`;
 
@@ -443,7 +462,7 @@ class Game extends Component {
         // Log some info
         console.log(`Keypair has address ${newPair.address} with publicKey [${newPair.publicKey}]`);
         api.setSigner(newPair);
-        await api.tx.treasury
+        await api.tx.tips
           .reportAwesome(u8aToHex(message), newPair.address)
           .signAndSend(newPair, ({ status, events }) => {
             this.showExtrinsicLogs('reportAwesome', status, events);
@@ -463,7 +482,7 @@ class Game extends Component {
         // Sets the signer for the address on the @polkadot/api so it causes popup to sign extrinsic
         api.setSigner(injector.signer);
 
-        await api.tx.treasury
+        await api.tx.tips
           .reportAwesome(u8aToHex(message), chainAccount)
           .signAndSend(chainAccount, ({ status, events }) => {
             this.showExtrinsicLogs('reportAwesome', status, events);
@@ -691,9 +710,15 @@ class Game extends Component {
           )
           : (
             <div>
-              <div className={`game-state white`}>Game over! You're awesome for clearing {blocksCleared} blocks on {currentEndpointName}!</div>
+              <div className={`game-state white`}>Game over! {chainAccountResult ? (chainAccountResult === chainAccount ? 'You won' : 'You lost') : 'Waiting for results...'}, clearing {blocksCleared} blocks on {currentEndpointName}!</div>
               <Button variant="primary" className="play-again btn btn-lg" onTouchStart={() => this.playAgain()} onClick={() => this.playAgain()}>Play Again?</Button>
-              <Button variant="success" className="report-awesomeness btn btn-lg" onTouchStart={() => this.openModal()} onClick={() => this.openModal()}>Share & Request Tip?</Button>
+              <div>
+                {
+                  chainAccountResult === chainAccount && gameEndedAtBlock ? (
+                    <Button variant="success" className="report-awesomeness btn btn-lg" onTouchStart={() => this.openModal()} onClick={() => this.openModal()}>Share & Request Tip?</Button>
+                  ) : null
+                }
+              </div>
             </div>
           )
         }
@@ -761,6 +786,11 @@ class Game extends Component {
               </Form.Group>
               <div>
                 After submitting, find your tip <a target="_new" href="https://polkadot.js.org/apps/#/treasury">here</a>
+              </div>
+              <div style={{fontSize: '10px', color: '#4169e1'}}>
+                <span>
+                  Preview reason: <i>{reason}</i>
+                </span>
               </div>
             </Modal.Body>
             <Modal.Footer className="justify-content-between">
