@@ -27,6 +27,7 @@ export default function sketch(p5) {
   let customFont;
   let interval;
   let isLoadingMsg = 'Loading...';
+  let isPendingMsg = 'Pending...';
   let isWaitingMsg = 'Waiting...';
 
   // Sockets
@@ -43,6 +44,8 @@ export default function sketch(p5) {
   let currentBlockNumber;
   let deviceOrientation;
   let gameStartRequestedAtBlock = '';
+  let gameEndedAtBlock = '';
+  let gameEndedAtTime = '';
   let gameOver;
   let innerHeight = 0;
   let innerWidth = 0;
@@ -64,6 +67,9 @@ export default function sketch(p5) {
       chainAccount: chainAccount,
       chainAccountResult: chainAccountResult,
       gameStartRequestedAtBlock: gameStartRequestedAtBlock,
+      gameEndedAtBlock: gameEndedAtBlock,
+      gameEndedAtTime: gameEndedAtTime,
+      currentBlockNumber: currentBlockNumber,
       blocksCleared: blocksCleared,
       obstaclesHit: obstaclesHit,
       obstaclesHitAt: obstaclesHitAt
@@ -131,6 +137,8 @@ export default function sketch(p5) {
       deviceOrientation = newProps.deviceOrientation;
       p5.deviceOrientation = deviceOrientation;
       gameStartRequestedAtBlock = newProps.gameStartRequestedAtBlock;
+      gameEndedAtBlock = newProps.gameEndedAtBlock;
+      gameEndedAtTime = newProps.gameEndedAtTime;
       gameOver = newProps.gameOver;
       innerHeight = newProps.innerHeight;
       innerWidth = newProps.innerWidth;
@@ -140,7 +148,10 @@ export default function sketch(p5) {
       updateOpponentsFromSockets = newProps.updateOpponentsFromSockets;
       opponents = newProps.opponents;
 
-      if (gameStartRequestedAtBlock === currentBlockNumber) {
+      if (
+        gameStartRequestedAtBlock === currentBlockNumber ||
+        gameEndedAtBlock === currentBlockNumber
+      ) {
         currentSpeed = DEFAULT_SPEED;
       }
     }
@@ -156,7 +167,7 @@ export default function sketch(p5) {
     // update opponent state
     if (updateOpponentsFromSockets) {
       updateOpponentsFromSockets({
-        opponentsData: gameDataPlayers,
+        allPlayersData: gameDataPlayers,
         playerSocketId: socket.id
       });
     }
@@ -174,9 +185,7 @@ export default function sketch(p5) {
       } else {
         // update current player state
         if (updatePlayerFromSockets) {
-          updatePlayerFromSockets({
-            chainAccountResult: gameDataPlayers[socket.id]['chainAccountResult']
-          });
+          updatePlayerFromSockets(gameDataPlayers[socket.id]);
         }
       }
     }
@@ -189,15 +198,17 @@ export default function sketch(p5) {
     let result = (chainAccountResult === chainAccount) ? 'winner' : chainAccountResult;
     p5.text('Game Result: ' + result, 20, 100);
     p5.text('Game Start Block: ' + gameStartRequestedAtBlock || isLoadingMsg, 20, 120);
-    p5.text('Current Block: ' + currentBlockNumber || isLoadingMsg, 20, 140);
+    p5.text('Game Ended Block: ' + gameEndedAtBlock || isPendingMsg, 20, 140);
+  
+    p5.text('Current Block: ' + currentBlockNumber || isLoadingMsg, 20, 160);
     // p5.text('Current Block Hash: ' + currentBlockHash, 20, 80);
     // if (currentBlockAuthors.length > 0) {
     //   p5.text('Current Block Authors: ' + currentBlockAuthors.join(', '), 20, 100);
     // }
     // p5.text('Parent Block Hash: ' + parentBlockHash, 20, 120);
-    p5.text('Player Chain Account: ' + chainAccount, 20, 160);
-    p5.text('Player Blocks Cleared: ' + Number.parseFloat(blocksCleared).toFixed(2), 20, 180);
-    
+    p5.text('Player Chain Account: ' + chainAccount, 20, 180);
+    p5.text('Player Blocks Cleared: ' + Number.parseFloat(blocksCleared).toFixed(2), 20, 200);
+
     let lv = 180;
     let vs = 20;
     let addVertSpace = () => {
@@ -239,8 +250,10 @@ export default function sketch(p5) {
       clearInterval(interval);
 
       console.log('game over');
+      // game over for currrent player, 
       isGameOver = 1;
       gameOver(blocksCleared);
+
       return;
     }
 
@@ -256,6 +269,7 @@ export default function sketch(p5) {
       p5.frameCount % 100 === 0 &&
       gameStartRequestedAtBlock &&
       currentBlockNumber >= gameStartRequestedAtBlock &&
+      !gameEndedAtBlock &&
       currentBlockNumber !== '' &&
       didChangeBlockNumber === 1
     ) {

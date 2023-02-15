@@ -36,6 +36,8 @@ class Game extends Component {
       errorMessage: '',
       currentBlockHash: '',
       gameStartRequestedAtBlock: '',
+      gameEndedAtBlock: '',
+      gameEndedAtTime: '',
       currentBlockAuthors: [],
       extensionAllInjected: '',
       extensionAllAccountsList: [],
@@ -63,7 +65,7 @@ class Game extends Component {
   }
 
   async componentDidMount() {
-    console.log(`FlappyTips v${pkg.version}`);
+    console.log(`FlappyTips 2 v${pkg.version}`);
     // Returns an array of all the injected sources
     let allInjected = await web3Enable('FlappyTips');
     allInjected = allInjected.map(({ name, version }) => `${name} ${version}`);
@@ -353,39 +355,49 @@ class Game extends Component {
   }
 
   updatePlayerFromSockets = (playerData) => {
-    const { chainAccountResult } = this.state;
-
+    const { chainAccountResult, gameEndedAtBlock, gameEndedAtTime } = this.state;
+    // note that chainAccountResult is assigned with the chainAccount value on the server,
+    // but when transferred to frontend it's assigned to 'winner', so it only happens once
     if (chainAccountResult !== 'winner') {
       if (playerData.chainAccountResult === this.state.chainAccount) {
         this.setState({
-          chainAccountResult: this.state.chainAccount
+          chainAccountResult: this.state.chainAccount,
+          gameEndedAtBlock: gameEndedAtBlock !== playerData.gameEndedAtBlock ? playerData.gameEndedAtBlock : gameEndedAtBlock,
+          gameEndedAtTime: gameEndedAtTime !== playerData.gameEndedAtTime ? playerData.gameEndedAtTime : gameEndedAtTime
         })
       // draw or lose
       } else {
         this.setState({
           chainAccountResult: (
             playerData.chainAccountResult !== chainAccountResult
-          ) ? playerData.chainAccountResult : chainAccountResult
+          ) ? playerData.chainAccountResult : chainAccountResult,
+          gameEndedAtBlock: gameEndedAtBlock !== playerData.gameEndedAtBlock ? playerData.gameEndedAtBlock : gameEndedAtBlock,
+          gameEndedAtTime: gameEndedAtTime !== playerData.gameEndedAtTime ? playerData.gameEndedAtTime : gameEndedAtTime
         })
       }
     }
+
+    this.setState({
+      gameEndedAtBlock: gameEndedAtBlock !== playerData.gameEndedAtBlock ? playerData.gameEndedAtBlock : gameEndedAtBlock,
+      gameEndedAtTime: gameEndedAtTime !== playerData.gameEndedAtTime ? playerData.gameEndedAtTime : gameEndedAtTime
+    })
   }
 
   updateOpponentsFromSockets = (data) => {
     const { clearedOldSocketsOpponents, opponents } = this.state;
-    const { opponentsData, playerSocketId } = data;
+    const { allPlayersData, playerSocketId } = data;
     if (clearedOldSocketsOpponents === false) {
       this.setState({
         clearedOldSocketsOpponents: true
       });
     }
     let updatedOpponents = {};
-    for (const [socketId, value] of Object.entries(opponentsData)) {
+    for (const [socketId, value] of Object.entries(allPlayersData)) {
       // only compare with players other than the current player
       if (value && playerSocketId !== socketId) {
         console.log(`processing opponent: ${socketId}: ${value}`);
-        console.log('data', socketId, opponents[socketId], opponentsData[socketId])
-        if (opponents[socketId] !== opponentsData[socketId]) {
+        console.log('data', socketId, opponents[socketId], allPlayersData[socketId])
+        if (opponents[socketId] !== allPlayersData[socketId]) {
           updatedOpponents[socketId] = value;
         }
       }
@@ -550,10 +562,12 @@ class Game extends Component {
 
       // if less than 5 blocks before next 100th block, the wait for game at next 100th block after that
       // i.e. 24199 + (100 - (24199 % 100)) == 24200 (so game would start in only 1 block!)
-      if (Number(currentBlockNumber) % 100 > 95) {
-        startBlock = (Number(currentBlockNumber) + (100 - (Number(currentBlockNumber) % 100)) + 100).toString();
+      let modulo = 10; // default 100
+      let gap = 9// default 95
+      if (Number(currentBlockNumber) % modulo > 95) {
+        startBlock = (Number(currentBlockNumber) + (modulo - (Number(currentBlockNumber) % modulo)) + modulo).toString();
       } else {
-        startBlock = (Number(currentBlockNumber) + (100 - (Number(currentBlockNumber) % 100))).toString();
+        startBlock = (Number(currentBlockNumber) + (modulo - (Number(currentBlockNumber) % modulo))).toString();
       }
       console.log('startBlock: ', startBlock);
 
@@ -639,7 +653,7 @@ class Game extends Component {
   }
 
   render() {
-    const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, chainAccountResult, chainAccount, currentBlockNumber, currentBlockHash, gameStartRequestedAtBlock,
+    const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, chainAccountResult, chainAccount, currentBlockNumber, currentBlockHash, gameStartRequestedAtBlock, gameEndedAtBlock, gameEndedAtTime,
       currentBlockAuthors, currentEndpoint, currentEndpointName, deviceOrientation, errorMessage, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList,
       isGameOver, innerHeight, innerWidth, opponents,
       parentBlockHash, previousBlockNumber, reason, showModal, showModalChain, showModalMobile, ipData } = this.state;
@@ -656,7 +670,19 @@ class Game extends Component {
     return (
       <div>
         {/* <button onClick={this.randomColor}>Random Color</button> */}
-        <div className="brandname">FlappyTips</div>
+        <div className="brandname">FlappyTips 2</div>
+        <div style={{position: 'fixed', bottom: '10%', fontSize: '10px', color: '#4169e1'}}><br/>
+          {
+            Object.entries(opponents).map((value, i) => {
+              if (
+                gameStartRequestedAtBlock === JSON.stringify(value[1]['gameStartRequestedAtBlock']) &&
+                chain === JSON.stringify(value[1]['chain'])
+              ) {
+                return <span>{JSON.stringify(value[1]['chainAccount'])} | Blocks Cleared: {JSON.stringify(value[1]['blocksCleared'])} | {JSON.stringify(value[0])} | {JSON.stringify(value[1]['chainAccountResult'])}<br/></span>
+              }
+            })
+          }
+        </div>
         {!isGameOver
           ? (
             currentBlockNumber > 0
@@ -683,6 +709,8 @@ class Game extends Component {
           currentBlockNumber={currentBlockNumber}
           deviceOrientation={deviceOrientation}
           gameStartRequestedAtBlock={gameStartRequestedAtBlock}
+          gameEndedAtBlock={gameEndedAtBlock}
+          gameEndedAtTime={gameEndedAtTime}
           gameOver={(blocksCleared) => this.gameOver(blocksCleared)}
           innerHeight={innerHeight}
           innerWidth={innerWidth}
@@ -690,7 +718,7 @@ class Game extends Component {
           parentBlockHash={parentBlockHash}
           previousBlockNumber={previousBlockNumber}
           updatePlayerFromSockets={(playerData) => this.updatePlayerFromSockets(playerData)}
-          updateOpponentsFromSockets={(opponentsData) => this.updateOpponentsFromSockets(opponentsData)}
+          updateOpponentsFromSockets={(allPlayersData) => this.updateOpponentsFromSockets(allPlayersData)}
         />
         <Modal show={showModal} onHide={() => this.closeModal()}>
           <Form onSubmit={this.handleSubmit}>
@@ -757,7 +785,7 @@ class Game extends Component {
           <Form onSubmit={this.handleSubmitChain}>
             <Modal.Header closeButton>
               <Modal.Title>
-                {isMobile ? 'FlappyTips on Mobile' : 'FlappyTips on Desktop'}: <br />
+                {isMobile ? 'FlappyTips 2 on Mobile' : 'FlappyTips 2 on Desktop'}: <br />
                 {/* <i>Choose a blockchain to play!</i> */}
               </Modal.Title>
             </Modal.Header>
@@ -821,13 +849,13 @@ class Game extends Component {
 
         <Modal show={extensionNotInstalled && !isMobile} onHide={() => console.log('Polkadot.js Extension required on Desktop')}>
           <Modal.Header>
-            <Modal.Title>FlappyTips on Desktop: Install and enable Polkadot.js Extension</Modal.Title>
+            <Modal.Title>FlappyTips 2 on Desktop: Install and enable Polkadot.js Extension</Modal.Title>
           </Modal.Header>
 
           <Modal.Body>
             <h3>Desktop users</h3>
-            <p>FlappyTips on Desktop users should use the Polkadot.js Extension (similar to MetaMask) that allows use of your cryptocurrency wallet to easily interact with
-              the game without exposing your private keys. Social interaction in FlappyTips
+            <p>FlappyTips 2 on Desktop users should use the Polkadot.js Extension (similar to MetaMask) that allows use of your cryptocurrency wallet to easily interact with
+              the game without exposing your private keys. Social interaction in FlappyTips 2
               requires an active account with sufficient balance to pay each transaction fee (e.g. 0.01 KSM)
               by accepting or rejecting pop-ups requesting your signature. After downloading it, enable it in your web browser settings, then refresh this
               page and authorise the extension to play!
@@ -845,8 +873,8 @@ class Game extends Component {
 
           <Modal.Body>
             <h3>Mobile users</h3>
-            <p><b>WARNING</b> Sharing your FlappyTips on Mobile game results on mobile devices currently only supports loading your account by
-            entering your private key. Only FlappyTips on Desktop supports loading accounts using the Polkadot.js Extension.</p>
+            <p><b>WARNING</b> Sharing your FlappyTips 2 on Mobile game results on mobile devices currently only supports loading your account by
+            entering your private key. Only FlappyTips 2 on Desktop supports loading accounts using the Polkadot.js Extension.</p>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="success" className="btn btn-lg btn-block" onTouchStart={() => this.closeModalMobile()} onClick={() => this.closeModalMobile()}>Play</Button>
