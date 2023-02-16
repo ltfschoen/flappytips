@@ -30,7 +30,7 @@
 * Create an account at "Add Account" from Polkadot.js Apps at https://polkadot.js.org/apps/#/accounts
 * Install the latest [Polkadot.js Browser Extension](https://github.com/polkadot-js/extension) and import that account
 * Go to https://flappytips.herokuapp.com
-* Allow Polkadot.js Browser Extension to use the FlappyTips 2 dapp
+* Authorize in the popup from Polkadot.js Browser Extension for FlappyTips 2 dapp to access the the addresses of your accounts by clicking "Yes, allow this application access"
 * Select an injected account from Polkadot.js Browser Extension to play a game with
 
 #### Start Game
@@ -86,9 +86,10 @@ brew tap heroku/brew && brew install heroku
 heroku login
 heroku apps:create flappytips
 heroku git:remote -a flappytips
+git push -f heroku yourbranch:master
 git push -f heroku master
 heroku local web
-heroku ps:scale web=1:free
+heroku ps:scale web=0:Eco
 heroku ps
 heroku open
 heroku logs --tail
@@ -107,7 +108,7 @@ heroku ps:scale web=2:standard-2x
 
 * Scale down dynos
 ```
-heroku ps:scale web=1:free
+heroku ps:scale web=0:Eco
 ```
 
 * Fees - https://devcenter.heroku.com/articles/usage-and-billing

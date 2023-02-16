@@ -9,7 +9,10 @@
 /coverage
 
 # production
-/build
+#/build
+build/*
+# exception to the rule
+!build/.gitkeep
 
 # misc
 .DS_Store

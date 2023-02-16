@@ -44,8 +44,9 @@
     "dev:client": "PORT=4000 react-scripts start",
     "dev:server": "node server.js",
     "dev": "corepack enable && corepack prepare yarn@stable --activate && yarn set version 3.4.1 && yarn && yarn build && concurrently --kill-others-on-fail \"cross-env yarn dev:server\" \"yarn dev:client\"",
+    "start": "yarn dev:server",
     "build": "react-scripts build",
-    "heroku-postbuild": "yarn build",
+    "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false corepack enable && corepack prepare yarn@stable --activate && yarn set version 3.4.1 && yarn && yarn run build",
     "production": "yarn build && node server.js"
   },
   "eslintConfig": {
