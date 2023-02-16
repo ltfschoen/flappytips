@@ -54,7 +54,8 @@ class Game extends Component {
       showModalMobile: isMobile,
       deviceOrientation: undefined,
       ipData: {},
-      opponents: {}
+      opponents: {},
+      opponentsWhenEnded: {},
     };
 
     this.twitterHandle = React.createRef();
@@ -358,8 +359,8 @@ class Game extends Component {
   }
 
   gameOver = (blocksCleared) => {
-    const { currentEndpointName, chainAccount, chainAccountResult, gameStartRequestedAtBlock, gameEndedAtBlock, opponents } = this.state;
-    const reason = `Played https://flappytips.herokuapp.com v${pkg.version} (${isMobile ? 'Mobile' : 'Desktop'}) on ${currentEndpointName} and ${chainAccountResult === chainAccount ? 'won' : 'lost'} against ${Object.keys(opponents).length} opponents, clearing ${Number.parseFloat(blocksCleared).toFixed(2)} blocks obstacles from #${gameStartRequestedAtBlock} to #${gameEndedAtBlock}!`;
+    const { currentEndpointName, chainAccount, chainAccountResult, gameStartRequestedAtBlock, gameEndedAtBlock, opponentsWhenEnded } = this.state;
+    const reason = `Played https://flappytips.herokuapp.com v${pkg.version} (${isMobile ? 'Mobile' : 'Desktop'}) on ${currentEndpointName} and ${chainAccountResult === chainAccount ? 'you won,' : 'you lost,'} against ${Object.keys(opponentsWhenEnded).length} opponents, clearing ${Number.parseFloat(blocksCleared).toFixed(0)} block obstacles from #${gameStartRequestedAtBlock} to #${gameEndedAtBlock}!`;
     this.setState({
       blocksCleared,
       isGameOver: true,
@@ -368,7 +369,7 @@ class Game extends Component {
   }
 
   updatePlayerFromSockets = (playerData) => {
-    const { chainAccountResult, gameEndedAtBlock, gameEndedAtTime } = this.state;
+    const { chainAccountResult, gameEndedAtBlock, gameEndedAtTime, opponents, opponentsWhenEnded } = this.state;
     // note that chainAccountResult is assigned with the chainAccount value on the server,
     // but when transferred to frontend it's assigned to 'winner', so it only happens once
     if (chainAccountResult !== 'winner') {
@@ -376,7 +377,8 @@ class Game extends Component {
         this.setState({
           chainAccountResult: this.state.chainAccount,
           gameEndedAtBlock: gameEndedAtBlock !== playerData.gameEndedAtBlock ? playerData.gameEndedAtBlock : gameEndedAtBlock,
-          gameEndedAtTime: gameEndedAtTime !== playerData.gameEndedAtTime ? playerData.gameEndedAtTime : gameEndedAtTime
+          gameEndedAtTime: gameEndedAtTime !== playerData.gameEndedAtTime ? playerData.gameEndedAtTime : gameEndedAtTime,
+          opponentsWhenEnded: gameEndedAtTime !== playerData.gameEndedAtTime ? opponentsWhenEnded : opponents 
         })
       // draw or lose
       } else {
@@ -385,7 +387,8 @@ class Game extends Component {
             playerData.chainAccountResult !== chainAccountResult
           ) ? playerData.chainAccountResult : chainAccountResult,
           gameEndedAtBlock: gameEndedAtBlock !== playerData.gameEndedAtBlock ? playerData.gameEndedAtBlock : gameEndedAtBlock,
-          gameEndedAtTime: gameEndedAtTime !== playerData.gameEndedAtTime ? playerData.gameEndedAtTime : gameEndedAtTime
+          gameEndedAtTime: gameEndedAtTime !== playerData.gameEndedAtTime ? playerData.gameEndedAtTime : gameEndedAtTime,
+          opponentsWhenEnded: gameEndedAtTime !== playerData.gameEndedAtTime ? opponentsWhenEnded : opponents
         })
       }
     }
@@ -408,8 +411,8 @@ class Game extends Component {
     for (const [socketId, value] of Object.entries(allPlayersData)) {
       // only compare with players other than the current player
       if (value && playerSocketId !== socketId) {
-        console.log(`processing opponent: ${socketId}: ${value}`);
-        console.log('data', socketId, opponents[socketId], allPlayersData[socketId])
+        // console.log(`processing opponent: ${socketId}: ${value}`);
+        // console.log('data', socketId, opponents[socketId], allPlayersData[socketId])
         if (opponents[socketId] !== allPlayersData[socketId]) {
           updatedOpponents[socketId] = value;
         }
@@ -674,7 +677,7 @@ class Game extends Component {
   render() {
     const { accountAddress, activeAccountIds, birdColor, blocksCleared, chain, chainAccountResult, chainAccount, currentBlockNumber, currentBlockHash, gameStartRequestedAtBlock, gameEndedAtBlock, gameEndedAtTime,
       currentBlockAuthors, currentEndpoint, currentEndpointName, deviceOrientation, errorMessage, extensionNotInstalled, extensionAllInjected, extensionAllAccountsList,
-      isGameOver, innerHeight, innerWidth, opponents,
+      isGameOver, innerHeight, innerWidth, opponents, opponentsWhenEnded,
       parentBlockHash, previousBlockNumber, reason, showModal, showModalChain, showModalMobile, ipData } = this.state;
     let reasonForTweet;
     // console.log('ip: ', ipData.ip);
@@ -685,6 +688,9 @@ class Game extends Component {
     if (gameStartRequestedAtBlock) {
       remainingBlocksUntilPlay = (Number(gameStartRequestedAtBlock) - Number(currentBlockNumber)).toString();
     }
+
+    // console.log('Object.keys(opponentsWhenEnded).length: ', Object.keys(opponentsWhenEnded).length);
+    // console.log('chainAccountResult: ', chainAccountResult);
 
     return (
       <div>
@@ -710,7 +716,8 @@ class Game extends Component {
           )
           : (
             <div>
-              <div className={`game-state white`}>Game over! {chainAccountResult ? (chainAccountResult === chainAccount ? 'You won' : 'You lost') : 'Waiting for results...'}, clearing {blocksCleared} blocks on {currentEndpointName}!</div>
+              <div className={`game-state white`}>Game over! {chainAccountResult ? (chainAccountResult === chainAccount ? 'You won,' : 'You lost,') : 'Waiting for results...' } cleared {blocksCleared} blocks on {currentEndpointName} from #{gameStartRequestedAtBlock} to #{gameEndedAtBlock}!</div>
+              {/* <div className={`game-state white`}>Game over! {chainAccountResult && Object.keys(opponentsWhenEnded).length > 0 ? (chainAccountResult === chainAccount ? 'You won,' : 'You lost,') : (Object.keys(opponentsWhenEnded).length > 0 ? 'Waiting for other player results...' : 'Single player' ) } cleared {blocksCleared} blocks on {currentEndpointName} from #{gameStartRequestedAtBlock} to #{gameEndedAtBlock}!</div> */}
               <Button variant="primary" className="play-again btn btn-lg" onTouchStart={() => this.playAgain()} onClick={() => this.playAgain()}>Play Again?</Button>
               <div>
                 {
@@ -740,6 +747,7 @@ class Game extends Component {
           innerHeight={innerHeight}
           innerWidth={innerWidth}
           opponents={opponents}
+          opponentsWhenEnded={opponentsWhenEnded}
           parentBlockHash={parentBlockHash}
           previousBlockNumber={previousBlockNumber}
           updatePlayerFromSockets={(playerData) => this.updatePlayerFromSockets(playerData)}

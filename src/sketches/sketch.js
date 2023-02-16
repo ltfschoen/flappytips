@@ -46,6 +46,7 @@ export default function sketch(p5) {
   let gameStartRequestedAtBlock = '';
   let gameEndedAtBlock = '';
   let gameEndedAtTime = '';
+  let opponentsWhenEnded = {};
   let gameOver;
   let innerHeight = 0;
   let innerWidth = 0;
@@ -69,6 +70,7 @@ export default function sketch(p5) {
       gameStartRequestedAtBlock: gameStartRequestedAtBlock,
       gameEndedAtBlock: gameEndedAtBlock,
       gameEndedAtTime: gameEndedAtTime,
+      opponentsWhenEnded: opponentsWhenEnded,
       currentBlockNumber: currentBlockNumber,
       blocksCleared: blocksCleared,
       obstaclesHit: obstaclesHit,
@@ -106,7 +108,24 @@ export default function sketch(p5) {
 
     socket.on("gameDataPlayers", (data) => {
       // get the data from the server to continually update the positions
-      gameDataPlayers = data;
+
+      // if current player has requested to start at a block
+      if (data[socket.id] && data[socket.id]['gameStartRequestedAtBlock']) {
+        let gameDataPlayersStarted = {};
+        Object.entries(data).forEach((player) => {
+          // filter only the other players that started at the same block as the current player
+          if (player[0] !== socket.id) {
+            if (player[1]['gameStartRequestedAtBlock'] === data[socket.id]['gameStartRequestedAtBlock']) {
+              gameDataPlayersStarted[`${player[0]}`] = player[1];
+            }
+          // add the current player too
+          } else {
+            gameDataPlayersStarted[socket.id] = player[1];
+          }
+        });
+
+        gameDataPlayers = gameDataPlayersStarted;
+      }
     });
   }
 
@@ -139,6 +158,7 @@ export default function sketch(p5) {
       gameStartRequestedAtBlock = newProps.gameStartRequestedAtBlock;
       gameEndedAtBlock = newProps.gameEndedAtBlock;
       gameEndedAtTime = newProps.gameEndedAtTime;
+      opponentsWhenEnded = newProps.opponentsWhenEnded;
       gameOver = newProps.gameOver;
       innerHeight = newProps.innerHeight;
       innerWidth = newProps.innerWidth;
@@ -208,8 +228,10 @@ export default function sketch(p5) {
     // p5.text('Parent Block Hash: ' + parentBlockHash, 20, 120);
     p5.text('Player Chain Account: ' + chainAccount, 20, 180);
     p5.text('Player Blocks Cleared: ' + Number.parseFloat(blocksCleared).toFixed(2), 20, 200);
+    let opponentCount = currentBlockNumber >= gameStartRequestedAtBlock ? Object.keys(opponents).length : Object.keys(opponentsWhenEnded).length;
+    p5.text('Opponent Count: ' + opponentCount, 20, 220);
 
-    let lv = 180;
+    let lv = 240;
     let vs = 20;
     let addVertSpace = () => {
       lv = lv + vs;

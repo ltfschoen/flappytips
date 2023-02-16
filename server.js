@@ -109,6 +109,7 @@ io.on("connection", (socket) => {
         gameStartRequestedAtBlock: null,
         gameEndedAtBlock: null,
         gameEndedAtTime: null,
+        opponentsWhenEnded: {},
         currentBlockNumber: null,
         blocksCleared: 0,
         obstaclesHit: 0,
@@ -124,6 +125,7 @@ io.on("connection", (socket) => {
     gameDataPlayers[socket.id].gameStartRequestedAtBlock = data.gameStartRequestedAtBlock;
     gameDataPlayers[socket.id].gameEndedAtBlock = data.gameEndedAtBlock;
     gameDataPlayers[socket.id].gameEndedAtTime = data.gameEndedAtTime;
+    gameDataPlayers[socket.id].opponentsWhenEnded = data.opponentsWhenEnded;
     gameDataPlayers[socket.id].currentBlockNumber = data.currentBlockNumber;
     gameDataPlayers[socket.id].blocksCleared = data.blocksCleared;
     gameDataPlayers[socket.id].obstaclesHit = data.obstaclesHit;
@@ -133,44 +135,56 @@ io.on("connection", (socket) => {
 
     // console.log(`socket.on updateGameDataPlayers: ${socket.id}`, gameDataPlayers[socket.id]);
 
-    const playerCount = Object.keys(gameDataPlayers).length;
+    // filter only the players that started at the same block as the current player
+    // where the start block is defined
+    let gameDataPlayersStarted = {};
+    Object.entries(gameDataPlayers).forEach((player) => {
+        if (data.gameStartRequestedAtBlock && (player[1]['gameStartRequestedAtBlock'] === data.gameStartRequestedAtBlock)) {
+          // delete the opponent's 'opponentsWhenEnded' property, otherwise we have too much nested unnecessary data
+          delete player[1]['opponentsWhenEnded'];
+          gameDataPlayersStarted[`${player[0]}`] = player[1];
+        }
+    });
+    // console.log('gameDataPlayers: ', JSON.stringify(gameDataPlayers));
+    console.log('gameDataPlayersStarted: ', JSON.stringify(gameDataPlayersStarted));
+
+    const playerCount = Object.keys(gameDataPlayersStarted).length;
     let obstaclesHitCount = 0;
 
-    console.log('aaa: ', socket.id, data.gameEndedAtBlock, data.obstaclesHitAt);
+    let hasSetOpponentsWhenEnded = data.opponentsWhenEnded !== {};
     if (data.obstaclesHitAt) {
-      for (const [socketId, value] of Object.entries(gameDataPlayers)) {
+      for (const [socketId, value] of Object.entries(gameDataPlayersStarted)) {
         // check if all players have died
-        if (gameDataPlayers[socketId]['obstaclesHitAt']) {
-          console.log('bbb: ', socketId, gameDataPlayers[socketId]['obstaclesHitAt']);
+        if (gameDataPlayersStarted[socketId]['obstaclesHitAt']) {
           obstaclesHitCount = obstaclesHitCount + 1;
         }
       }
 
-      console.log('ccc: ', playerCount, obstaclesHitCount);
       if (playerCount === obstaclesHitCount) {
-        console.log('all players have died hitting an object at block for start block: ', gameDataPlayers[socket.id]['gameStartRequestedAtBlock'], data.currentBlockNumber);
-        for (const [socketId, value] of Object.entries(gameDataPlayers)) {
+        console.log('all players have died hitting an object at block for start block: ', gameDataPlayersStarted[socket.id]['gameStartRequestedAtBlock'], data.currentBlockNumber);
+        for (const [socketId, value] of Object.entries(gameDataPlayersStarted)) {
+          if (!hasSetOpponentsWhenEnded && socketId !== socket.id && !gameDataPlayersStarted[socketId]['opponentsWhenEnded'].hasOwnProperty(socketId)) {
+            gameDataPlayersStarted[socketId]['opponentsWhenEnded'][socketId] = gameDataPlayersStarted[socketId];
+          }
+
           if (
             value.chain === data.chain &&
-            gameDataPlayers[socket.id]['gameStartRequestedAtBlock'] === gameDataPlayers[socketId]['gameStartRequestedAtBlock'] &&
-            !gameDataPlayers[socketId].gameEndedAtBlock &&
-            !gameDataPlayers[socketId].gameEndedAtTime
+            gameDataPlayersStarted[socket.id]['gameStartRequestedAtBlock'] === gameDataPlayersStarted[socketId]['gameStartRequestedAtBlock'] &&
+            !gameDataPlayersStarted[socketId].gameEndedAtBlock &&
+            !gameDataPlayersStarted[socketId].gameEndedAtTime
           ) {
-            gameDataPlayers[socketId].gameEndedAtBlock = data.currentBlockNumber;
+            gameDataPlayersStarted[socketId].gameEndedAtBlock = data.currentBlockNumber;
             let currentDateUnixTimestamp = moment().unix();
             console.log('currentDateUnixTimestamp: ', currentDateUnixTimestamp);
             console.log('currentDateUnixTimestamp date: ', moment.unix(currentDateUnixTimestamp).format("YYYY-MM-DD HH:mm"));
-            gameDataPlayers[socketId].gameEndedAtTime = currentDateUnixTimestamp;
+            gameDataPlayersStarted[socketId].gameEndedAtTime = currentDateUnixTimestamp;
           }
         }
       }
     }
 
-    console.log('next: ', data.chainAccountResult);
-
     if (data.chainAccountResult) {
       // game already over early exit
-      console.log('data.chainAccountResult undefined');
       return;
     } else {
       // game over event to determine winner
@@ -180,16 +194,16 @@ io.on("connection", (socket) => {
       };
       // only do once all have hit an object
       // note: data.gameEndedAtBlock won't have been set until next emission to server,
-      // so use gameDataPlayers[socketId].gameEndedAtBlock instead
-      if (data.obstaclesHitAt && gameDataPlayers[socket.id].gameEndedAtBlock) {
-        for (const [socketId, value] of Object.entries(gameDataPlayers)) {
+      // so use gameDataPlayersStarted[socketId].gameEndedAtBlock instead
+      if (data.obstaclesHitAt && gameDataPlayersStarted[socket.id].gameEndedAtBlock) {
+        for (const [socketId, value] of Object.entries(gameDataPlayersStarted)) {
           // only compare with players other than the current player
           // and only those connected using the same chain
           // and only those that started the game at the same block
           if (
             socket.id !== socketId &&
             value.chain === data.chain &&
-            gameDataPlayers[socket.id]['gameStartRequestedAtBlock'] === gameDataPlayers[socketId]['gameStartRequestedAtBlock']
+            gameDataPlayersStarted[socket.id]['gameStartRequestedAtBlock'] === gameDataPlayersStarted[socketId]['gameStartRequestedAtBlock']
           ) {
             console.log(`processing: ${socketId}: ${value}`);
             // we are in a nested if where we have already checked that player socket.id has a defined obstaclesHitAt. 
@@ -201,37 +215,37 @@ io.on("connection", (socket) => {
               // player with older timestamp of hitting obstacle is loser
               winner.id = socket.id;
               winner.obstaclesHitAt = data.obstaclesHitAt;
-              gameDataPlayers[socketId]['chainAccountResult'] = 'loser';
+              gameDataPlayersStarted[socketId]['chainAccountResult'] = 'loser';
               console.log('loser: ', socketId, moment.unix(value.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
             } else if (value.obstaclesHitAt && data.obstaclesHitAt < value.obstaclesHitAt) {
               winner.id = socketId;
               winner.obstaclesHitAt = value.obstaclesHitAt;
             } else if (value.obstaclesHitAt && data.obstaclesHitAt === value.obstaclesHitAt) {
               // draw is not supported. if you do not win then you lose
-              gameDataPlayers[socket.id]['chainAccountResult'] = 'loser';
-              gameDataPlayers[socketId]['chainAccountResult'] = 'loser';
+              gameDataPlayersStarted[socket.id]['chainAccountResult'] = 'loser';
+              gameDataPlayersStarted[socketId]['chainAccountResult'] = 'loser';
               console.log('draw: ', socket.id, moment.unix(data.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
               console.log('draw: ', socketId, moment.unix(value.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
             }
           }
         }
-        if (winner.id === socket.id) {
-          gameDataPlayers[winner.id]['chainAccountResult'] = gameDataPlayers[winner.id].chainAccount;
+        if (winner.id === socket.id && gameDataPlayersStarted[winner.id]['blocksCleared'] > 0) {
+          gameDataPlayersStarted[winner.id]['chainAccountResult'] = gameDataPlayersStarted[winner.id].chainAccount;
           console.log('winner: ', winner.id, moment.unix(winner.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
         } else if (winner.id && winner.id !== socket.id) {
-          gameDataPlayers[winner.id]['chainAccountResult'] = gameDataPlayers[winner.id].chainAccount;
+          gameDataPlayersStarted[winner.id]['chainAccountResult'] = gameDataPlayersStarted[winner.id].chainAccount;
           console.log('winner: ', winner.id, moment.unix(winner.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
           // haven't set the current player result previously
-          gameDataPlayers[socket.id]['chainAccountResult'] = 'loser';
+          gameDataPlayersStarted[socket.id]['chainAccountResult'] = 'loser';
         } else {
           console.log('no winner');
           // haven't set the current player result previously
-          gameDataPlayers[socket.id]['chainAccountResult'] = 'loser';
+          gameDataPlayersStarted[socket.id]['chainAccountResult'] = 'loser';
         }
       }
     }
 
-    console.log('finished processing: ', gameDataPlayers);
+    console.log('finished processing: ', gameDataPlayersStarted);
   });
 });
 
