@@ -76,6 +76,11 @@ npm install
 
 ### Deploy to Heroku
 
+* Install Heroku CLI for macOS
+```
+brew tap heroku/brew && brew install heroku
+```
+
 * Start
 ```
 heroku login
