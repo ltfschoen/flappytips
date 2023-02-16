@@ -1,34 +1,52 @@
 ## FlappyTips 2
 
-**Objective:** Fly the DOT character between the gaps as many blocks as possible. 
+**Objective:** Fly the DOT character between more gaps (of obstacles blocks) than all other opponents to win the game of that starting block on the Zeitgeist chain.
 
-**Economics** Incentivises users to create an account on the chain and deposit sufficient funds to cover the transaction costs required to share their game results. If the user plays the game and shares their results, they may be eligible for a tip from the treasury.
+**Economics** Players may choose to play without using any funds. However, incentivises exist that require tokens, where users may create a Substrate-based account and deposit sufficient tokens (DOT tokens) to cover the transaction costs required to share their game results. If the user plays the game and shares their results, they may be eligible for a tip from the treasury.
 
-**Features**:
-* Choice of currently supported chains (i.e. Polkadot, Kusama).
-* Player character is a DOT (similar to Flappy Bird)
-* Polkadot.js Extension is integrated when playing on Desktop, otherwise user needs to enter their private key to share their result (until FlappyTips supports account QR code scanning)
-* Responsive with support for mobile devices or desktop
-* Press Spacebar multiple times to fly the DOT on desktop
-* Touch the screen multiple times to fly the DOT on mobile devices
-* Blocks appear each time a new block is authored on your chosen chain. The chain must support `treasury.reportAwesome`
-* After each block appears, the speed that it moves increases each time.
-* After about 10 blocks the gap may becomes larger but it still becomes more difficult as the blocks move faster
-* If you click "Request Tip?" button after each game and enter your "Mnemonic Seed" that corresponds to the chain that you chose to connected to in the game, along with an optional identifer (i.e. your Twitter handle), it then will submit an extrinsic to the chain that will report your awesomeness for clearing some blocks as a Tip, and should appear in the "Tip" section here https://polkadot.js.org/apps/#/treasury. To obtain an account for that chain and an associated "Mnemonic Seed", go to https://polkadot.js.org/apps/#/accounts and create an account at "Add Account", and remember and use the "Mnemonic Seed".
-* Deploy to Heroku
-
-**Future**:
-* Add support for adding accounts by scanning QR code on mobile devices
-* Standardise the game configurations and prevent users from submitting a fake game result
+**Build Log**
+* Add restricted gameplay endpoint of only Zeitgeist to use their block time for ease of integration with the Zeitgeist prediction markets. Future releases may restore choice of chain
+* Adds support for multiplayer instead of just single player games. If no other opponents connect in time. Once the user selects a Polkadot.js Extension account to play with and clicks "Play" it schedules a game at a future block. Other players may join if they also click "Play" a sufficient amount of blocks before the game starts, otherwise they are scheduled to play at a future block, where other players can join too.
+* Added support to show ghost icon of other players during gameplay
+* Adds support to tracks the start block and end block of the game after all players have hit an obstacle
+* Adds gameplay success factor where players may only Win in multiplayer. Single player games or draws are shown as losing
+* Updated all dependencies including Polkadot.js API, Polkadot Extension, Express API, P5 Gaming API, React
+* Updated from Node.js 10 to latest Node.js 19 and updated Yarn 1 to Yarn 3
+* Added Websockets support for multiplayer
+* Add IP address recording only incase necessary to block malicious users in production.
+* Retains FlappyTips 1 UI where player character is a dot icon
+* Retains FlappyTips 1 gameplay movement via pressing space bar (Desktop) or tapping screen (Mobile) to fly character between gaps of approaching obstacles. Each obstacle is labelled to represent a block of the connected blockchain (Zeitgeist)
+* Retains FlappyTips 1 obstacle speed increase after each obstacle bypassed
+* Retains FlappyTips 1 responsive support for mobile devices or desktop
+* Retains FlappyTips 1 legacy code where users may share their results on Twitter
+* Retains FlappyTips 1 legacy code (only Desktop support) to request a tip from the Polkadot treasury
+* Retains FlappyTips 1 support for deploying to Heroku for production
+* Temporarily removes FlappTips 1 support for requesting a tip on Mobile devices until QR code scanning is supported to avoid having tn enter private key
+* Removes FlappyTips 1 Namebase API and Handshake API domain deployment since Sia Skynet Skylink deprecated.
 
 ### Play
 
+#### Setup
+* Create an account at "Add Account" from Polkadot.js Apps at https://polkadot.js.org/apps/#/accounts
+* Install the latest [Polkadot.js Browser Extension](https://github.com/polkadot-js/extension) and import that account
 * Go to https://flappytips.herokuapp.com
-* Press space bar to make your dot fly and try to navigate through the obstacles.
+* Allow Polkadot.js Browser Extension to use the FlappyTips 2 dapp
+* Select an injected account from Polkadot.js Browser Extension to play a game with
+
+#### Start Game
+* Click the "Play" button after the "Loading..." screen disappears to automatically schedule to play a game at an upcoming block
+* Watch the countdown to the scheduled starting block when gameplay starts  
+* Press space bar multiple times (Desktop) to make your dot character fly and try to navigate and clear your way through gaps in the obstacles to score points.
+* Touch the screen multiple times to fly the DOT (Mobile devices)
+* Obstacles (blocks) appear each time a new block is authored on the connected chain (Zeitgeist). 
+* After each block appears, the speed that it moves increases each time.
+* After about 10 blocks the gap may becomes larger but it still becomes more difficult as the blocks move faster
+
+#### Share Results
+* After game ends optionally click the "Share" button to share your result or request a tip (Desktop only) 
+* After winning a game you may wish to click the "Share & Request Tip?" button, along with an optional identifer (i.e. your Twitter handle). Share your result on Twitter for free. Alternatively deposit submit sufficient funds into the wallet to create an extrinsic to Polkadot chain (DOT tokens) that will report your awesomeness for clearing some blocks requesting a Tip, and should appear in the "Tip" section here https://polkadot.js.org/apps/#/treasury on a chain that supports `treasury.reportAwesome` (Polkadot).
 
 ### Develop Environment
-
-Install the latest [polkadot-js/extension](https://github.com/polkadot-js/extension)
 
 Clone the repository, install Yarn 3.x and Node.js, and then run the following in terminal:
 ```
@@ -41,12 +59,11 @@ npm install -g concurrently &&
 yarn add node-gyp
 yarn run dev
 ```
-
-* Go to http://localhost:4000
-* Click the polkadot-js/extension and allow it to use FlappyTips
-* Press space bar to make your dot fly and try to navigate through the obstacles.
+ 
+* Follow the "Setup" in the "Play" section of this README file, but instead go to http://localhost:4000
+* Click the polkadot-js/extension browser icon and allow it to interact with FlappyTips 2
+* Press space bar to make your dot character fly and try to navigate through the obstacles.
 * Access the API endpoints at http://localhost:5000/api 
-Additional planned functionality and deployment to production is dependent on whether help is obtained from Riot channels in response to technical support enquiries.
 
 ### Maintenance
 
@@ -106,7 +123,7 @@ kill -9 <PROCESS_ID>
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 Credit to this repo that was used to replicate a Flappy Bird like game https://codepen.io/renzo/pen/GXWbEq
 
-## Smart Contracts
+<!-- ## Smart Contracts
 
 ### Create Leaderboard using Substrate ink! Smart Contract language
 
@@ -145,9 +162,9 @@ cargo +nightly test
 Access in ./target/<CONTRACT_NAME>.json
 ```
 cargo +nightly contract generate-metadata
-```
+``` -->
 
-### Deploy Smart Contract to Edgeware
+<!-- ### Deploy Smart Contract to Edgeware
 
 * Deploy smart contract to Substrate node. See https://substrate.dev/substrate-contracts-workshop/#/0/deploying-your-contract
   * Contract deployment is split into: 1. Deploying code on blockchain (only once); 2. Create smart contract instance; 3. Instantiate multiple times (without having to redeploy code and waste space on blockchain)
@@ -169,7 +186,7 @@ cargo +nightly contract generate-metadata
   Ensure contract balance is refilled with sufficient balance to pay the contract's rent (endowment)
   otherwise the contract becomes an invalid tombstone.
 * Call smart contract using Polkadot.js Apps. See https://substrate.dev/substrate-contracts-workshop/#/0/calling-your-contract
-  * Deploy Contract
+  * Deploy Contract -->
 
 ### Documentation for ink!
 
@@ -178,16 +195,3 @@ https://paritytech.github.io/ink/
 ### References
 
 * https://medium.com/geekculture/multiplayer-interaction-with-p5js-f04909e13b87
-
-## Debugging Notes
-
-Key debugging console logs:
-
-* frontend
-chainAccount
-opponent gameDataPlayer
-gameDataPlayers received
-
-* server
-socket.on updateGameDataPlayers
-

@@ -761,20 +761,26 @@ class Game extends Component {
             <Modal.Body>
               {!isMobile
                 ? (
-                  <Form.Group controlId="formChainAccount">
-                    <h5>Chain Account:</h5>
-                    <Form.Label>Select an account for this chain</Form.Label>
-                    <Form.Control as="select" ref={this.chainAccount} name="chainAccount">
-                      {extensionAllAccountsList.map((value, i) => {
-                        return <option key={i} value={value.address}>{value.meta.name} | {value.address}</option>
-                      })}
-                    </Form.Control>
-                    <Form.Text className="text-muted">
-                      Important: Ensure sufficient balance to pay transaction fees (e.g. >0.001 KSM)
-                    </Form.Text>
-                  </Form.Group>
+                  <div>
+                    <Form.Group controlId="formChainAccount">
+                      <h5>Chain Account:</h5>
+                      <Form.Label>Select an account for this chain</Form.Label>
+                      <Form.Control as="select" ref={this.chainAccount} name="chainAccount">
+                        {extensionAllAccountsList.map((value, i) => {
+                          return <option key={i} value={value.address}>{value.meta.name} | {value.address}</option>
+                        })}
+                      </Form.Control>
+                      <Form.Text className="text-muted">
+                        Important: Ensure sufficient balance to pay transaction fees (e.g. >0.001 KSM)
+                      </Form.Text>
+                    </Form.Group>
+                    <div>
+                      After submitting, see if you receive a tip <a target="_new" href="https://polkadot.js.org/apps/#/treasury">here</a>
+                    </div>
+                  </div>
                 )
-                : (
+                : (<div></div>)
+                /* (
                   <Form.Group controlId="formMnemonicSeed">
                     <Form.Label>Mnemonic Seed:  Public Address (SS58): {accountAddress}</Form.Label>
                     <Form.Control type="text" ref={this.mnemonicSeed} name="mnemonicSeed" placeholder="Account Mnemonic Seed" onChange={() => this.onChangeMnemonic(this)}/>
@@ -783,7 +789,7 @@ class Game extends Component {
                       Important: Ensure sufficient balance to pay transaction fees (e.g. >0.001 KSM)
                     </Form.Text>
                   </Form.Group>
-                )
+                )*/
               }
               <Form.Group controlId="formTwitterHandle">
                 <Form.Label>Twitter Handle:</Form.Label>
@@ -792,9 +798,6 @@ class Game extends Component {
                   Enter your Twitter handle or other form of nickname
                 </Form.Text>
               </Form.Group>
-              <div>
-                After submitting, find your tip <a target="_new" href="https://polkadot.js.org/apps/#/treasury">here</a>
-              </div>
               <div style={{fontSize: '10px', color: '#4169e1'}}>
                 <span>
                   Preview reason: <i>{reason}</i>
@@ -911,8 +914,9 @@ class Game extends Component {
 
           <Modal.Body>
             <h3>Mobile users</h3>
-            <p><b>WARNING</b> Sharing your FlappyTips 2 on Mobile game results on mobile devices currently only supports loading your account by
-            entering your private key. Only FlappyTips 2 on Desktop supports loading accounts using the Polkadot.js Extension.</p>
+            <p>Play and social sharing is enabled, however requesting tipping FlappyTips 2 on Mobile game results on mobile devices is not currently supported until a QR code scanning feature using Parity Signer is incorporated.</p>
+            {/* <p><b>WARNING</b> Sharing your FlappyTips 2 on Mobile game results on mobile devices currently only supports loading your account by
+            entering your private key. Only FlappyTips 2 on Desktop supports loading accounts using the Polkadot.js Extension.</p> */}
           </Modal.Body>
           <Modal.Footer>
             <Button variant="success" className="btn btn-lg btn-block" onTouchStart={() => this.closeModalMobile()} onClick={() => this.closeModalMobile()}>Play</Button>
