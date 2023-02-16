@@ -6,7 +6,8 @@ import { COLOURS } from '../constants';
 
 // get socket which only uses websockets as a means of communication
 // ws://localhost:5000/socket.io/?EIO=4&transport=websocket
-const socket = io("ws://localhost:5000", {
+let socketEndpoint = process.env.NODE_ENV ? 'ws://flappytips.herokuapp.com:5000' : 'ws://localhost:5000';
+const socket = io(socketEndpoint, {
   transports: ["websocket"]
 });
 console.log('socket in sketch', socket);

@@ -8,7 +8,7 @@ const { IS_PROD } = require('./constants');
 const app = express();
 const http = require('http').Server(app);
 const io = require("socket.io")(http, {
-  transports: ["websocket"] // set to use websocket only
+  transports: ["websocket"], // set to use websocket only
 }); // this loads socket.io and connects it to the server.
 const port = process.env.PORT || 5000;
 const staticPath = path.join(__dirname, './', 'build');
@@ -16,6 +16,10 @@ const corsWhitelist = [
   'http://localhost:3000',
   'http://localhost:4000', // frontend
   'http://localhost:5000', // proxy
+  'https://flappytips.herokuapp.com',
+  'https://flappytips.herokuapp.com',
+  'http://flappytips.herokuapp.com/assets/LemonMilkMedium.otf',
+  'https://flappytips.herokuapp.com/assets/LemonMilkMedium.otf'
 ];
 // https://www.npmjs.com/package/cors#configuration-options
 const corsOptions = {

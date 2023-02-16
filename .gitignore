@@ -9,9 +9,8 @@
 /coverage
 
 # production
-#/build
 build/*
-# exception to the rule
+# exception to the rule for Heroku use
 !build/.gitkeep
 
 # misc
