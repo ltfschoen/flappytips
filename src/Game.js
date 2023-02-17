@@ -367,7 +367,7 @@ class Game extends Component {
 
   gameOver = (blocksCleared) => {
     const { currentEndpointName, chainAccount, chainAccountResult, gameStartRequestedAtBlock, gameEndedAtBlock, opponentsWhenEnded } = this.state;
-    const reason = `Played https://flappytips.herokuapp.com v${pkg.version} (${isMobile ? 'Mobile' : 'Desktop'}) on ${currentEndpointName} and ${chainAccountResult === chainAccount ? 'you won,' : 'you lost,'} against ${Object.keys(opponentsWhenEnded).length} opponents, clearing ${Number.parseFloat(blocksCleared).toFixed(0)} block obstacles from #${gameStartRequestedAtBlock} to #${gameEndedAtBlock}!`;
+    const reason = `Played FlappyTips 2 v${pkg.version} (${isMobile ? 'Mobile' : 'Desktop'}) on ${currentEndpointName} and ${chainAccountResult === chainAccount ? 'you won,' : 'you lost,'} against ${Object.keys(opponentsWhenEnded).length} opponents, clearing ${Number.parseFloat(blocksCleared).toFixed(0)} block obstacles from #${gameStartRequestedAtBlock} to #${gameEndedAtBlock}!`;
     this.setState({
       blocksCleared,
       isGameOver: true,

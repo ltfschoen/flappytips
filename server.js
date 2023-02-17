@@ -4,7 +4,6 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const { createProxyMiddleware } = require('http-proxy-middleware');
-const pkg = require('./package.json');
 const http = require("http");
 const https = require('https');
 const fs = require('fs');
@@ -13,19 +12,19 @@ const { IS_PROD } = require('./constants');
 
 const PORT = process.env.PORT || 5000;
 // https or http
-let proxy_port = (process.env.WSS !== true) ? 80 : 443;
+let proxy_port = (process.env.REACT_APP_WSS !== true) ? 80 : 443;
 let proxy_url;
-if (process.env.NODE_ENV === 'production' && process.env.WSS) {
+if (process.env.NODE_ENV === 'production' && process.env.REACT_APP_WSS === true) {
   proxy_url = `https://flappytips.herokuapp.com:${proxy_port}`;
-} else if (process.env.NODE_ENV === 'production' && process.env.WSS !== true) {
+} else if (process.env.NODE_ENV === 'production' && process.env.REACT_APP_WSS !== true) {
   proxy_url = `http://flappytips.herokuapp.com:${proxy_port}`;
 } else if (process.env.NODE_ENV !== 'production') {
-  proxy_url = pkg.proxy;
+  proxy_url = 'http://localhost:5000';
 }
 // const target = PROXY || pkg.proxy;
 // console.log('proxy_url: ', proxy_url);
 let options;
-if (process.env.WSS === true) {
+if (process.env.REACT_APP_WSS === true) {
   options = {
     key: fs.readFileSync(path.resolve(__dirname, 'key-rsa.pem')),
     cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem'))
@@ -35,7 +34,7 @@ if (process.env.WSS === true) {
 const app = express();
 
 let httpServer;
-if (process.env.WSS === true) {
+if (process.env.REACT_APP_WSS === true) {
   // https
   httpServer = https.createServer(options, app);
 } else {

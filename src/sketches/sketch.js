@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 5000;
 // ws://localhost:5000/socket.io/?EIO=4&transport=websocket
 let socketEndpoint = process.env.NODE_ENV === 'production'
   ? (
-    process.env.WSS === true
+    process.env.REACT_APP_WSS === true
     ? `wss://flappytips.herokuapp.com:${PORT}`
     : `ws://flappytips.herokuapp.com:${PORT}`
   )

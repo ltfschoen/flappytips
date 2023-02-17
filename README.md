@@ -48,7 +48,14 @@
 
 ### Develop Environment
 
-Clone the repository, install Yarn 3.x and Node.js, and then run the following in terminal:
+Clone the repository. Checkout the PR with FlappyTips 2 features.
+```
+git clone https://github.com/ltfschoen/flappytips
+git fetch origin flappydot:flappydot
+git checkout flappydot
+```
+
+Install Yarn 3.x and Node.js, and then run the following in terminal:
 ```
 nvm use 19.6.0
 npm i -g yarn
@@ -56,13 +63,15 @@ corepack enable && corepack prepare yarn@stable --activate && yarn set version 3
 yarn \
 npm install -g nodemon &&
 npm install -g concurrently &&
-yarn add node-gyp
+yarn add node-gyp &&
+yarn add fs &&
 yarn run dev
 ```
  
 * Follow the "Setup" in the "Play" section of this README file, but instead go to http://localhost:4000
 * Click the polkadot-js/extension browser icon and allow it to interact with FlappyTips 2
 * Press space bar to make your dot character fly and try to navigate through the obstacles.
+* Open other browser windows at http://localhost:4000 for other players to join
 * Access the API endpoints at http://localhost:5000/api 
 
 ### Maintenance
@@ -74,9 +83,81 @@ rm -rf node_modules
 npm install
 ```
 
+### Websockets
+
+* HTTPS and WWS credentials were setup following this guidehttps://medium.com/developer-rants/implementing-https-and-wss-support-in-express-with-typescript-of-course-f36006c77bab
+```
+openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
+openssl rsa -in key.pem -out key-rsa.pem
+```
+
+### Deploy to Linode
+
+https://www.youtube.com/watch?v=FTyby51m0hQ
+
+```
+ssh x@x.x.x.x
+git clone git@github.com:ltfschoen/flappytips.git
+git fetch origin flappydot:flappydot
+git checkout flappydot
+```
+
+* Install NVM https://www.linode.com/docs/guides/how-to-install-use-node-version-manager-nvm/
+
+```
+nvm use v19.6.0
+sudo apt update
+sudo apt upgrade
+sudo apt install nginx
+
+mv ./flapptips /var/www
+sudo vim /etc/nginx/sites-available/flapptips
+sudo ln -s /etc/nginx/sites-available/flapptips /etc/nginx/sites-enabled
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+* https://www.linode.com/docs/guides/getting-started-with-nginx-part-3-enable-tls-for-https/
+
+/etc/nginx/sites-available/flapptips
+```
+server {
+  ssl_certificate     /var/www/cert.pem;
+  ssl_certificate_key /var/www/key-rsa.pem;
+  listen          443 ssl default_server;
+  listen          [::]:443 ssl default_server;
+  server_name     139.144.96.196;
+  root            /var/www/build;
+  index           index.html;
+  location / {
+                  try_files $uri /index.html =404;
+  }
+}
+```
+
+```
+nginx -s reload
+```
+
+* Follow development environment commands
+
+* Run with screen https://linuxconfig.org/how-to-run-command-in-background-on-linux
+
 ### Deploy to Heroku
 
 Note: It is necessary to use either Eco or Basic plan on Heroku. [Eco plan dyno that receives no web traffic in a 30-minute period sleeps and becomes active again upon receiving traffic](https://devcenter.heroku.com/articles/eco-dyno-hours#dyno-sleeping). See https://www.heroku.com/pricing
+
+Note:  I tried to deploy and run the game on Heroku after removing console.log to reduce the required production memory to ~1Gb memory. I provided credit card info and chose 1 dyno resized to performance-m which has 2.5Gb memory instead of 0.5Gb memory of the lower plans that were giving R14 out of memory errors, however Heroku would not let me scale to performance-m and an gave an error `Access to performance-m and performance-l dynos is limited to customers with an established payment history`. But the only way to quickly get payment history is to buy their lame $5 Eco plan that only provides 0.5Gb of memory, which is not sufficient to run my game anyway, but they do not give the option of paying $25 upfront for the performance-m plan.
+```
+[heroku-exec] Starting
+2023-02-17T09:08:44.912127+00:00 app[web.1]: Creating an optimized production build...
+2023-02-17T09:09:00.375813+00:00 heroku[web.1]: Process running mem=789M(154.3%)
+2023-02-17T09:09:00.377211+00:00 heroku[web.1]: Error R14 (Memory quota exceeded)
+2023-02-17T09:09:22.552936+00:00 heroku[web.1]: Process running mem=1194M(233.2%)
+2023-02-17T09:09:22.555218+00:00 heroku[web.1]: Error R15 (Memory quota vastly exceeded)
+2023-02-17T09:09:22.557134+00:00 heroku[web.1]: Stopping process with SIGKILL
+```
+So despite having used Heroku for many years with Ruby on Rails, based on this experience I think I will switch to deploying on Linode where I already have a cheap server with plenty of memory. 
 
 * Install Heroku CLI for macOS
 ```
@@ -211,3 +292,5 @@ https://paritytech.github.io/ink/
 
 * https://medium.com/geekculture/multiplayer-interaction-with-p5js-f04909e13b87
 * Swenky CLI for ink! https://www.youtube.com/watch?v=rx9B6vQLmS8
+
+* iMovie presentation - https://support.apple.com/en-gb/guide/imovie/mov91a895a64/mac
