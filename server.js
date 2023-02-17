@@ -2,21 +2,28 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const http = require("http");
+const https = require('https');
+const fs = require('fs');
 const moment = require('moment');
 const { IS_PROD } = require('./constants');
 
 const cluster = require("cluster");
-// const httpServer = require("http");
 const { Server } = require("socket.io");
 const numCPUs = require("os").cpus().length;
 const { setupMaster, setupWorker } = require("@socket.io/sticky");
 const { createAdapter, setupPrimary } = require("@socket.io/cluster-adapter");
 
+const options = {
+  key: fs.readFileSync(path.resolve(__dirname, 'key.pem')),
+  cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem'))
+};
+
 if (cluster.isMaster) {
   console.log(`Master ${process.pid} is running`);
 
   const app = express();
-  const httpServer = require('http').Server(app);
+  const httpServer = https.createServer(options, app);
 
   const io = require("socket.io")(httpServer, {
     transports: ["websocket"], // set to use websocket only
@@ -114,7 +121,7 @@ if (cluster.isMaster) {
   console.log(`Worker ${process.pid} started`);
 
   const app = express();
-  const httpServer = require('http').Server(app);
+  const httpServer = https.createServer(options, app);
   const io = require("socket.io")(httpServer, {
     transports: ["websocket"], // set to use websocket only
     credentials: true
