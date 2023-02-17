@@ -287,11 +287,13 @@ io.on("connection", (socket) => {
           // fetch Oracle and Leaderboard contract address
           const address = fetchOracleAndLeaderboardContracts();
           // submit winner to contract
-          submitGameWinnerToContract(
+          await submitGameWinnerToContract(
             address,
             gameDataPlayersStarted[winner.id].chainAccount,
             gameDataPlayersStarted[winner.id]['blocksCleared']
           );
+
+          await submitOracleOutcomeToZeitgeist(address, winnerAccountId);
 
         } else if (winner.id && winner.id !== socket.id) {
           gameDataPlayersStarted[winner.id]['chainAccountResult'] = gameDataPlayersStarted[winner.id].chainAccount;
