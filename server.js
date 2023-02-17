@@ -293,7 +293,11 @@ io.on("connection", (socket) => {
             gameDataPlayersStarted[winner.id]['blocksCleared']
           );
 
-          await submitOracleOutcomeToZeitgeist(address, winnerAccountId);
+          await submitOracleOutcomeToZeitgeist(
+            address,
+            winnerAccountId,
+            gameDataPlayersStarted[winner.id]['blocksCleared']
+          );
 
         } else if (winner.id && winner.id !== socket.id) {
           gameDataPlayersStarted[winner.id]['chainAccountResult'] = gameDataPlayersStarted[winner.id].chainAccount;

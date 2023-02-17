@@ -45,4 +45,6 @@ async function deployOracleAndLeaderboardContracts () {
     });
 }
 
-deployOracleAndLeaderboardContracts();
+deployOracleAndLeaderboardContracts()
+    .catch(console.error)
+    .finally(() => process.exit());

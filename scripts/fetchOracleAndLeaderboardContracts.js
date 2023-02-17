@@ -37,5 +37,5 @@ async function fetchOracleAndLeaderboardContracts () {
 }
 
 module.exports = {
-    fetchOracleAndLeaderboardContracts: fetchOracleAndLeaderboardContracts()
+    fetchOracleAndLeaderboardContracts: fetchOracleAndLeaderboardContracts().catch(console.error).finally(() => process.exit();
 };

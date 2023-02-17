@@ -42,5 +42,5 @@ async function submitGameWinnerToContract (address, winnerAccountId, winnerBlock
 }
 
 module.exports = {
-    submitGameWinnerToContract: submitGameWinnerToContract()
+    submitGameWinnerToContract: submitGameWinnerToContract().catch(console.error).finally(() => process.exit())
 };

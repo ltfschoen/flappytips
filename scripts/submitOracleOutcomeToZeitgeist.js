@@ -1,5 +1,6 @@
 const { ApiPromise, Keyring, WsProvider } = require('@polkadot/api');
 const { CodePromise, ContractPromise } = require('@polkadot/api-contract');
+const SDK, { util } = require("@zeitgeistpm/sdk");
 const metadata = require('./ink/contracts/leaderboard/leaderboard.json');
 
 // Alice will deploy oracle and leaderboard contract on behalf of players
@@ -7,7 +8,7 @@ const metadata = require('./ink/contracts/leaderboard/leaderboard.json');
 const ALICE = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
 
 // TODO - use Swanky CLI instead
-async function submitOracleOutcomeToZeitgeist (address, winnerAccountId) {
+async function submitOracleOutcomeToZeitgeist (address, winnerAccountId, winnerBlocksCleared) {
     const endpoint = 'wss://zeitgeist-rpc.dwellir.com';
     const provider = new WsProvider(endpoint);
     const keyring = new Keyring({ type: 'sr25519' });
@@ -35,7 +36,43 @@ async function submitOracleOutcomeToZeitgeist (address, winnerAccountId) {
     );
 
     // Oracle sends score to Zeitgeist
+    // https://github.com/Whisker17/sdk-demo/blob/main/src/market/reportOutcome.ts
+
+    const ZTGNET = "wss://bsr.zeitgeist.pm";
+    const sdk = await SDK.initialize(ZTGNET);
+    // TODO - automate this
+    const marketId = 8; // specify the market that they were competing in
+
+    // map tickers to account ids
+    const outcomes = {
+        "d.....1": 1, // PLY1 ticker
+        "d.....2": 2, // PLY2 ticker
+        "d.....3": 3, // PLY3 ticker
+    }
+
+    let outcomeForTickerOfWinner;
+    for (const [account, value] of Object.entries(outcomes)) {
+        if (account === winnerAccountId) {
+            outcomeForTickerOfWinner = outcome[account];
+        }
+    }
+  
+    // Generate signer based on seed
+    const seed = ALICE;
+    const signer = util.signerFromSeed(seed);
+    console.log("Sending transaction from", signer.address);
+  
+    const market = await sdk.models.fetchMarketData(Number(marketId));
+  
+    const outcomeReport = market.marketType.isCategorical
+      ? { categorical: Number(outcomeForTickerOfWinner) }
+      : { scalar: Number(outcomeForTickerOfWinner) };
+    const res = await market.reportOutcome(signer, outcomeReport, true);
+  
+    console.log(res);
 }
 
-submitOracleOutcomeToZeitgeist();
+submitOracleOutcomeToZeitgeist()
+    .catch(console.error)
+    .finally(() => process.exit());
 
