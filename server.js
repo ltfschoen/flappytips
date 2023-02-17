@@ -33,12 +33,13 @@ if (process.env.WSS !== true) {
 const io = require("socket.io")(httpServer, {
   transports: ["websocket"] // set to use websocket only
 }); // this loads socket.io and connects it to the server.
-const port = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000;
 const staticPath = path.join(__dirname, './', 'build');
 const corsWhitelist = [
   'http://localhost:3000',
   'http://localhost:4000', // frontend
   'http://localhost:5000', // proxy
+  `http://localhost:${PORT}`, // proxy
   'http://flappytips.herokuapp.com', // http
   'https://flappytips.herokuapp.com', // https
   'http://flappytips.herokuapp.com/assets/LemonMilkMedium.otf',
@@ -97,8 +98,8 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 
-httpServer.listen(port, () => {
-   console.log(`CORS-enabled web server listening on port ${port}`);
+httpServer.listen(PORT, () => {
+   console.log(`CORS-enabled web server listening on port ${PORT}`);
 });
 
 // store the positions of each client in this object.

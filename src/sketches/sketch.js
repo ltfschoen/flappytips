@@ -4,15 +4,16 @@ import Bird from './Bird';
 import Obstacle from './Obstacle';
 import { COLOURS } from '../constants';
 
+const PORT = process.env.PORT;
 // get socket which only uses websockets as a means of communication
 // ws://localhost:5000/socket.io/?EIO=4&transport=websocket
 let socketEndpoint = process.env.NODE_ENV === 'production'
   ? (
     process.env.WSS === true
-    ? 'wss://flappytips.herokuapp.com:5000'
-    : 'ws://flappytips.herokuapp.com:5000'
+    ? `wss://flappytips.herokuapp.com:${PORT}`
+    : `ws://flappytips.herokuapp.com:${PORT}`
   )
-  : 'ws://localhost:5000';
+  : `ws://localhost:${PORT}`;
 const socket = io(socketEndpoint, {
   transports: ["websocket"]
 });
