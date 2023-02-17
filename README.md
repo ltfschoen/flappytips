@@ -98,6 +98,11 @@ heroku logs --tail
 heroku restart
 ```
 
+* SSH
+```
+heroku ps:exec
+```
+
 * Stop
 ```
 heroku ps:stop web

@@ -6,7 +6,7 @@ import { COLOURS } from '../constants';
 
 // get socket which only uses websockets as a means of communication
 // ws://localhost:5000/socket.io/?EIO=4&transport=websocket
-let socketEndpoint = process.env.NODE_ENV === "production"
+let socketEndpoint = process.env.NODE_ENV === 'production'
   ? (
     process.env.WSS === true
     ? 'wss://flappytips.herokuapp.com:5000'

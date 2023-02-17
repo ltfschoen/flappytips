@@ -1,13 +1,36 @@
+require('dotenv').config()
 const bodyParser = require('body-parser');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const http = require("http");
+const https = require('https');
+const fs = require('fs');
 const moment = require('moment');
 const { IS_PROD } = require('./constants');
 
+let options;
+if (process.env.WSS) {
+  options = {
+    key: fs.readFileSync(path.resolve(__dirname, 'key-rsa.pem')),
+    cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem'))
+  };
+}
+
 const app = express();
-const http = require('http').Server(app);
-const io = require("socket.io")(http, {
+
+let httpServer;
+if (process.env.WSS !== true) {
+  // https
+  httpServer = https.createServer(options, app);
+} else {
+  // http
+  // httpServer = http.createServer(app);
+  httpServer = require('http').Server(app);
+}
+
+
+const io = require("socket.io")(httpServer, {
   transports: ["websocket"] // set to use websocket only
 }); // this loads socket.io and connects it to the server.
 const port = process.env.PORT || 5000;
@@ -74,7 +97,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 
-http.listen(port, () => {
+httpServer.listen(port, () => {
    console.log(`CORS-enabled web server listening on port ${port}`);
 });
 
