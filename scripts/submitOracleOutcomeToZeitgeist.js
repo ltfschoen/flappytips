@@ -1,6 +1,6 @@
 const { ApiPromise, Keyring, WsProvider } = require('@polkadot/api');
 const { CodePromise, ContractPromise } = require('@polkadot/api-contract');
-const SDK, { util } = require("@zeitgeistpm/sdk");
+let SDK, { util } = require("@zeitgeistpm/sdk");
 const metadata = require('./ink/contracts/leaderboard/leaderboard.json');
 
 // Alice will deploy oracle and leaderboard contract on behalf of players
@@ -53,7 +53,7 @@ async function submitOracleOutcomeToZeitgeist (address, winnerAccountId, winnerB
     let outcomeForTickerOfWinner;
     for (const [account, value] of Object.entries(outcomes)) {
         if (account === winnerAccountId) {
-            outcomeForTickerOfWinner = outcome[account];
+            outcomeForTickerOfWinner = outcomes[account];
         }
     }
   
@@ -75,4 +75,3 @@ async function submitOracleOutcomeToZeitgeist (address, winnerAccountId, winnerB
 submitOracleOutcomeToZeitgeist()
     .catch(console.error)
     .finally(() => process.exit());
-
