@@ -46,6 +46,55 @@
 * After game ends optionally click the "Share" button to share your result or request a tip (Desktop only) 
 * After winning a game you may wish to click the "Share & Request Tip?" button, along with an optional identifer (i.e. your Twitter handle). Share your result on Twitter for free. Alternatively deposit submit sufficient funds into the wallet to create an extrinsic to Polkadot chain (DOT tokens) that will report your awesomeness for clearing some blocks requesting a Tip, and should appear in the "Tip" section here https://polkadot.js.org/apps/#/treasury on a chain that supports `treasury.reportAwesome` (Polkadot).
 
+#### Zeitgeist Prediction Markets Integration
+
+##### Create Market
+
+* User enters market name
+* User enters question
+* User adds logo for market
+* User choose category (i.e. e-sports)
+* User chooses market end date or block (when game ends)
+	- Calculate time lapsed between current zeitgeist block and proposed market end block
+	- Ensure it ends after get result from all competitors, than allow time for oracle result too
+	- Zeitgeist app provides 4 days for oracle to submit final outcome (otherwise oracle forfeits oracle bond of 200 ZTG)
+	(i.e. >= 4 days between market ending and oracle submitting result)
+* User creates crypto assets for each outcome, i.e. Y/N, Options, Range
+	i.e. outcomes + ticker Player1 PLY1, Player2 PLY2 (ticker must be unique)
+	- The more outcome tokens minted (i.e. amt column below... the better for the market, and the more efficient the market will be
+* User specifies Oracle wallet address
+	i.e. use your own i.e. d_______ (Zeitgeist)
+	- Must report the correct result before resolution time
+* User specifies market description
+	- The end date
+	- Location of source of finality
+	- i.e. Prediction market to give insights into who will win the ___ race,
+	the market will end right before the semi-final stage so to give more opportunity for predictions,
+	the Oracle shall source the result from url www.___.com after the final completes,
+	in the highlight unlikely even that it is a draw, then the outcome "OTHER" shall be the winning token,
+	winners holding a winning asset get 1 ZTG per winning asset 
+* User gets liquidity from zeitgeist or provides it themselves
+
+balance    weights  %	amt price (1 ZTG / 3)	total value
+PLY1 200      33       33	100      0.33				33
+PLY2 200      33       33	100      0.33				33
+PLY3 200	    33       33	100      0.33				33
+ZTG  200	    100	     100 100     1          100
+
+Note: markets denominated in ZTG tokens (to buy/sell outcome assets)
+
+Prize pool = 100 ZTG
+Liquidity  = 200 ZTG
+
+* User chooses Pool Fees (i.e. 0.1%, 1%, 10%, 3%) allowing liquidity providers to collect more from a given trade, but may reduce market participants
+
+Cost breakdown
+Network fee             - 0.053 ZTG
+Permissionless Bond 	  - 1000 ZTG (if believe it is a fair market, returned if market not deleted by committee)
+Oracle Bond 			      - 200 ZTG
+Liquidity				        - 200 ZTG (100 for counterpair, 10*10=100 to mint other outcome tokens)
+* Ends in x days
+
 ### Develop Environment
 
 Clone the repository. Checkout the PR with FlappyTips 2 features.
@@ -85,12 +134,6 @@ npm install
 
 ### Websockets
 
-* HTTPS and WWS credentials were setup following this guidehttps://medium.com/developer-rants/implementing-https-and-wss-support-in-express-with-typescript-of-course-f36006c77bab
-```
-openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
-openssl rsa -in key.pem -out key-rsa.pem
-```
-
 ### Deploy to Linode
 
 https://www.youtube.com/watch?v=FTyby51m0hQ
@@ -100,6 +143,12 @@ ssh x@x.x.x.x
 git clone git@github.com:ltfschoen/flappytips.git
 git fetch origin flappydot:flappydot
 git checkout flappydot
+```
+
+* Check that HTTPS and WWS example credentials that were setup using this guide are still valid guidehttps://medium.com/developer-rants/implementing-https-and-wss-support-in-express-with-typescript-of-course-f36006c77bab
+```
+openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
+openssl rsa -in key.pem -out key-rsa.pem
 ```
 
 * Install NVM https://www.linode.com/docs/guides/how-to-install-use-node-version-manager-nvm/
@@ -290,7 +339,8 @@ https://paritytech.github.io/ink/
 
 ### References
 
-* https://medium.com/geekculture/multiplayer-interaction-with-p5js-f04909e13b87
+* Polkadot Europe Opening Ceremony - https://www.youtube.com/watch?v=Wyd1-9EIq4I
+* P5.js game using websockets - https://medium.com/geekculture/multiplayer-interaction-with-p5js-f04909e13b87
 * Swenky CLI for ink! https://www.youtube.com/watch?v=rx9B6vQLmS8
 
 * iMovie presentation - https://support.apple.com/en-gb/guide/imovie/mov91a895a64/mac
