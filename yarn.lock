@@ -3174,10 +3174,27 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@socket.io/cluster-adapter@npm:^0.2.1":
+  version: 0.2.1
+  resolution: "@socket.io/cluster-adapter@npm:0.2.1"
+  dependencies:
+    debug: ~4.3.1
+    socket.io-adapter: ~2.4.0
+  checksum: 5e0e9322e0df6bff9226133f09a73ea01aa487a25e15327b7712e642d80382e3750d99f71cd3c8d94f910d77097e792bb18c9214006e9590a39647398865802c
+  languageName: node
+  linkType: hard
+
 "@socket.io/component-emitter@npm:~3.1.0":
   version: 3.1.0
   resolution: "@socket.io/component-emitter@npm:3.1.0"
   checksum: db069d95425b419de1514dffe945cc439795f6a8ef5b9465715acf5b8b50798e2c91b8719cbf5434b3fe7de179d6cdcd503c277b7871cb3dd03febb69bdd50fa
+  languageName: node
+  linkType: hard
+
+"@socket.io/sticky@npm:^1.0.2":
+  version: 1.0.2
+  resolution: "@socket.io/sticky@npm:1.0.2"
+  checksum: 4e6765a0160817907eade86e79f84cf1eac3c6d75ef85167026b362eb630494fd67617f0f8572de5ab389dda48c45ab54ae71364b0494245c162ea296e87dda8
   languageName: node
   linkType: hard
 
@@ -5460,6 +5477,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cluster@npm:^0.7.7":
+  version: 0.7.7
+  resolution: "cluster@npm:0.7.7"
+  dependencies:
+    log: ">= 1.2.0"
+    mkdirp: ">= 0.0.1"
+  checksum: c9b4bf91cf4ab01481620bac6d9ea8150f8d9f7dc94ed6808a58e723893c59d8f6239ac74d79d2581ef71f88185d91f926303612673f3a16942ca715e5a64892
+  languageName: node
+  linkType: hard
+
 "co@npm:^4.6.0":
   version: 4.6.0
   resolution: "co@npm:4.6.0"
@@ -6605,6 +6632,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"duration@npm:^0.2.2":
+  version: 0.2.2
+  resolution: "duration@npm:0.2.2"
+  dependencies:
+    d: 1
+    es5-ext: ~0.10.46
+  checksum: 907f4fdb2d5304744b419466846b41076bb0b2f5cde4ca02e78dd8d679b3ae14c29350d3f3a852006f5b6df0c6848efb7b38a6e4ae1b5dbadab5c46a2af22f91
+  languageName: node
+  linkType: hard
+
 "ed2curve@npm:^0.3.0":
   version: 0.3.0
   resolution: "ed2curve@npm:0.3.0"
@@ -6910,7 +6947,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"es6-iterator@npm:~2.0.3":
+"es5-ext@npm:^0.10.53, es5-ext@npm:~0.10.14, es5-ext@npm:~0.10.46":
+  version: 0.10.62
+  resolution: "es5-ext@npm:0.10.62"
+  dependencies:
+    es6-iterator: ^2.0.3
+    es6-symbol: ^3.1.3
+    next-tick: ^1.1.0
+  checksum: 25f42f6068cfc6e393cf670bc5bba249132c5f5ec2dd0ed6e200e6274aca2fed8e9aec8a31c76031744c78ca283c57f0b41c7e737804c6328c7b8d3fbcba7983
+  languageName: node
+  linkType: hard
+
+"es6-iterator@npm:^2.0.3, es6-iterator@npm:~2.0.3":
   version: 2.0.3
   resolution: "es6-iterator@npm:2.0.3"
   dependencies:
@@ -6921,7 +6969,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"es6-symbol@npm:^3.1.1, es6-symbol@npm:~3.1.3":
+"es6-symbol@npm:^3.1.1, es6-symbol@npm:^3.1.3, es6-symbol@npm:~3.1.3":
   version: 3.1.3
   resolution: "es6-symbol@npm:3.1.3"
   dependencies:
@@ -7343,6 +7391,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"event-emitter@npm:^0.3.5":
+  version: 0.3.5
+  resolution: "event-emitter@npm:0.3.5"
+  dependencies:
+    d: 1
+    es5-ext: ~0.10.14
+  checksum: 27c1399557d9cd7e0aa0b366c37c38a4c17293e3a10258e8b692a847dd5ba9fb90429c3a5a1eeff96f31f6fa03ccbd31d8ad15e00540b22b22f01557be706030
+  languageName: node
+  linkType: hard
+
 "eventemitter3@npm:^4.0.0":
   version: 4.0.0
   resolution: "eventemitter3@npm:4.0.0"
@@ -7667,11 +7725,14 @@ __metadata:
     "@polkadot/typegen": ^9.13.6
     "@polkadot/util": ^10.3.1
     "@polkadot/util-crypto": ^10.3.1
+    "@socket.io/cluster-adapter": ^0.2.1
+    "@socket.io/sticky": ^1.0.2
     "@testing-library/jest-dom": ^5.16.5
     "@testing-library/react": ^13.4.0
     "@testing-library/user-event": ^14.4.3
     axios: ^1.3.2
     bootstrap: ^5.2.3
+    cluster: ^0.7.7
     cors: ^2.8.5
     cross-env: ^7.0.3
     dotenv: ^16.0.3
@@ -10188,6 +10249,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"log@npm:>= 1.2.0":
+  version: 6.3.1
+  resolution: "log@npm:6.3.1"
+  dependencies:
+    d: ^1.0.1
+    duration: ^0.2.2
+    es5-ext: ^0.10.53
+    event-emitter: ^0.3.5
+    sprintf-kit: ^2.0.1
+    type: ^2.5.0
+    uni-global: ^1.0.0
+  checksum: 21800f4b55acb7878ec90fcf626d45002b22d91e74270357981305c7e0b7429599c62072b57e807fe73e07fc7229827e983f836f17401d661b22dcfc14519ea5
+  languageName: node
+  linkType: hard
+
 "loose-envify@npm:^1.0.0, loose-envify@npm:^1.1.0, loose-envify@npm:^1.4.0":
   version: 1.4.0
   resolution: "loose-envify@npm:1.4.0"
@@ -10587,6 +10663,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"mkdirp@npm:>= 0.0.1":
+  version: 2.1.3
+  resolution: "mkdirp@npm:2.1.3"
+  bin:
+    mkdirp: dist/cjs/src/bin.js
+  checksum: 5d7d7997e38a962e8b66dd4db1974bdcb841f084531ba8c9e1f3d52d71f5e6639677a96b2eb5d5940406d729a2153d820f396077ed3a6716058d3e75041dc1f2
+  languageName: node
+  linkType: hard
+
 "mkdirp@npm:^1.0.3, mkdirp@npm:^1.0.4":
   version: 1.0.4
   resolution: "mkdirp@npm:1.0.4"
@@ -10695,6 +10780,13 @@ __metadata:
   version: 2.6.2
   resolution: "neo-async@npm:2.6.2"
   checksum: deac9f8d00eda7b2e5cd1b2549e26e10a0faa70adaa6fdadca701cc55f49ee9018e427f424bac0c790b7c7e2d3068db97f3093f1093975f2acb8f8818b936ed9
+  languageName: node
+  linkType: hard
+
+"next-tick@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "next-tick@npm:1.1.0"
+  checksum: 83b5cf36027a53ee6d8b7f9c0782f2ba87f4858d977342bfc3c20c21629290a2111f8374d13a81221179603ffc4364f38374b5655d17b6a8f8a8c77bdea4fe8b
   languageName: node
   linkType: hard
 
@@ -13598,6 +13690,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"socket.io-adapter@npm:~2.4.0":
+  version: 2.4.0
+  resolution: "socket.io-adapter@npm:2.4.0"
+  checksum: a84639946dce13547b95f6e09fe167cdcd5d80941afc2e46790cc23384e0fd3c901e690ecc9bdd600939ce6292261ee15094a0b486f797ed621cfc8783d87a0c
+  languageName: node
+  linkType: hard
+
 "socket.io-adapter@npm:~2.5.2":
   version: 2.5.2
   resolution: "socket.io-adapter@npm:2.5.2"
@@ -13790,6 +13889,15 @@ __metadata:
   version: 1.0.3
   resolution: "sprintf-js@npm:1.0.3"
   checksum: 19d79aec211f09b99ec3099b5b2ae2f6e9cdefe50bc91ac4c69144b6d3928a640bb6ae5b3def70c2e85a2c3d9f5ec2719921e3a59d3ca3ef4b2fd1a4656a0df3
+  languageName: node
+  linkType: hard
+
+"sprintf-kit@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "sprintf-kit@npm:2.0.1"
+  dependencies:
+    es5-ext: ^0.10.53
+  checksum: e867136dc67419920da065ff57a75786b884cd66bb08c7b7978d0368ec6169ecbe90acd3fbc53435753a9b053d55075d196fe5e35ec17919c8251c6e909e41ec
   languageName: node
   linkType: hard
 
@@ -14523,6 +14631,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"type@npm:^2.5.0":
+  version: 2.7.2
+  resolution: "type@npm:2.7.2"
+  checksum: 0f42379a8adb67fe529add238a3e3d16699d95b42d01adfe7b9a7c5da297f5c1ba93de39265ba30ffeb37dfd0afb3fb66ae09f58d6515da442219c086219f6f4
+  languageName: node
+  linkType: hard
+
 "typed-array-length@npm:^1.0.4":
   version: 1.0.4
   resolution: "typed-array-length@npm:1.0.4"
@@ -14582,6 +14697,15 @@ __metadata:
   peerDependencies:
     react: ">=15.0.0"
   checksum: 3345c0c1916193ddb9cc6f2b78711dc9f22b919d780485e15b95690722e9d1797fc702c4ebb30c0acaae6a772b865d0a9ddc83fa1da44958f089aee78f2f5eab
+  languageName: node
+  linkType: hard
+
+"uni-global@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "uni-global@npm:1.0.0"
+  dependencies:
+    type: ^2.5.0
+  checksum: 80550f304b350424381189989715888615a8ba9b0552ca771af63c59714fb0f1358d35dfe679ecff60a872da06be0c96f8a440d5f3c5cedfed4b29d7a2d3932c
   languageName: node
   linkType: hard
 
