@@ -30,7 +30,7 @@ if (process.env.WSS !== true) {
 
 const io = require("socket.io")(httpServer, {
   transports: ["websocket"], // set to use websocket only
-  credentials: true
+  // credentials: true
 }); // this loads socket.io and connects it to the server.
 const port = process.env.PORT || 5000;
 const staticPath = path.join(__dirname, './', 'build');

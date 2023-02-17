@@ -8,8 +8,8 @@ import { COLOURS } from '../constants';
 // ws://localhost:5000/socket.io/?EIO=4&transport=websocket
 let socketEndpoint = process.env.NODE_ENV ? 'ws://flappytips.herokuapp.com:5000' : 'ws://localhost:5000';
 const socket = io(socketEndpoint, {
-  transports: ["websocket", "polling"],
-  withCredentials: true
+  transports: ["websocket"], // , "polling"
+  // withCredentials: true
 });
 console.log('socket in sketch', socket);
 
