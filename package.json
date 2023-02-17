@@ -17,6 +17,7 @@
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "http-proxy-middleware": "^2.0.6",
     "internet-available": "^1.0.0",
     "jquery": "^3.6.3",
     "moment": "^2.29.4",
@@ -42,9 +43,9 @@
   },
   "scripts": {
     "dev:client": "PORT=4000 react-scripts start",
-    "dev:server": "node server.js",
-    "dev": "corepack enable && corepack prepare yarn@stable --activate && yarn set version 3.4.1 && yarn && yarn build && concurrently --kill-others-on-fail \"cross-env yarn dev:server\" \"yarn dev:client\"",
-    "start": "yarn dev:server",
+    "dev:server": "yarn build && node server.js",
+    "dev": "PORT=4000 corepack enable && corepack prepare yarn@stable --activate && yarn set version 3.4.1 && yarn && yarn build && concurrently --kill-others-on-fail \"cross-env yarn dev:server\" \"yarn dev:client\"",
+    "start": "PORT=5000 yarn dev:server",
     "build": "react-scripts build",
     "heroku-postbuild": "corepack enable && corepack prepare yarn@stable --activate && yarn set version 3.4.1 && yarn && yarn run build",
     "production": "yarn build && node server.js"

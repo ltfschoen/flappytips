@@ -3,11 +3,25 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const { createProxyMiddleware } = require('http-proxy-middleware');
+const pkg = require('./package.json');
 const http = require("http");
 const https = require('https');
 const fs = require('fs');
 const moment = require('moment');
 const { IS_PROD } = require('./constants');
+
+// https or http
+let proxy_port = (process.env.WSS !== true) ? 80 : 443;
+let proxy_url;
+if (process.env.NODE_ENV === 'production' && process.env.WSS) {
+  proxy_url = `https://flappytips.herokuapp.com:${proxy_port}`;
+} else if (process.env.NODE_ENV === 'production' && process.env.WSS !== true) {
+  proxy_url = `http://flappytips.herokuapp.com:${proxy_port}`;
+} else if (process.env.NODE_ENV !== 'production') {
+  proxy_url = pkg.proxy;
+}
+// const target = PROXY || pkg.proxy;
 
 let options;
 if (process.env.WSS) {
@@ -70,6 +84,13 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({status: err.status, message: err.message})
 });
 app.use(express.static(staticPath));
+
+app.use('/api',
+  createProxyMiddleware({ 
+    target: proxy_url,
+    changeOrigin: true 
+  }
+));
 
 app.options('*', cors())
 app.get('/api/test', cors(corsOptions),

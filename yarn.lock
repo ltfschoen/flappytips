@@ -7676,6 +7676,7 @@ __metadata:
     cross-env: ^7.0.3
     dotenv: ^16.0.3
     express: ^4.18.2
+    http-proxy-middleware: ^2.0.6
     internet-available: ^1.0.0
     jquery: ^3.6.3
     moment: ^2.29.4
@@ -8422,7 +8423,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"http-proxy-middleware@npm:^2.0.3":
+"http-proxy-middleware@npm:^2.0.3, http-proxy-middleware@npm:^2.0.6":
   version: 2.0.6
   resolution: "http-proxy-middleware@npm:2.0.6"
   dependencies:
