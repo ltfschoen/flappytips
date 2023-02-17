@@ -1,3 +1,4 @@
+require('dotenv').config()
 const bodyParser = require('body-parser');
 const path = require('path');
 const express = require('express');
@@ -14,16 +15,28 @@ const numCPUs = require("os").cpus().length;
 const { setupMaster, setupWorker } = require("@socket.io/sticky");
 const { createAdapter, setupPrimary } = require("@socket.io/cluster-adapter");
 
-const options = {
-  key: fs.readFileSync(path.resolve(__dirname, 'key.pem')),
-  cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem'))
-};
+let options;
+if (process.env.WSS) {
+  options = {
+    key: fs.readFileSync(path.resolve(__dirname, 'key.pem')),
+    cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem'))
+  };
+}
 
 if (cluster.isMaster) {
   console.log(`Master ${process.pid} is running`);
 
   const app = express();
-  const httpServer = https.createServer(options, app);
+
+  let httpServer;
+  if (process.env.WSS) {
+    // https
+    httpServer = https.createServer(options, app);
+  } else {
+    // http
+    httpServer = http.createServer(app);
+  }
+  
 
   const io = require("socket.io")(httpServer, {
     transports: ["websocket"], // set to use websocket only
@@ -121,7 +134,15 @@ if (cluster.isMaster) {
   console.log(`Worker ${process.pid} started`);
 
   const app = express();
-  const httpServer = https.createServer(options, app);
+  let httpServer;
+  if (process.env.WSS) {
+    // https
+    httpServer = https.createServer(options, app);
+  } else {
+    // http
+    httpServer = http.createServer(app);
+  }
+
   const io = require("socket.io")(httpServer, {
     transports: ["websocket"], // set to use websocket only
     credentials: true
