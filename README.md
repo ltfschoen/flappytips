@@ -76,6 +76,8 @@ npm install
 
 ### Deploy to Heroku
 
+Note: It is necessary to use either Eco or Basic plan on Heroku. [Eco plan dyno that receives no web traffic in a 30-minute period sleeps and becomes active again upon receiving traffic](https://devcenter.heroku.com/articles/eco-dyno-hours#dyno-sleeping). See https://www.heroku.com/pricing
+
 * Install Heroku CLI for macOS
 ```
 brew tap heroku/brew && brew install heroku
@@ -101,8 +103,9 @@ heroku restart
 heroku ps:stop web
 ```
 
-* Scale up dynos
+* Scale up dynos. If you get an error like `code=H14 desc="No web processes running"` in Heroku logs then scale your dynos
 ```
+heroku ps:scale web=1:Basic
 heroku ps:scale web=2:standard-2x
 ```
 

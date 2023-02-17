@@ -67,26 +67,33 @@ class Game extends Component {
 
   async componentDidMount() {
     console.log(`FlappyTips 2 v${pkg.version}`);
-    // Returns an array of all the injected sources
-    let allInjected = await web3Enable('FlappyTips');
-    allInjected = allInjected.map(({ name, version }) => `${name} ${version}`);
-    console.log('allInjected: ', allInjected);
-
-    // returns an array of { address, meta: { name, source } }
-    // meta.source contains the name of the extension that provides this account
-    let allAccounts = await web3Accounts();
-    console.log('allAccounts orig: ', allAccounts);
-    // let allAccountsList = [];
-    // allAccounts = allAccounts.map(({ address }) => allAccountsList.push(`${address}`));
-    // console.log('allAccounts', allAccountsList);
 
     this.getDimensions();
     this.getIpData();
 
-    const initialChainAccount = allAccounts[0].address;
+    let initialChainAccount;
+    let allInjected;
+    let allAccounts;
+
+    if (isMobile) {
+      // Returns an array of all the injected sources
+      allInjected = await web3Enable('FlappyTips');
+      allInjected = allInjected.map(({ name, version }) => `${name} ${version}`);
+      console.log('allInjected: ', allInjected);
+
+      // returns an array of { address, meta: { name, source } }
+      // meta.source contains the name of the extension that provides this account
+      allAccounts = await web3Accounts();
+      console.log('allAccounts orig: ', allAccounts);
+      // let allAccountsList = [];
+      // allAccounts = allAccounts.map(({ address }) => allAccountsList.push(`${address}`));
+      // console.log('allAccounts', allAccountsList);
+
+      initialChainAccount = allAccounts.length !== 0 && allAccounts[0].address;
+    }
 
     // initialise value of the ref
-    this.chainAccount.current = initialChainAccount;
+    this.chainAccount.current = initialChainAccount || 'DEMO-MOBILE';
     console.log('set this.chainAccount.current: ', this.chainAccount.current);
 
     const initialEndpointName = 'Zeitgeist Mainnet';
@@ -98,8 +105,8 @@ class Game extends Component {
       currentEndpointName: initialEndpointName,
       extensionNotInstalled: allInjected.length === 0,
       extensionAllInjected: allInjected,
-      extensionAllAccountsList: allAccounts,
-      chainAccount: initialChainAccount,
+      extensionAllAccountsList: allAccounts.length === 0 ? allAccounts : [],
+      chainAccount: this.chainAccount.current,
       showModalChain: true
     });
 
@@ -653,8 +660,10 @@ class Game extends Component {
     const mnemonicSeed = this.mnemonicSeed.current.value;
     try {
       const newPair = keyring.addFromUri(mnemonicSeed);
-      console.log(`Keypair accountAddress [${newPair.address}]`);
-      accountAddress = newPair.address;
+      if (newPair) {
+        console.log(`Keypair accountAddress [${newPair.address}]`);
+        accountAddress = newPair.address;
+      }
     } catch (err) {
       console.log('no matching pair for mnemonic seed');
       accountAddress = undefined;
@@ -767,7 +776,7 @@ class Game extends Component {
                       <Form.Label>Select an account for this chain</Form.Label>
                       <Form.Control as="select" ref={this.chainAccount} name="chainAccount">
                         {extensionAllAccountsList.map((value, i) => {
-                          return <option key={i} value={value.address}>{value.meta.name} | {value.address}</option>
+                          return <option key={i} value={value && value.address}>{value && value.meta.name} | {value && value.address}</option>
                         })}
                       </Form.Control>
                       <Form.Text className="text-muted">
@@ -835,18 +844,29 @@ class Game extends Component {
               : null
             }
             <Modal.Body>
-            <Form.Group controlId="formChainAccount">
-              {/* <h5>Chain Account:</h5> */}
-              <Form.Label>Select an account to play with:</Form.Label>
-              <Form.Control
-                as="select" ref={this.chainAccount} name="chainAccount"
-                onChange={() => this.onChangeChainAccount(this)}
-              >
-                {extensionAllAccountsList.map((value, i) => {
-                  return <option key={i} value={value.address}>{value.meta.name} | {value.address}</option>
-                })}
-              </Form.Control>
-            </Form.Group>
+            <div>
+              {!isMobile
+                ? (
+                  <div>
+                    <Form.Group controlId="formChainAccount">
+                      {/* <h5>Chain Account:</h5> */}
+                      <Form.Label>Select an account to play with:</Form.Label>
+                      <Form.Control
+                        as="select" ref={this.chainAccount} name="chainAccount"
+                        onChange={() => this.onChangeChainAccount(this)}
+                      >
+                        {
+                          extensionAllAccountsList.map((value, i) => {
+                            return <option key={i} value={value && value.address}>{value && value.meta.name} | {value && value.address}</option>
+                          })
+                        }
+                      </Form.Control>
+                    </Form.Group>
+                  </div>
+                )
+                : <span>{chainAccount}</span>
+              }
+            </div>
             <Form.Group controlId="customEndpoint">
               {/* <h5>Chain Endpoint:</h5> */}
               <Form.Label>Chain endpoint:</Form.Label>

@@ -16,6 +16,10 @@ const corsWhitelist = [
   'http://localhost:3000',
   'http://localhost:4000', // frontend
   'http://localhost:5000', // proxy
+  'http://flappytips.herokuapp.com', // http
+  'https://flappytips.herokuapp.com', // https
+  'http://flappytips.herokuapp.com/assets/LemonMilkMedium.otf',
+  'https://flappytips.herokuapp.com/assets/LemonMilkMedium.otf'
 ];
 // https://www.npmjs.com/package/cors#configuration-options
 const corsOptions = {
