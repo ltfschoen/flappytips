@@ -85,10 +85,12 @@ app.use((err, req, res, next) => {
 });
 app.use(express.static(staticPath));
 
+// https://www.npmjs.com/package/http-proxy-middleware
 app.use('/api',
   createProxyMiddleware({ 
     target: proxy_url,
-    changeOrigin: true 
+    changeOrigin: true,
+    ws: true
   }
 ));
 
