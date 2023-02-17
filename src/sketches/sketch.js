@@ -4,7 +4,9 @@ import Bird from './Bird';
 import Obstacle from './Obstacle';
 import { COLOURS } from '../constants';
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
+// console.log('PORT', PORT);
+// console.log('process.env.PORT', process.env.PORT);
 // get socket which only uses websockets as a means of communication
 // ws://localhost:5000/socket.io/?EIO=4&transport=websocket
 let socketEndpoint = process.env.NODE_ENV === 'production'
@@ -17,7 +19,7 @@ let socketEndpoint = process.env.NODE_ENV === 'production'
 const socket = io(socketEndpoint, {
   transports: ["websocket"]
 });
-console.log('socket in sketch', socket);
+// console.log('socket in sketch', socket);
 
 const DEFAULT_SPEED = 3;
 
@@ -111,7 +113,7 @@ export default function sketch(p5) {
     p5.frameRate(30); //set framerate to 30, same as server
 
     socket.on('connect', () => {
-      console.log('socket connected', socket);
+      // console.log('socket connected', socket);
     });
 
     socket.on("gameDataPlayers", (data) => {
@@ -275,11 +277,11 @@ export default function sketch(p5) {
     }
     if (obstaclesHit > 0) {
       let currentDateUnixTimestamp = moment().unix();
-      console.log('time: ', moment.unix(currentDateUnixTimestamp).format("YYYY-MM-DD HH:mm"));
+      // console.log('time: ', moment.unix(currentDateUnixTimestamp).format("YYYY-MM-DD HH:mm"));
       updateServerWithPlayerViaSockets(currentDateUnixTimestamp);
       clearInterval(interval);
 
-      console.log('game over');
+      // console.log('game over');
       // game over for currrent player, 
       isGameOver = 1;
       gameOver(blocksCleared);

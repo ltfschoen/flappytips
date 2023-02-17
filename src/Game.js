@@ -66,25 +66,25 @@ class Game extends Component {
   }
 
   async componentDidMount() {
-    console.log(`FlappyTips 2 v${pkg.version}`);
+    // console.log(`FlappyTips 2 v${pkg.version}`);
 
     this.getDimensions();
     this.getIpData();
 
     let initialChainAccount;
     let allInjected;
-    let allAccounts;
+    let allAccounts = [];
 
-    if (isMobile) {
+    if (!isMobile) {
       // Returns an array of all the injected sources
       allInjected = await web3Enable('FlappyTips');
       allInjected = allInjected.map(({ name, version }) => `${name} ${version}`);
-      console.log('allInjected: ', allInjected);
+      // console.log('allInjected: ', allInjected);
 
       // returns an array of { address, meta: { name, source } }
       // meta.source contains the name of the extension that provides this account
       allAccounts = await web3Accounts();
-      console.log('allAccounts orig: ', allAccounts);
+      // console.log('allAccounts orig: ', allAccounts);
       // let allAccountsList = [];
       // allAccounts = allAccounts.map(({ address }) => allAccountsList.push(`${address}`));
       // console.log('allAccounts', allAccountsList);
@@ -94,7 +94,7 @@ class Game extends Component {
 
     // initialise value of the ref
     this.chainAccount.current = initialChainAccount || 'DEMO-MOBILE';
-    console.log('set this.chainAccount.current: ', this.chainAccount.current);
+    // console.log('set this.chainAccount.current: ', this.chainAccount.current);
 
     const initialEndpointName = 'Zeitgeist Mainnet';
     const initialEndpoint = ENDPOINTS['Zeitgeist Mainnet'].url;
@@ -103,9 +103,9 @@ class Game extends Component {
     this.setState({
       currentEndpoint: initialEndpoint,
       currentEndpointName: initialEndpointName,
-      extensionNotInstalled: allInjected.length === 0,
+      extensionNotInstalled: !allInjected || allInjected.length === 0,
       extensionAllInjected: allInjected,
-      extensionAllAccountsList: allAccounts.length === 0 ? allAccounts : [],
+      extensionAllAccountsList: allAccounts,
       chainAccount: this.chainAccount.current,
       showModalChain: true
     });
@@ -436,7 +436,7 @@ class Game extends Component {
   }
 
   handleSubmit = async (event) => {
-    console.log('handleSubmit');
+    // console.log('handleSubmit');
     event.preventDefault(); // Prevent page refreshing when click submit
 
     // only do tips on polkadot or kusama network
@@ -468,16 +468,16 @@ class Game extends Component {
 
         // Add an account to keyring
         const newPair = keyring.addFromUri(mnemonicSeed);
-        console.log('keyring pairs', keyring.getPairs());
+        // console.log('keyring pairs', keyring.getPairs());
         // Log some info
-        console.log(`Keypair has address ${newPair.address} with publicKey [${newPair.publicKey}]`);
+        // console.log(`Keypair has address ${newPair.address} with publicKey [${newPair.publicKey}]`);
         api.setSigner(newPair);
         await api.tx.tips
           .reportAwesome(u8aToHex(message), newPair.address)
           .signAndSend(newPair, ({ status, events }) => {
             this.showExtrinsicLogs('reportAwesome', status, events);
           });
-        console.log('Submitted reportAwesome on Mobile');
+        // console.log('Submitted reportAwesome on Mobile');
       } else {
         // Sign using Polkadot Extension
         if (!this.chainAccount.current.value || !this.chainAccount.current.value) {
@@ -485,7 +485,7 @@ class Game extends Component {
           return;
         }
         const chainAccount = this.chainAccount.current.value;
-        console.log('chainAccount entered: ', chainAccount);
+        // console.log('chainAccount entered: ', chainAccount);
         // finds an injector for an address
         const injector = await web3FromAddress(chainAccount);
         
@@ -497,7 +497,7 @@ class Game extends Component {
           .signAndSend(chainAccount, ({ status, events }) => {
             this.showExtrinsicLogs('reportAwesome', status, events);
           });
-        console.log('Submitted reportAwesome on Desktop');
+        // console.log('Submitted reportAwesome on Desktop');
       }
     } catch (error) {
       console.error('Caught error: ', error);
@@ -518,12 +518,12 @@ class Game extends Component {
   showExtrinsicLogs = (extrinsicName, status, events) => {
     const { api } = this.state;
     if (status.isInBlock || status.isFinalized) {
-      console.log(`${extrinsicName} current status is ${status}`);
+      // console.log(`${extrinsicName} current status is ${status}`);
 
       if (status.isInBlock) {
-        console.log(`${extrinsicName} transaction included at blockHash ${status.asInBlock}`);
+        // console.log(`${extrinsicName} transaction included at blockHash ${status.asInBlock}`);
       } else if (status.isFinalized) {
-        console.log(`${extrinsicName} transaction finalized at blockHash ${status.asFinalized}`);
+        // console.log(`${extrinsicName} transaction finalized at blockHash ${status.asFinalized}`);
       }
 
       events
@@ -540,25 +540,25 @@ class Game extends Component {
             const decoded = api.registry.findMetaError(error.asModule);
             const { documentation, method, section } = decoded;
 
-            console.log(`${extrinsicName} error: ${section}.${method}: ${documentation.join(' ')}`);
+            // console.log(`${extrinsicName} error: ${section}.${method}: ${documentation.join(' ')}`);
           } else {
             // Other, CannotLookup, BadOrigin, no extra info
-            console.log(`${extrinsicName} other error: `, error.toString());
+            // console.log(`${extrinsicName} other error: `, error.toString());
           }
         });
     }
   }
 
   handleSubmitChain = async (event) => {
-    console.log('handleSubmitChain');
+    // console.log('handleSubmitChain');
     event.preventDefault(); // Prevent page refreshing when click submit
     const { api, chainAccount, currentBlockNumber, currentEndpoint, gameStartRequestedAtBlock } = this.state;
     if (!chainAccount) {
-      console.log('Error: cannot start game without account selected');
+      // console.log('Error: cannot start game without account selected');
       return;
     }
     if (!currentBlockNumber) {
-      console.log('Error: cannot start game without first fetching block for default chain');
+      // console.log('Error: cannot start game without first fetching block for default chain');
       return;
     }
 
@@ -598,7 +598,7 @@ class Game extends Component {
       } else {
         startBlock = (Number(currentBlockNumber) + (modulo - (Number(currentBlockNumber) % modulo))).toString();
       }
-      console.log('startBlock: ', startBlock);
+      // console.log('startBlock: ', startBlock);
 
       this.setState({
         // only set this up once, not if they call handleSubmitChain again to change the chain
@@ -661,11 +661,11 @@ class Game extends Component {
     try {
       const newPair = keyring.addFromUri(mnemonicSeed);
       if (newPair) {
-        console.log(`Keypair accountAddress [${newPair.address}]`);
+        // console.log(`Keypair accountAddress [${newPair.address}]`);
         accountAddress = newPair.address;
       }
     } catch (err) {
-      console.log('no matching pair for mnemonic seed');
+      // console.log('no matching pair for mnemonic seed');
       accountAddress = undefined;
     }
     this.setState({
@@ -676,7 +676,7 @@ class Game extends Component {
   onChangeChainAccount = (event) => {
     const chainAccount = this.chainAccount && this.chainAccount.current && this.chainAccount.current.value;
     if (chainAccount) {
-      console.log('changed chainAccount to:', chainAccount);
+      // console.log('changed chainAccount to:', chainAccount);
       this.setState({
         chainAccount
       });
@@ -908,7 +908,9 @@ class Game extends Component {
           </Form>
         </Modal>
 
-        <Modal show={extensionNotInstalled && !isMobile} onHide={() => console.log('Polkadot.js Extension required on Desktop')}>
+        <Modal show={extensionNotInstalled && !isMobile} onHide={() => {
+          // console.log('Polkadot.js Extension required on Desktop');
+        }}>
           <Modal.Header>
             <Modal.Title>FlappyTips 2 on Desktop: Install and enable Polkadot.js Extension</Modal.Title>
           </Modal.Header>
@@ -927,7 +929,9 @@ class Game extends Component {
           </Modal.Body>
         </Modal>
 
-        <Modal show={showModalMobile && extensionNotInstalled && isMobile} onHide={() => console.log('Mobile device detected')}>
+        <Modal show={showModalMobile && extensionNotInstalled && isMobile} onHide={() => {
+          // console.log('Mobile device detected')
+        }}>
           <Modal.Header>
             <Modal.Title>FlappyTips on Mobile</Modal.Title>
           </Modal.Header>

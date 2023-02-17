@@ -11,6 +11,7 @@ const fs = require('fs');
 const moment = require('moment');
 const { IS_PROD } = require('./constants');
 
+const PORT = process.env.PORT || 5000;
 // https or http
 let proxy_port = (process.env.WSS !== true) ? 80 : 443;
 let proxy_url;
@@ -22,9 +23,9 @@ if (process.env.NODE_ENV === 'production' && process.env.WSS) {
   proxy_url = pkg.proxy;
 }
 // const target = PROXY || pkg.proxy;
-
+// console.log('proxy_url: ', proxy_url);
 let options;
-if (process.env.WSS) {
+if (process.env.WSS === true) {
   options = {
     key: fs.readFileSync(path.resolve(__dirname, 'key-rsa.pem')),
     cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem'))
@@ -34,7 +35,7 @@ if (process.env.WSS) {
 const app = express();
 
 let httpServer;
-if (process.env.WSS !== true) {
+if (process.env.WSS === true) {
   // https
   httpServer = https.createServer(options, app);
 } else {
@@ -47,7 +48,6 @@ if (process.env.WSS !== true) {
 const io = require("socket.io")(httpServer, {
   transports: ["websocket"] // set to use websocket only
 }); // this loads socket.io and connects it to the server.
-const PORT = process.env.PORT || 5000;
 const staticPath = path.join(__dirname, './', 'build');
 const corsWhitelist = [
   'http://localhost:3000',
@@ -98,7 +98,7 @@ app.options('*', cors())
 app.get('/api/test', cors(corsOptions),
   // Middleware chain
   async (req, res, next) => {
-    console.log('Test');
+    // console.log('Test');
   },
   async (req, res, next) => {
     // Handle error in async function
@@ -117,12 +117,12 @@ app.get('/api/test', cors(corsOptions),
 // Incase user requests a resource not in the public folder
 app.get('*', (req, res) => {
   let ip = (req.headers['x-forwarded-for'] || '').split(',')[0];
-  console.log('ip connected: ', ip);
+  // console.log('ip connected: ', ip);
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 
 httpServer.listen(PORT, () => {
-   console.log(`CORS-enabled web server listening on port ${PORT}`);
+   // console.log(`CORS-enabled web server listening on port ${PORT}`);
 });
 
 // store the positions of each client in this object.
@@ -134,12 +134,12 @@ const gameDataPlayers = {};
 io.on("connection", (socket) => {
   // each time someone visits the site and connect to socket.io this function gets called.
   // it includes the socket object from which you can get the id, useful for identifying each client
-  console.log(`${socket.id} connected`);
+  // console.log(`${socket.id} connected`);
 
   socket.on("disconnect", () => {
     // when this client disconnects, lets delete its position from the object.
     delete gameDataPlayers[socket.id];
-    console.log(`${socket.id} disconnected`);
+    // console.log(`${socket.id} disconnected`);
   });
 
   // client can send a message each time the clients position changes
@@ -181,8 +181,8 @@ io.on("connection", (socket) => {
     gameDataPlayers[socket.id].blocksCleared = data.blocksCleared;
     gameDataPlayers[socket.id].obstaclesHit = data.obstaclesHit;
     gameDataPlayers[socket.id].obstaclesHitAt = data.obstaclesHitAt;
-    console.log('data.obstaclesHitAt', data.obstaclesHitAt);
-    console.log('data.chainAccountResult: ', data.chainAccountResult);
+    // console.log('data.obstaclesHitAt', data.obstaclesHitAt);
+    // console.log('data.chainAccountResult: ', data.chainAccountResult);
 
     // console.log(`socket.on updateGameDataPlayers: ${socket.id}`, gameDataPlayers[socket.id]);
 
@@ -197,7 +197,7 @@ io.on("connection", (socket) => {
         }
     });
     // console.log('gameDataPlayers: ', JSON.stringify(gameDataPlayers));
-    console.log('gameDataPlayersStarted: ', JSON.stringify(gameDataPlayersStarted));
+    // console.log('gameDataPlayersStarted: ', JSON.stringify(gameDataPlayersStarted));
 
     const playerCount = Object.keys(gameDataPlayersStarted).length;
     let obstaclesHitCount = 0;
@@ -212,7 +212,7 @@ io.on("connection", (socket) => {
       }
 
       if (playerCount === obstaclesHitCount) {
-        console.log('all players have died hitting an object at block for start block: ', gameDataPlayersStarted[socket.id]['gameStartRequestedAtBlock'], data.currentBlockNumber);
+        // console.log('all players have died hitting an object at block for start block: ', gameDataPlayersStarted[socket.id]['gameStartRequestedAtBlock'], data.currentBlockNumber);
         for (const [socketId, value] of Object.entries(gameDataPlayersStarted)) {
           if (!hasSetOpponentsWhenEnded && socketId !== socket.id && !gameDataPlayersStarted[socketId]['opponentsWhenEnded'].hasOwnProperty(socketId)) {
             gameDataPlayersStarted[socketId]['opponentsWhenEnded'][socketId] = gameDataPlayersStarted[socketId];
@@ -226,8 +226,8 @@ io.on("connection", (socket) => {
           ) {
             gameDataPlayersStarted[socketId].gameEndedAtBlock = data.currentBlockNumber;
             let currentDateUnixTimestamp = moment().unix();
-            console.log('currentDateUnixTimestamp: ', currentDateUnixTimestamp);
-            console.log('currentDateUnixTimestamp date: ', moment.unix(currentDateUnixTimestamp).format("YYYY-MM-DD HH:mm"));
+            // console.log('currentDateUnixTimestamp: ', currentDateUnixTimestamp);
+            // console.log('currentDateUnixTimestamp date: ', moment.unix(currentDateUnixTimestamp).format("YYYY-MM-DD HH:mm"));
             gameDataPlayersStarted[socketId].gameEndedAtTime = currentDateUnixTimestamp;
           }
         }
@@ -256,7 +256,7 @@ io.on("connection", (socket) => {
             value.chain === data.chain &&
             gameDataPlayersStarted[socket.id]['gameStartRequestedAtBlock'] === gameDataPlayersStarted[socketId]['gameStartRequestedAtBlock']
           ) {
-            console.log(`processing: ${socketId}: ${value}`);
+            // console.log(`processing: ${socketId}: ${value}`);
             // we are in a nested if where we have already checked that player socket.id has a defined obstaclesHitAt. 
             // if there is at least one other player account socketId who has an earlier obstaclesHitAt
             // then that other player account lost in comparison with the player socket.id.
@@ -267,7 +267,7 @@ io.on("connection", (socket) => {
               winner.id = socket.id;
               winner.obstaclesHitAt = data.obstaclesHitAt;
               gameDataPlayersStarted[socketId]['chainAccountResult'] = 'loser';
-              console.log('loser: ', socketId, moment.unix(value.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
+              // console.log('loser: ', socketId, moment.unix(value.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
             } else if (value.obstaclesHitAt && data.obstaclesHitAt < value.obstaclesHitAt) {
               winner.id = socketId;
               winner.obstaclesHitAt = value.obstaclesHitAt;
@@ -275,28 +275,28 @@ io.on("connection", (socket) => {
               // draw is not supported. if you do not win then you lose
               gameDataPlayersStarted[socket.id]['chainAccountResult'] = 'loser';
               gameDataPlayersStarted[socketId]['chainAccountResult'] = 'loser';
-              console.log('draw: ', socket.id, moment.unix(data.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
-              console.log('draw: ', socketId, moment.unix(value.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
+              // console.log('draw: ', socket.id, moment.unix(data.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
+              // console.log('draw: ', socketId, moment.unix(value.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
             }
           }
         }
         if (winner.id === socket.id && gameDataPlayersStarted[winner.id]['blocksCleared'] > 0) {
           gameDataPlayersStarted[winner.id]['chainAccountResult'] = gameDataPlayersStarted[winner.id].chainAccount;
-          console.log('winner: ', winner.id, moment.unix(winner.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
+          // console.log('winner: ', winner.id, moment.unix(winner.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
         } else if (winner.id && winner.id !== socket.id) {
           gameDataPlayersStarted[winner.id]['chainAccountResult'] = gameDataPlayersStarted[winner.id].chainAccount;
-          console.log('winner: ', winner.id, moment.unix(winner.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
+          // console.log('winner: ', winner.id, moment.unix(winner.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
           // haven't set the current player result previously
           gameDataPlayersStarted[socket.id]['chainAccountResult'] = 'loser';
         } else {
-          console.log('no winner');
+          // console.log('no winner');
           // haven't set the current player result previously
           gameDataPlayersStarted[socket.id]['chainAccountResult'] = 'loser';
         }
       }
     }
 
-    console.log('finished processing: ', gameDataPlayersStarted);
+    // console.log('finished processing: ', gameDataPlayersStarted);
   });
 });
 

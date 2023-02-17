@@ -112,6 +112,7 @@ heroku ps:stop web
 ```
 heroku ps:scale web=1:Basic
 heroku ps:scale web=2:standard-2x
+heroku ps:scale web=1:performance-m
 ```
 
 * Scale down dynos
@@ -209,3 +210,4 @@ https://paritytech.github.io/ink/
 ### References
 
 * https://medium.com/geekculture/multiplayer-interaction-with-p5js-f04909e13b87
+* Swenky CLI for ink! https://www.youtube.com/watch?v=rx9B6vQLmS8
