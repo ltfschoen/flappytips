@@ -16,9 +16,9 @@ const { setupMaster, setupWorker } = require("@socket.io/sticky");
 const { createAdapter, setupPrimary } = require("@socket.io/cluster-adapter");
 
 let options;
-if (process.env.WSS) {
+if (process.env.WSS !== true) {
   options = {
-    key: fs.readFileSync(path.resolve(__dirname, 'key.pem')),
+    key: fs.readFileSync(path.resolve(__dirname, 'key-rsa.pem')),
     cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem'))
   };
 }
@@ -29,7 +29,7 @@ if (cluster.isMaster) {
   const app = express();
 
   let httpServer;
-  if (process.env.WSS) {
+  if (process.env.WSS !== true) {
     // https
     httpServer = https.createServer(options, app);
   } else {
@@ -135,7 +135,7 @@ if (cluster.isMaster) {
 
   const app = express();
   let httpServer;
-  if (process.env.WSS) {
+  if (process.env.WSS !== true) {
     // https
     httpServer = https.createServer(options, app);
   } else {
