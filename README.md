@@ -46,55 +46,6 @@
 * After game ends optionally click the "Share" button to share your result or request a tip (Desktop only) 
 * After winning a game you may wish to click the "Share & Request Tip?" button, along with an optional identifer (i.e. your Twitter handle). Share your result on Twitter for free. Alternatively deposit submit sufficient funds into the wallet to create an extrinsic to Polkadot chain (DOT tokens) that will report your awesomeness for clearing some blocks requesting a Tip, and should appear in the "Tip" section here https://polkadot.js.org/apps/#/treasury on a chain that supports `treasury.reportAwesome` (Polkadot).
 
-#### Zeitgeist Prediction Markets Integration
-
-##### Create Market
-
-* User enters market name
-* User enters question
-* User adds logo for market
-* User choose category (i.e. e-sports)
-* User chooses market end date or block (when game ends)
-	- Calculate time lapsed between current zeitgeist block and proposed market end block
-	- Ensure it ends after get result from all competitors, than allow time for oracle result too
-	- Zeitgeist app provides 4 days for oracle to submit final outcome (otherwise oracle forfeits oracle bond of 200 ZTG)
-	(i.e. >= 4 days between market ending and oracle submitting result)
-* User creates crypto assets for each outcome, i.e. Y/N, Options, Range
-	i.e. outcomes + ticker Player1 PLY1, Player2 PLY2 (ticker must be unique)
-	- The more outcome tokens minted (i.e. amt column below... the better for the market, and the more efficient the market will be
-* User specifies Oracle wallet address
-	i.e. use your own i.e. d_______ (Zeitgeist)
-	- Must report the correct result before resolution time
-* User specifies market description
-	- The end date
-	- Location of source of finality
-	- i.e. Prediction market to give insights into who will win the ___ race,
-	the market will end right before the semi-final stage so to give more opportunity for predictions,
-	the Oracle shall source the result from url www.___.com after the final completes,
-	in the highlight unlikely even that it is a draw, then the outcome "OTHER" shall be the winning token,
-	winners holding a winning asset get 1 ZTG per winning asset 
-* User gets liquidity from zeitgeist or provides it themselves
-
-balance    weights  %	amt price (1 ZTG / 3)	total value
-PLY1 200      33       33	100      0.33				33
-PLY2 200      33       33	100      0.33				33
-PLY3 200	    33       33	100      0.33				33
-ZTG  200	    100	     100 100     1          100
-
-Note: markets denominated in ZTG tokens (to buy/sell outcome assets)
-
-Prize pool = 100 ZTG
-Liquidity  = 200 ZTG
-
-* User chooses Pool Fees (i.e. 0.1%, 1%, 10%, 3%) allowing liquidity providers to collect more from a given trade, but may reduce market participants
-
-Cost breakdown
-Network fee             - 0.053 ZTG
-Permissionless Bond 	  - 1000 ZTG (if believe it is a fair market, returned if market not deleted by committee)
-Oracle Bond 			      - 200 ZTG
-Liquidity				        - 200 ZTG (100 for counterpair, 10*10=100 to mint other outcome tokens)
-* Ends in x days
-
 ### Develop Environment
 
 Clone the repository. Checkout the PR with FlappyTips 2 features.
@@ -268,7 +219,192 @@ kill -9 <PROCESS_ID>
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 Credit to this repo that was used to replicate a Flappy Bird like game https://codepen.io/renzo/pen/GXWbEq
 
-<!-- ## Smart Contracts
+#### Zeitgeist Prediction Markets Integration
+
+##### Create Market
+
+Note: Relevant Zeitgeist frontend UI code to create a market https://github.com/zeitgeistpm/ui/blob/staging/pages/create.tsx
+
+* User enters market name
+* User enters question
+* User adds logo for market
+* User choose category (i.e. e-sports)
+* User chooses market end date or block (when game ends)
+	- Calculate time lapsed between current zeitgeist block and proposed market end block
+	- Ensure it ends after get result from all competitors, than allow time for oracle result too
+	- Zeitgeist app provides 4 days for oracle to submit final outcome (otherwise oracle forfeits oracle bond of 200 ZTG)
+	(i.e. >= 4 days between market ending and oracle submitting result)
+* User creates crypto assets for each outcome, i.e. Y/N, Options, Range
+	i.e. outcomes + ticker Player1 PLY1, Player2 PLY2 (ticker must be unique)
+	- The more outcome tokens minted (i.e. amt column below... the better for the market, and the more efficient the market will be
+* User specifies Oracle wallet address
+	i.e. use your own i.e. d_______ (Zeitgeist)
+	- Must report the correct result before resolution time
+* User specifies market description
+	- The end date
+	- Location of source of finality
+	- i.e. Prediction market to give insights into who will win the ___ race,
+	the market will end right before the semi-final stage so to give more opportunity for predictions,
+	the Oracle shall source the result from url www.___.com after the final completes,
+	in the highlight unlikely even that it is a draw, then the outcome "OTHER" shall be the winning token,
+	winners holding a winning asset get 1 ZTG per winning asset 
+* User gets liquidity from zeitgeist or provides it themselves
+
+balance    weights  %	amt price (1 ZTG / 3)	total value
+PLY1 200      33       33	100      0.33				33
+PLY2 200      33       33	100      0.33				33
+PLY3 200	    33       33	100      0.33				33
+ZTG  200	    100	     100 100     1          100
+
+Note: markets denominated in ZTG tokens (to buy/sell outcome assets)
+
+Prize pool = 100 ZTG
+Liquidity  = 200 ZTG
+
+* User chooses Pool Fees (i.e. 0.1%, 1%, 10%, 3%) allowing liquidity providers to collect more from a given trade, but may reduce market participants
+
+Cost breakdown
+Network fee             - 0.053 ZTG
+Permissionless Bond 	  - 1000 ZTG (if believe it is a fair market, returned if market not deleted by committee)
+Oracle Bond 			      - 200 ZTG
+Liquidity				        - 200 ZTG (100 for counterpair, 10*10=100 to mint other outcome tokens)
+* Ends in x days
+
+### Oracle Smart Contract in ink!
+
+#### Setup & Deploy
+
+* Install Rust
+* Check version
+```
+rustup update
+rustup show
+```
+* Install Cargo Contract to allow you to compile and interact with contracts (published on crates.io)
+```
+cargo install cargo-contract --version 2.0.0-rc.1
+```
+  * Error
+    ```
+    Compiling wasm-opt v0.111.0
+    error[E0432]: unresolved import `contract_build::metadata::METADATA_FILE`
+      --> /Users/luke/.cargo/registry/src/github.com-1ecc6299db9ec823/cargo-contract-2.0.0-rc.1/src/cmd/extrinsics/mod.rs:85:5
+      |
+    85 | use contract_build::metadata::METADATA_FILE;
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `METADATA_FILE` in `metadata`
+
+    For more information about this error, try `rustc --explain E0432`.
+    The following warnings were emitted during compilation:
+
+    warning: Git command failed with status: exit status: 128
+    warning: Could not find `.git/HEAD` searching from `/Users/luke/.cargo/registry/src/github.com-1ecc6299db9ec823/cargo-contract-2.0.0-rc.1` upwards!
+
+    error: could not compile `cargo-contract` due to previous error
+    error: failed to compile `cargo-contract v2.0.0-rc.1`, intermediate artifacts can be found at `/var/folders/69/n6p09m3d6t5d7tw5kn9f3kkm0000gq/T/cargo-installytfbPN`
+    ```
+* Run Cargo Contract Node
+```
+substrate-contracts-node --dev
+```
+
+* Install Contracts Node
+```
+cargo install contracts-node --git https://github.com/paritytech/substrate-contracts-node/ --version 0.24.0
+```
+
+* Create rust project with template inside (i.e. Cargo.toml and lib.rs, which uses ink crate 4.0.0-rc)
+	```
+  cargo contract new flappytips
+  ```
+* Generate .contract, .wasm, metadata.json code. Note: Use `---release` to deploy
+	```
+  cargo contract build
+	cargo contract build --release
+  ```
+
+* Upload Contract (note: prefer to use contracts-ui to avoid exposing private key)
+```
+cargo contract upload --suri //Alice
+```
+
+* Outputs the:
+```
+CodeStored event
+code_hash: 0x......
+```
+  * Note: only one copy of the code is stored, but there can be many instance of one code blob,
+differs from other EVM chains where each node has a copy
+
+#### Interact with ink! Contracts using Contracts Node
+
+##### Cargo Contracts
+
+* Instantiate Contract
+```
+contract instantiate \
+	--suri //Bob \
+	--contructor new \
+	--args 10
+```
+
+* Wait for response
+
+```
+...
+Event System => NewAccount
+	account: 5G...
+...
+Event Contracts + Instantiated
+	deployer: 5F...
+	contract: 5G.... (new contract account address to interact with contract)
+...
+```
+
+* Check value was assigned correctly
+* Use `dry-run` because if execute as a transaction then we won't see the return value
+```
+cargo contract call \
+	--suri //Charlie \
+	--contract 5G... \
+	--message get \
+	--dry-run
+```
+
+* Interact to increment by 5, not a dry run so no response but we get a gas limit response
+
+```
+cargo contract call \
+	--suri //Charlie \
+	--contract 5G... \
+	--message inc \
+	--args 5
+```
+
+* Check it incremented
+
+```
+cargo contract call \
+	--suri //Charlie \
+	--contract 5G... \
+	--message get \
+	--dry-run
+```
+
+* Note: only works in debug mode `cargo build` (not release)
+```
+ink::env::debug_println("inc by {}, new value {}", by, self.value);
+```
+
+* Note: it should output on substrate-contracts-node too as `tokio-runtime-worker runtime::contracts Exection finished with debug buffer...`
+* Note: it should show in contracts-ui website too
+* Note: events are not emitted in a dry-run (why wouldn't we want this in debugging mode?)
+
+#### Interact with Contract using Polkadot.js API
+
+* Reference https://polkadot.js.org/docs/api-contract/start/basics
+
+<!--
+## Smart Contracts
 
 ### Create Leaderboard using Substrate ink! Smart Contract language
 
@@ -307,7 +443,8 @@ cargo +nightly test
 Access in ./target/<CONTRACT_NAME>.json
 ```
 cargo +nightly contract generate-metadata
-``` -->
+```
+-->
 
 <!-- ### Deploy Smart Contract to Edgeware
 
@@ -341,6 +478,16 @@ https://paritytech.github.io/ink/
 
 * Polkadot Europe Opening Ceremony - https://www.youtube.com/watch?v=Wyd1-9EIq4I
 * P5.js game using websockets - https://medium.com/geekculture/multiplayer-interaction-with-p5js-f04909e13b87
-* Swenky CLI for ink! https://www.youtube.com/watch?v=rx9B6vQLmS8
-
+* Swanky CLI for ink! https://www.youtube.com/watch?v=rx9B6vQLmS8
+* Substrate Contracts Tutorial ink! - https://www.youtube.com/watch?v=eUbuDey8Mog
 * iMovie presentation - https://support.apple.com/en-gb/guide/imovie/mov91a895a64/mac
+* ink! Resources
+  * ink! Examples https://github.com/paritytech/ink/tree/master/examples
+  * Leaderboard example https://github.com/OpenEmojiBattler/open-emoji-battler/tree/main/front/src/components/pages/Leaderboard
+  * ink! website https://use.ink/
+  * Substrate Contracts UI - https://contracts-ui.substrate.io/
+  * Awesome !ink - https://github.com/paritytech/awesome-ink
+  * Old
+    * Substrate Contracts Workshop https://substrate.dev/substrate-contracts-workshop/#/0/setup
+* Phala Phat Contract Oracle Workshop https://github.com/Phala-Network/phat-offchain-rollup/blob/main/phat/Sub0-Workshop.md#phat-contract-oracle-workshop
+* OpenEmojiBattler Substrate ink! Rust Blockchain Game - https://github.com/OpenEmojiBattler/open-emoji-battler

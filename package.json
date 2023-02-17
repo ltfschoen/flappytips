@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@polkadot/api": "^9.13.6",
+    "@polkadot/api-contract": "^9.14.1",
     "@polkadot/extension-dapp": "^0.44.8",
     "@polkadot/typegen": "^9.13.6",
     "@polkadot/util": "^10.3.1",

@@ -9,6 +9,7 @@ const https = require('https');
 const fs = require('fs');
 const moment = require('moment');
 const { IS_PROD } = require('./constants');
+const { fetchOracleAndLeaderboardContracts, submitGameWinnerToContract } = require('./scripts/fetchOracleAndLeaderboardContracts.js');
 
 const PORT = process.env.PORT || 5000;
 // https or http
@@ -282,6 +283,16 @@ io.on("connection", (socket) => {
         if (winner.id === socket.id && gameDataPlayersStarted[winner.id]['blocksCleared'] > 0) {
           gameDataPlayersStarted[winner.id]['chainAccountResult'] = gameDataPlayersStarted[winner.id].chainAccount;
           // console.log('winner: ', winner.id, moment.unix(winner.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
+
+          // fetch Oracle and Leaderboard contract address
+          const address = fetchOracleAndLeaderboardContracts();
+          // submit winner to contract
+          submitGameWinnerToContract(
+            address,
+            gameDataPlayersStarted[winner.id].chainAccount,
+            gameDataPlayersStarted[winner.id]['blocksCleared']
+          );
+
         } else if (winner.id && winner.id !== socket.id) {
           gameDataPlayersStarted[winner.id]['chainAccountResult'] = gameDataPlayersStarted[winner.id].chainAccount;
           // console.log('winner: ', winner.id, moment.unix(winner.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
