@@ -74,6 +74,10 @@ yarn run dev
 * Open other browser windows at http://localhost:4000 for other players to join
 * Access the API endpoints at http://localhost:5000/api 
 
+### Debugging on Mobile
+
+https://www.addictivetips.com/android/get-web-console-log-chrome-for-android/
+
 ### Maintenance
 
 ```
@@ -87,7 +91,7 @@ npm install
 
 ### Deploy to Linode
 
-https://www.youtube.com/watch?v=FTyby51m0hQ
+Deploy React App with Linode https://www.youtube.com/watch?v=FTyby51m0hQ
 
 ```
 ssh x@x.x.x.x
@@ -101,6 +105,7 @@ git checkout flappydot
 openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
 openssl rsa -in key.pem -out key-rsa.pem
 ```
+  * Ngrok to use https and forward to non-https dev server https://camerondwyer.com/2019/09/23/using-ngrok-to-get-a-public-https-address-for-a-local-server-already-serving-https-for-free/
 
 * Install NVM https://www.linode.com/docs/guides/how-to-install-use-node-version-manager-nvm/
 
@@ -169,6 +174,7 @@ brew tap heroku/brew && brew install heroku
 heroku login
 heroku apps:create flappytips
 heroku git:remote -a flappytips
+heroku config:set XYZ=abc --app flappytips
 git push -f heroku yourbranch:master
 git push -f heroku master
 heroku local web
@@ -284,24 +290,8 @@ rustup show
 ```
 cargo install cargo-contract --version 2.0.0-rc.1
 ```
-  * Error
-    ```
-    Compiling wasm-opt v0.111.0
-    error[E0432]: unresolved import `contract_build::metadata::METADATA_FILE`
-      --> /Users/luke/.cargo/registry/src/github.com-1ecc6299db9ec823/cargo-contract-2.0.0-rc.1/src/cmd/extrinsics/mod.rs:85:5
-      |
-    85 | use contract_build::metadata::METADATA_FILE;
-      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `METADATA_FILE` in `metadata`
+  * Error (see Github Issues)
 
-    For more information about this error, try `rustc --explain E0432`.
-    The following warnings were emitted during compilation:
-
-    warning: Git command failed with status: exit status: 128
-    warning: Could not find `.git/HEAD` searching from `/Users/luke/.cargo/registry/src/github.com-1ecc6299db9ec823/cargo-contract-2.0.0-rc.1` upwards!
-
-    error: could not compile `cargo-contract` due to previous error
-    error: failed to compile `cargo-contract v2.0.0-rc.1`, intermediate artifacts can be found at `/var/folders/69/n6p09m3d6t5d7tw5kn9f3kkm0000gq/T/cargo-installytfbPN`
-    ```
 * Run Cargo Contract Node
 ```
 substrate-contracts-node --dev
@@ -477,17 +467,50 @@ https://paritytech.github.io/ink/
 ### References
 
 * Polkadot Europe Opening Ceremony - https://www.youtube.com/watch?v=Wyd1-9EIq4I
+  * Hackathon website - https://www.polkadotglobalseries.com/
+  * Discord - https://discord.com/channels/1047373734295646240/1052894365531525131/threads/1069922083414495252
 * P5.js game using websockets - https://medium.com/geekculture/multiplayer-interaction-with-p5js-f04909e13b87
 * Swanky CLI for ink! https://www.youtube.com/watch?v=rx9B6vQLmS8
+  * https://github.com/ltfschoen/swanky-cli
 * Substrate Contracts Tutorial ink! - https://www.youtube.com/watch?v=eUbuDey8Mog
 * iMovie presentation - https://support.apple.com/en-gb/guide/imovie/mov91a895a64/mac
 * ink! Resources
+  * aWASoMe ink! - https://github.com/AstarNetwork/aWASoMe
   * ink! Examples https://github.com/paritytech/ink/tree/master/examples
+    * Astar DAO Governer - https://github.com/AstarNetwork/wasm-showcase-dapps/blob/main/dao/governor/lib.rs
   * Leaderboard example https://github.com/OpenEmojiBattler/open-emoji-battler/tree/main/front/src/components/pages/Leaderboard
   * ink! website https://use.ink/
   * Substrate Contracts UI - https://contracts-ui.substrate.io/
   * Awesome !ink - https://github.com/paritytech/awesome-ink
+  * Solidity to ink! https://github.com/727-Ventures/sol2ink
   * Old
     * Substrate Contracts Workshop https://substrate.dev/substrate-contracts-workshop/#/0/setup
+* Polkadot
+  * PSP - https://github.com/w3f/PSPs
+* Polkadot.js
+  * Zeitgeist
+    * Website - https://zeitgeist.pm/ 
+    * Create Market https://github.com/zeitgeistpm/ui/blob/staging/pages/create.tsx
+    * ReportOutcome 
+      * https://github.com/Whisker17/sdk-demo/blob/main/src/market/reportOutcome.ts
+      * https://docs.zeitgeist.pm/docs/build/sdk/market#reportoutcome
+    * Blog usage https://blog.zeitgeist.pm/how-to-use-zeitgeist/
 * Phala Phat Contract Oracle Workshop https://github.com/Phala-Network/phat-offchain-rollup/blob/main/phat/Sub0-Workshop.md#phat-contract-oracle-workshop
 * OpenEmojiBattler Substrate ink! Rust Blockchain Game - https://github.com/OpenEmojiBattler/open-emoji-battler
+* Astar
+  * Developers https://astar.network/developers/
+  * Docs https://docs.astar.network/
+    * XCM - https://docs.astar.network/docs/xcm/building-with-xcm/native-transactions/
+  * Mint WASM NFTs with ink! - https://www.crowdcast.io/c/astar-tech-talk-006-wasm-nfts
+* Substrate
+  * Zombienet https://github.com/paritytech/zombienet
+  * Substrate Connect
+    * https://docs.substrate.io/fundamentals/light-clients-in-substrate-connect/
+    * https://paritytech.github.io/substrate-connect/api/
+    * https://substrate.io/developers/substrate-connect/
+    * https://github.com/paritytech/substrate-connect
+* Dev tools
+  * Cheaper cloud development https://medium.com/commonwealth-labs/build-substrate-in-few-minutes-with-fraction-costs-26fce6aa5066
+### Events
+  * Dotsocial event - https://www.eventbrite.com/e/dotsocial-paris-tickets-516475230317?aff=AHBlogpost
+  * Moonbeam Accelerator https://moonbeamaccelerator.com/

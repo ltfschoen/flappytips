@@ -9,7 +9,11 @@ const https = require('https');
 const fs = require('fs');
 const moment = require('moment');
 const { IS_PROD } = require('./constants');
-const { fetchOracleAndLeaderboardContracts, submitGameWinnerToContract } = require('./scripts/fetchOracleAndLeaderboardContracts.js');
+const {
+  fetchOracleAndLeaderboardContracts, 
+  submitGameWinnerToContract,
+  submitOracleOutcomeToZeitgeist
+} = require('./scripts/fetchOracleAndLeaderboardContracts.js');
 
 const PORT = process.env.PORT || 5000;
 // https or http
@@ -143,7 +147,7 @@ io.on("connection", (socket) => {
   });
 
   // client can send a message each time the clients position changes
-  socket.on("updateGameDataPlayers", (data) => {
+  socket.on("updateGameDataPlayers", async (data) => {
     if (!data.chainAccount || !data.chain) {
       // ignore connections that haven't chosen an account id to play with 
       return;
@@ -284,20 +288,22 @@ io.on("connection", (socket) => {
           gameDataPlayersStarted[winner.id]['chainAccountResult'] = gameDataPlayersStarted[winner.id].chainAccount;
           // console.log('winner: ', winner.id, moment.unix(winner.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
 
-          // fetch Oracle and Leaderboard contract address
-          const address = fetchOracleAndLeaderboardContracts();
-          // submit winner to contract
-          await submitGameWinnerToContract(
-            address,
-            gameDataPlayersStarted[winner.id].chainAccount,
-            gameDataPlayersStarted[winner.id]['blocksCleared']
-          );
+          // TODO - get this to work
 
-          await submitOracleOutcomeToZeitgeist(
-            address,
-            winnerAccountId,
-            gameDataPlayersStarted[winner.id]['blocksCleared']
-          );
+          // // fetch Oracle and Leaderboard contract address
+          // const address = fetchOracleAndLeaderboardContracts();
+          // // submit winner to contract
+          // await submitGameWinnerToContract(
+          //   address,
+          //   gameDataPlayersStarted[winner.id].chainAccount,
+          //   gameDataPlayersStarted[winner.id]['blocksCleared']
+          // );
+
+          // await submitOracleOutcomeToZeitgeist(
+          //   address,
+          //   gameDataPlayersStarted[winner.id].chainAccount,
+          //   gameDataPlayersStarted[winner.id]['blocksCleared']
+          // );
 
         } else if (winner.id && winner.id !== socket.id) {
           gameDataPlayersStarted[winner.id]['chainAccountResult'] = gameDataPlayersStarted[winner.id].chainAccount;
