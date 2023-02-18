@@ -42,6 +42,11 @@
   margin-top: 5%
 }
 
+canvas {
+  display: block;
+  width: 100vw;
+}
+
 .game-state {
   font-size: 1.5em;
   position: fixed;
@@ -99,4 +104,13 @@
 
 .btn-success {
   font-size: large !important;
+}
+
+/* https://stackoverflow.com/a/70953753/3208553 */
+select.form-control{
+  -webkit-appearance: menulist!important;
+  -moz-appearance: menulist!important;
+  -ms-appearance: menulist!important;
+  -o-appearance: menulist!important;
+  appearance: menulist!important;
 }

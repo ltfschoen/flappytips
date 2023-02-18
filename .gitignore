@@ -9,7 +9,10 @@
 /coverage
 
 # production
-/build
+#/build
+build/*
+# exception to the rule for Heroku use
+!build/.gitkeep
 
 # misc
 .DS_Store
@@ -27,7 +30,7 @@ yarn-error.log*
 .env
 .secrets
 
-public/index-temp.html
+.yarn/cache
+.yarn/install-state.gz
 
-skylink.txt
-skylink-website.txt
+

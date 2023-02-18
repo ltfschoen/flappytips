@@ -2,40 +2,37 @@
 const ENDPOINTS = {
   'Kusama': {
     url: 'wss://kusama-rpc.polkadot.io',
-    isPolk: true
   },
   'Polkadot-CC1': {
     url: 'wss://rpc.polkadot.io',
-    isPolk: true
   },
-  'Edgeware Mainnet': {
-    url: 'wss://mainnet4.edgewa.re',
-    isPolk: true
-  },
-  'Sia Mainnet': {
-    url: 'https://siastats.info',
-    isPolk: false
-  },
-  'DataHighway Harbour Testnet': {
-    url: 'wss://testnet-harbour.datahighway.com',
-    isPolk: true
+  'Zeitgeist Mainnet': {
+    // url: 'wss://zeitgeist.api.onfinality.io/public-ws',
+    url: 'wss://zeitgeist-rpc.dwellir.com',
   },
   // Note: Westend not supported as it does not use Treasury, which is required for using Tips
   'Westend Testnet': {
     url: 'wss://westend-rpc.polkadot.io',
-    isPolk: true
   },
-  // Note: Kulupu not supported as it returns error
-  // `Unhandled Rejection (TypeError): Cannot read property 'validators' of undefined`
-  // 'Kulupu Mainnet': 'wss://rpc.kulupu.network/ws',
 }
 
 const COLOURS = {
   pink: '#FF0863',
-  grey: '#EE4499'
+  orange: '#FFA500',
+  purple: '#33338F',
+  grey: '#EE4499',
+  blue: '#4169e1'
 };
+
+// below also need updating in in ./constants/index.js for server
+const HOST_PROD = '139.144.96.196';
+const IS_PROD = process.env.NODE_ENV === 'production';
+const WSS = true; 
 
 export {
   COLOURS,
-  ENDPOINTS
+  ENDPOINTS,
+  HOST_PROD,
+  IS_PROD,
+  WSS
 }

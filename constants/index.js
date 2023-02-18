@@ -1,11 +1,10 @@
+// below also need updating in in ./constants/index.js for frontend
+const HOST_PROD = '139.144.96.196';
 const IS_PROD = process.env.NODE_ENV === 'production';
-const BUILD_SKYNET_SUBDIRECTORY = 'skynet';
-const HANDSHAKE_DOMAIN_NAME = `${process.env.HNS_DOMAIN}/`;
-const SIA_SKYLINK_PORTAL_HANDSHAKE_URL_PREFIX = 'https://siasky.net/hns/';
+const WSS = true; 
 
 module.exports = {
-  BUILD_SKYNET_SUBDIRECTORY,
-  HANDSHAKE_DOMAIN_NAME,
+  HOST_PROD,
   IS_PROD,
-  SIA_SKYLINK_PORTAL_HANDSHAKE_URL_PREFIX
+  WSS
 };
