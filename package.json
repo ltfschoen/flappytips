@@ -21,6 +21,7 @@
     "dotenv": "^16.0.3",
     "eslint": "^7.32.0",
     "express": "^4.18.2",
+    "fs": "^0.0.1-security",
     "http-proxy-middleware": "^2.0.6",
     "internet-available": "^1.0.0",
     "jquery": "^3.6.3",
@@ -53,9 +54,6 @@
     "build": "react-scripts build",
     "heroku-postbuild": "corepack enable && corepack prepare yarn@stable --activate && yarn set version 3.4.1 && yarn && yarn run build",
     "production": "yarn build && node server.js"
-  },
-  "eslintConfig": {
-    "extends": "react-app"
   },
   "browserslist": {
     "production": [

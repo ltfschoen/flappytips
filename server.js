@@ -8,28 +8,28 @@ const http = require("http");
 const https = require('https');
 const fs = require('fs');
 const moment = require('moment');
-const { IS_PROD } = require('./constants');
-const {
-  fetchOracleAndLeaderboardContracts, 
-  submitGameWinnerToContract,
-  submitOracleOutcomeToZeitgeist
-} = require('./scripts/fetchOracleAndLeaderboardContracts.js');
+const { HOST_PROD, IS_PROD, WSS } = require('./constants');
+// const {
+//   fetchOracleAndLeaderboardContracts, 
+//   submitGameWinnerToContract,
+//   submitOracleOutcomeToZeitgeist
+// } = require('./scripts/fetchOracleAndLeaderboardContracts.js');
 
 const PORT = process.env.PORT || 5000;
 // https or http
-let proxy_port = (process.env.REACT_APP_WSS !== true) ? 80 : 443;
+let proxy_port = (WSS !== true) ? 80 : 443;
 let proxy_url;
-if (process.env.NODE_ENV === 'production' && process.env.REACT_APP_WSS === true) {
-  proxy_url = `https://flappytips.herokuapp.com:${proxy_port}`;
-} else if (process.env.NODE_ENV === 'production' && process.env.REACT_APP_WSS !== true) {
-  proxy_url = `http://flappytips.herokuapp.com:${proxy_port}`;
-} else if (process.env.NODE_ENV !== 'production') {
-  proxy_url = 'http://localhost:5000';
+if (IS_PROD === true && WSS === true) {
+  proxy_url = `https://${HOST_PROD}:${proxy_port}`;
+} else if (IS_PROD === true && WSS !== true) {
+  proxy_url = `http://${HOST_PROD}:${proxy_port}`;
+} else if (IS_PROD !== true) {
+  proxy_url = `http://localhost:${proxy_port}`;
 }
 // const target = PROXY || pkg.proxy;
 // console.log('proxy_url: ', proxy_url);
 let options;
-if (process.env.REACT_APP_WSS === true) {
+if (WSS === true) {
   options = {
     key: fs.readFileSync(path.resolve(__dirname, 'key-rsa.pem')),
     cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem'))
@@ -39,7 +39,7 @@ if (process.env.REACT_APP_WSS === true) {
 const app = express();
 
 let httpServer;
-if (process.env.REACT_APP_WSS === true) {
+if (WSS === true) {
   // https
   httpServer = https.createServer(options, app);
 } else {
@@ -54,14 +54,21 @@ const io = require("socket.io")(httpServer, {
 }); // this loads socket.io and connects it to the server.
 const staticPath = path.join(__dirname, './', 'build');
 const corsWhitelist = [
+  `https://${HOST_PROD}:443`,
+  `http://${HOST_PROD}:80`,
+  `https://${HOST_PROD}:5000`,
+  `http://${HOST_PROD}:4000`,
+  `http://${HOST_PROD}:5000`,
+  `https://${HOST_PROD}:${PORT}`,
+  `http://${HOST_PROD}:${PORT}`,
   'http://localhost:3000',
   'http://localhost:4000', // frontend
   'http://localhost:5000', // proxy
   `http://localhost:${PORT}`, // proxy
-  'http://flappytips.herokuapp.com', // http
-  'https://flappytips.herokuapp.com', // https
-  'http://flappytips.herokuapp.com/assets/LemonMilkMedium.otf',
-  'https://flappytips.herokuapp.com/assets/LemonMilkMedium.otf'
+  `http://${HOST_PROD}`, // http
+  `https://${HOST_PROD}`, // https
+  `http://${HOST_PROD}/assets/LemonMilkMedium.otf`,
+  `https://${HOST_PROD}/assets/LemonMilkMedium.otf`
 ];
 // https://www.npmjs.com/package/cors#configuration-options
 const corsOptions = {

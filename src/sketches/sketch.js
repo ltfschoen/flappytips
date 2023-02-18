@@ -2,20 +2,24 @@ import io from 'socket.io-client';
 import moment from 'moment';
 import Bird from './Bird';
 import Obstacle from './Obstacle';
-import { COLOURS } from '../constants';
+import { COLOURS, HOST_PROD, IS_PROD, WSS } from '../constants';
 
 const PORT = process.env.PORT || 5000;
 // console.log('PORT', PORT);
 // console.log('process.env.PORT', process.env.PORT);
 // get socket which only uses websockets as a means of communication
 // ws://localhost:5000/socket.io/?EIO=4&transport=websocket
-let socketEndpoint = process.env.NODE_ENV === 'production'
+let socketEndpoint = (IS_PROD === true)
   ? (
-    process.env.REACT_APP_WSS === true
-    ? `wss://flappytips.herokuapp.com:${PORT}`
-    : `ws://flappytips.herokuapp.com:${PORT}`
+    WSS === true
+    ? `wss://${HOST_PROD}:${PORT}`
+    : `ws://${HOST_PROD}:${PORT}`
   )
   : `ws://localhost:${PORT}`;
+
+console.log('PORT', PORT);
+console.log('WSS', WSS);
+
 const socket = io(socketEndpoint, {
   transports: ["websocket"]
 });

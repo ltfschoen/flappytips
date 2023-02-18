@@ -11,7 +11,7 @@ async function fetchOracleAndLeaderboardContracts () {
     const keyring = new Keyring({ type: 'sr25519' });
     let api;
     api = await ApiPromise.create({ provider });
-    const blueprint = new BlueprintPromise(api, metadata, codeHash);
+    const blueprint = new BlueprintPromise(api, metadata || "", codeHash);
 
     // maximum gas to be consumed for the instantiation. if limit is too small the instantiation will fail.
     const gasLimit = 100000n * 1000000n;
@@ -37,5 +37,5 @@ async function fetchOracleAndLeaderboardContracts () {
 }
 
 module.exports = {
-    fetchOracleAndLeaderboardContracts: fetchOracleAndLeaderboardContracts().catch(console.error).finally(() => process.exit();
+    fetchOracleAndLeaderboardContracts: fetchOracleAndLeaderboardContracts().catch(console.error).finally(() => process.exit())
 };
