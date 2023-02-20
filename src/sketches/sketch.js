@@ -12,6 +12,9 @@ const PORT = process.env.PORT || 5000;
 let socketEndpoint = (IS_PROD === true)
   ? (
     WSS === true
+    // https://stackoverflow.com/questions/73662397/websockets-not-working-with-http-proxy-middleware
+    // window.location.protocol
+    // window.location.host
     ? `wss://${HOST_PROD}:${PORT}`
     : `ws://${HOST_PROD}:${PORT}`
   )
@@ -20,8 +23,12 @@ let socketEndpoint = (IS_PROD === true)
 console.log('PORT', PORT);
 console.log('WSS', WSS);
 
-const socket = io(socketEndpoint, {
-  transports: ["websocket"]
+// const socket = io(socketEndpoint, {
+const socket = io(`https://clawbird.com`, {
+  transports: ["websocket"],
+  addTrailingSlash: true, // trailing slash of path
+  path: "/socket.io/", // explicit custom path (default)
+  withCredentials: true,
 });
 // console.log('socket in sketch', socket);
 
@@ -117,7 +124,17 @@ export default function sketch(p5) {
     p5.frameRate(30); //set framerate to 30, same as server
 
     socket.on('connect', () => {
-      // console.log('socket connected', socket);
+      console.log('socket connected', socket);
+      const engine = socket.io.engine;
+      console.log('engine', engine);
+    });
+
+    socket.on("error", (error) => {
+      console.log('socket.io error', error);
+    });
+
+    socket.on("connect_error", (error) => {
+      console.log('socket.io connect_error', error);
     });
 
     socket.on("gameDataPlayers", (data) => {

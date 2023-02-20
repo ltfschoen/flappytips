@@ -17,7 +17,7 @@ const { HOST_PROD, IS_PROD, WSS } = require('./constants');
 
 const PORT = process.env.PORT || 5000;
 // https or http
-let proxy_port = (WSS !== true) ? 80 : 443;
+let proxy_port = PORT; // = (WSS !== true) ? 80 : 443;
 let proxy_url;
 if (IS_PROD === true && WSS === true) {
   proxy_url = `https://${HOST_PROD}:${proxy_port}`;
@@ -31,8 +31,20 @@ if (IS_PROD === true && WSS === true) {
 let options;
 if (WSS === true) {
   options = {
-    key: fs.readFileSync(path.resolve(__dirname, 'key-rsa.pem')),
-    cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem'))
+    // https://socket.io/docs/v4/client-options/#nodejs-specific-options
+    // self-sign
+    key: fs.readFileSync(path.resolve(__dirname, 'key-rsa.pem')), // change to correct SSL one on server without __dirname prefix
+    cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem')),  // change to correct SSL one on server without __dirname prefix
+    // client-certificate authentication
+    // key: fs.readFileSync(path.resolve('/root/certs/clawbird.com/positivessl/clawbird.com.key')),
+    // cert: fs.readFileSync(path.resolve('/root/certs/clawbird.com/positivessl/clawbird.com.combined.crt')),
+    // key: fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/privkey.pem')),
+    // cert: fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/fullchain.pem')),
+    requestCert: true,
+    // Necessary only if the server uses a self-signed certificate
+    // ca: [
+    //   fs.readFileSync(path.resolve('server-cert.pem')),
+    // ]
   };
 }
 
@@ -50,7 +62,12 @@ if (WSS === true) {
 
 
 const io = require("socket.io")(httpServer, {
-  transports: ["websocket"] // set to use websocket only
+  transports: ["websocket"], // set to use websocket only
+  path: "/socket.io/", // explicitely set custom path (default)
+  cors: {
+    origin: "https://clawbird.com",
+    credentials: true,
+  }
 }); // this loads socket.io and connects it to the server.
 const staticPath = path.join(__dirname, './', 'build');
 const corsWhitelist = [
@@ -65,6 +82,8 @@ const corsWhitelist = [
   'http://localhost:4000', // frontend
   'http://localhost:5000', // proxy
   `http://localhost:${PORT}`, // proxy
+  'https://localhost:5000',
+  'https://localhost:443',
   `http://${HOST_PROD}`, // http
   `https://${HOST_PROD}`, // https
   `http://${HOST_PROD}/assets/LemonMilkMedium.otf`,
@@ -94,16 +113,26 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use((err, req, res, next) => {
   res.status(err.status || 500).json({status: err.status, message: err.message})
 });
-app.use(express.static(staticPath));
 
 // https://www.npmjs.com/package/http-proxy-middleware
-app.use('/api',
-  createProxyMiddleware({ 
-    target: proxy_url,
-    changeOrigin: true,
-    ws: true
-  }
-));
+// app.use('/api',
+//   createProxyMiddleware({ 
+//     target: proxy_url,
+//     changeOrigin: true,
+//     ws: true
+//   }
+// ));
+// https://www.npmjs.com/package/http-proxy-middleware#external-websocket-upgrade
+
+const wsProxy = createProxyMiddleware({ 
+  target: proxy_url,
+  changeOrigin: true,
+  ws: true,
+  logger: console,
+});
+app.use(wsProxy);
+
+app.use(express.static(staticPath));
 
 app.options('*', cors())
 app.get('/api/test', cors(corsOptions),
@@ -132,9 +161,14 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 
-httpServer.listen(PORT, () => {
-   // console.log(`CORS-enabled web server listening on port ${PORT}`);
-});
+// httpServer.listen(PORT, () => {
+//    // console.log(`CORS-enabled web server listening on port ${PORT}`);
+// });
+
+httpServer.listen(PORT, '0.0.0.0');
+
+// https://github.com/chimurai/http-proxy-middleware/blob/master/examples/websocket/index.js
+httpServer.on('upgrade', wsProxy.upgrade); // optional: upgrade externally
 
 // store the positions of each client in this object.
 // It would be safer to connect it to a database as well so the data doesn't get destroyed when the server restarts

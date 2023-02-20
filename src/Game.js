@@ -152,11 +152,11 @@ class Game extends Component {
   }
 
   getIpData = async () => {
-    const response = await fetch('https://ipapi.co/json/');
-    const data = await response.json();
-    this.setState({
-      ipData: data
-    });
+    // const response = await fetch('https://ipapi.co/json/');
+    // const data = await response.json();
+    // this.setState({
+    //   ipData: data
+    // });
   }
 
   setupTempApi = async (customEndpoint, customEndpointName) => {
@@ -367,7 +367,7 @@ class Game extends Component {
 
   gameOver = (blocksCleared) => {
     const { currentEndpointName, chainAccount, chainAccountResult, gameStartRequestedAtBlock, gameEndedAtBlock, opponentsWhenEnded } = this.state;
-    const reason = `Played FlappyTips 2 v${pkg.version} (${isMobile ? 'Mobile' : 'Desktop'}) on ${currentEndpointName} and ${chainAccountResult === chainAccount ? 'you won,' : 'you lost,'} against ${Object.keys(opponentsWhenEnded).length} opponents, clearing ${Number.parseFloat(blocksCleared).toFixed(0)} block obstacles from #${gameStartRequestedAtBlock} to #${gameEndedAtBlock}!`;
+    const reason = `Played FlappyTips v${pkg.version} (${isMobile ? 'Mobile' : 'Desktop'}) @ https://clawbird.com on ${currentEndpointName} and ${chainAccountResult === chainAccount ? 'you won,' : 'you lost,'} against ${Object.keys(opponentsWhenEnded).length} opponents, clearing ${Number.parseFloat(blocksCleared).toFixed(0)} block obstacles from #${gameStartRequestedAtBlock} to #${gameEndedAtBlock}!`;
     this.setState({
       blocksCleared,
       isGameOver: true,
@@ -823,7 +823,7 @@ class Game extends Component {
               }
               <script async src="https://platform.twitter.com/widgets.js" charSet="utf-8"></script>
               <TwitterShareButton
-                url={`https://flappytips.herokuapp.com`}
+                url={`https://clawbird.com`}
                 options={{ text: reasonForTweet, via: 'ltfschoen' }}
               />
               {/* <Button variant="secondary" className="btn btn-primary btn-large btn-block" onTouchStart={() => this.closeModal()} onClick={() => this.closeModal()} >Close</Button> */}

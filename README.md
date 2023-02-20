@@ -115,16 +115,19 @@ sudo apt update
 sudo apt upgrade
 sudo apt install nginx
 
-mv ./flapptips /var/www
-sudo vim /etc/nginx/sites-available/flapptips
-sudo ln -s /etc/nginx/sites-available/flapptips /etc/nginx/sites-enabled
+mv ./flappytips /var/www
+sudo vim /etc/nginx/nginx.conf
+sudo vim /etc/nginx/sites-available/flappytips
+sudo ln -s /etc/nginx/sites-available/flappytips /etc/nginx/sites-enabled
 sudo nginx -t
+nginx -s reload
 sudo systemctl restart nginx
+journalctl -xeu nginx.service
 ```
 
 * https://www.linode.com/docs/guides/getting-started-with-nginx-part-3-enable-tls-for-https/
 
-/etc/nginx/sites-available/flapptips
+/etc/nginx/sites-available/flappytips
 ```
 server {
   ssl_certificate     /var/www/cert.pem;
