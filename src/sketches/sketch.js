@@ -18,10 +18,10 @@ let socketEndpoint = process.env.NODE_ENV === 'production'
     //? 'wss://localhost:5000'
     //? `wss://${HOST_PROD}:${PORT}`
     ? `${window.location.protocol === 'http:' ? 'ws:' : 'wss:'}//${window.location.host}:${PORT}`
-    : `ws://${HOST_PROD}:${PORT}`
+    : `ws://${window.location.host}:${PORT}`
   )
-  : `ws://localhost:${PORT}`;
-
+  //: `ws://localhost:${PORT}`;
+  : `${window.location.protocol === 'http:' ? 'ws:' : 'wss:'}//localhost:${PORT}`;
 console.log('PORT', PORT);
 console.log('WSS', WSS);
 console.log('socketEndpoint', socketEndpoint);
@@ -31,7 +31,7 @@ const socket = io(socketEndpoint, {
   transports: ["websocket"],
   addTrailingSlash: true, // trailing slash of path
   path: "/socket.io/", // explicit custom path (default)
-  withCredentials: true,
+  withCredentials: WSS,
 });
 
 console.log('socket in sketch', socket);

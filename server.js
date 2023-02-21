@@ -20,13 +20,13 @@ const PORT = process.env.PORT || 5000;
 let proxy_port = PORT; //= (WSS !== true) ? 80 : 443;
 let proxy_url;
 if (process.env.NODE_ENV === 'production' && WSS === true) {
-  // proxy_url = `https://${HOST_PROD}:${proxy_port}`;
-  proxy_url = 'https://localhost:5000';
-  //proxy_url = 'https://clawbird.com:5000';
+  proxy_url = `https://clawbird.com:5000`;
 } else if (process.env.NODE_ENV === 'production' && WSS !== true) {
   proxy_url = `http://${HOST_PROD}:${proxy_port}`;
-} else if (process.env.NODE_ENV !== 'production') {
-  proxy_url = `http://${HOST_PROD}:5000`;
+} else if (process.env.NODE_ENV !== 'production' && WSS === true) {
+  proxy_url = `https://localhost:5000`;
+} else if (process.env.NODE_ENV !== 'production' && WSS !== true) {
+  proxy_url = `http://localhost:5000`;
 }
 // const target = PROXY || pkg.proxy;
 // console.log('proxy_url: ', proxy_url);
@@ -69,13 +69,12 @@ if (WSS === true) {
   httpServer = require('http').Server(app);
 }
 
-
 const io = require("socket.io")(httpServer, {
   transports: ["websocket"], // set to use websocket only
   path: "/socket.io/", // explicitely set custom path (default)
   cors: {
     origin: proxy_url,
-    credentials: true,
+    credentials: WSS,
   }
 }); // this loads socket.io and connects it to the server.
 const staticPath = path.join(__dirname, './', 'build');
@@ -137,14 +136,15 @@ app.use((err, req, res, next) => {
 //    ws: true
 //  }
 //));
+
 // https://www.npmjs.com/package/http-proxy-middleware#external-websocket-upgrade
-const wsProxy = createProxyMiddleware({
-	  target: proxy_url,
-	  changeOrigin: true,
-	  ws: true,
-	  logger: console,
-});
-app.use('/socket.io/', wsProxy);
+// const wsProxy = createProxyMiddleware({
+//     target: proxy_url,
+//     changeOrigin: true,
+//     ws: true,
+//     logger: console,
+// });
+// app.use('/socket.io/', wsProxy);
 
 app.use(express.static(staticPath));
 
@@ -175,13 +175,16 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 
-httpServer.listen(PORT, '0.0.0.0');
+httpServer.listen(
+  PORT,
+  IS_PROD ? HOST_PROD : '0.0.0.0',
+);
 //httpServer.listen(PORT, () => {
 //   // console.log(`CORS-enabled web server listening on port ${PORT}`);
 //});
 
-// https://github.com/chimurai/http-proxy-middleware/blob/master/examples/websocket/index.js
-httpServer.on('upgrade', wsProxy.upgrade); // optional: upgrade externally
+// // https://github.com/chimurai/http-proxy-middleware/blob/master/examples/websocket/index.js
+// httpServer.on('upgrade', wsProxy.upgrade); // optional: upgrade externally
 
 // store the positions of each client in this object.
 // It would be safer to connect it to a database as well so the data doesn't get destroyed when the server restarts

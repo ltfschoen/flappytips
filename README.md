@@ -65,7 +65,7 @@ npm install -g nodemon &&
 npm install -g concurrently &&
 yarn add node-gyp &&
 yarn add fs &&
-yarn run dev
+DEBUG=* yarn run dev
 ```
  
 * Follow the "Setup" in the "Play" section of this README file, but instead go to http://localhost:4000
@@ -91,6 +91,9 @@ localStorage.debug = '*'; // browser
 https://socket.io/docs/v4/logging-and-debugging/
 
 https://socket.io/docs/v4/client-installation/
+
+To debug Websockets frames in browser: https://stackoverflow.com/a/30770934/3208553
+It may be necessary to drag down an expand the window to view each frame.
 
 ### Maintenance
 
@@ -457,7 +460,8 @@ server {
 
 * Run web server using screen (`apt install screen`) 
   * https://phoenixnap.com/kb/how-to-use-linux-screen-with-commands
-  * Start screen `screen`
+  * https://www.geeksforgeeks.org/screen-command-in-linux-with-examples/
+  * Start screen `screen -S flappytips`
   * Show screens `screen -ls`
   * Create screen if not exist CTRL-A + C
   * Run server after making changes to code `yarn && yarn start`
@@ -468,15 +472,6 @@ server {
 ```
 nginx -s reload && sudo systemctl restart nginx
 ```
-
-
-
-
-https://www.geeksforgeeks.org/screen-command-in-linux-with-examples/
-screen -S flappytips
-CTRL-A + D
-screen -ls
-screen -r 750610.flappytips2
 
 * Enable Firewall
 ```
