@@ -82,6 +82,12 @@ https://www.addictivetips.com/android/get-web-console-log-chrome-for-android/
 
 To enable websockets debugging in server logs: 
 
+```
+DEBUG=* node yourfile.js // server
+
+localStorage.debug = '*'; // browser
+```
+
 https://socket.io/docs/v4/logging-and-debugging/
 
 https://socket.io/docs/v4/client-installation/
@@ -324,6 +330,16 @@ PositiveSSL activation and add to server
 
 
     * Lastly, update all Nginx config files, and update server.js with the link to the new certificate, then kill the old server on port 5000, re-enter the `screen -ls` rebuild with `yarn && yarn run start`, detach screen, and restart Nginx
+
+#### Backup Certificates
+
+* Backup SSL files
+	```
+	mkdir -p /root/certs/backup
+	cp /etc/nginx/nginx.conf /root/certs/backup/nginx.conf.backup-pt1
+  	cp -r /etc/nginx/conf.d/ /root/certs/backup/conf.d-backup-pt1
+  	cp /etc/nginx/sites-available/flappytips /root/certs/backup/flappytips-backup-pt1
+	```
 
 ### Content Security Policy (CSP)
 
