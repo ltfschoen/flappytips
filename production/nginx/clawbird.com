@@ -10,16 +10,16 @@ server {
     return 308 https://$host$request_uri;
 }
 
-map $http_upgrade $connection_upgrade {
-    default upgrade;
-    ''      close;
-}
+# map $http_upgrade $connection_upgrade {
+#     default upgrade;
+#     ''      close;
+# }
 
 # TODO - move into http{} configuration block of nginx.conf
 # Upstream Declaration
-upstream appserver {
-    server 0.0.0.0:5000 weight=100; # appserver_ip:ws_port
-}
+# upstream appserver {
+#     server 0.0.0.0:5000 weight=100; # appserver_ip:ws_port
+# }
 
 # Virtual Host Configuration
 server {
@@ -43,25 +43,25 @@ server {
     root                    /var/www/build;
     index                   index.html;
     # Only forward the Socket.IO requests to path /socket.io/
-    location /socket.io/ {
+    # location /socket.io/ {
                             # try_files $uri /index.html =404;
                             # https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_ssl_verify
-                            proxy_set_header        Host $host;
+                            # proxy_set_header        Host $host;
                             # proxy_set_header        Host $http_host;
                             # proxy_set_header        Host $host:$proxy_port;
-                            proxy_set_header        X-Real-IP $remote_addr;
-                            proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
-                            proxy_set_header        X-Forwarded-Proto $scheme;
+                            # proxy_set_header        X-Real-IP $remote_addr;
+                            # proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                            # proxy_set_header        X-Forwarded-Proto $scheme;
                             # proxy_set_header        X-Forwarded-Proto https;
                             # prevent header from being passed
                             # proxy_set_header        Accept-Encoding "";
 
-                            proxy_socket_keepalive on;
-                            proxy_ssl_server_name on;
-                            proxy_ssl_certificate /etc/letsencrypt/live/www.clawbird.com/chain.pem;
-                            proxy_ssl_certificate_key /etc/letsencrypt/live/www.clawbird.com/privkey.pem;
-                            proxy_ssl_trusted_certificate /etc/letsencrypt/live/www.clawbird.com/chain.pem;
-                            proxy_ssl_verify      on;
+                            # proxy_socket_keepalive on;
+                            # proxy_ssl_server_name on;
+                            # proxy_ssl_certificate /etc/letsencrypt/live/www.clawbird.com/chain.pem;
+                            # proxy_ssl_certificate_key /etc/letsencrypt/live/www.clawbird.com/privkey.pem;
+                            # proxy_ssl_trusted_certificate /etc/letsencrypt/live/www.clawbird.com/chain.pem;
+                            # proxy_ssl_verify      on;
                                     
                             # Fix the “It appears that your reverse proxy set up is broken" error.
                             # use port where application runs below
@@ -69,14 +69,14 @@ server {
                             # proxy_pass          http://139.144.96.196:5000;
                             
                             # proxy_pass https://appserver;
-                            proxy_pass           https://0.0.0.0:5000;
+                            #proxy_pass           https://0.0.0.0:5000;
                             
                             # proxy_read_timeout  90;
 
                             # WebSocket support
-                            proxy_http_version 1.1;
-                            proxy_set_header Upgrade $http_upgrade;
-                            proxy_set_header Connection "upgrade";
+                            # proxy_http_version 1.1;
+                            # proxy_set_header Upgrade $http_upgrade;
+                            # proxy_set_header Connection "upgrade";
                             # proxy_set_header Connection $connection_upgrade;
-    }
+    # }
 }
