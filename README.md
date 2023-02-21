@@ -188,6 +188,8 @@ $ cat /etc/letsencrypt/live/README
 `[cert name]/cert.pem`     : will break many server configurations, and should not be used without reading further documentation (see link below).
 ```
 
+Note: None of the certificates or keys should be pushed to Git but I have included only self-signing ones for learning purposes.
+
 ```
 Successfully received certificate.
 Certificate is saved at: /etc/letsencrypt/live/www.clawbird.com/fullchain.pem

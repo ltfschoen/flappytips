@@ -17,14 +17,16 @@ const { HOST_PROD, IS_PROD, WSS } = require('./constants');
 
 const PORT = process.env.PORT || 5000;
 // https or http
-let proxy_port = PORT; // = (WSS !== true) ? 80 : 443;
+let proxy_port = PORT; //= (WSS !== true) ? 80 : 443;
 let proxy_url;
-if (IS_PROD === true && WSS === true) {
-  proxy_url = `https://${HOST_PROD}:${proxy_port}`;
-} else if (IS_PROD === true && WSS !== true) {
+if (process.env.NODE_ENV === 'production' && WSS === true) {
+  // proxy_url = `https://${HOST_PROD}:${proxy_port}`;
+  proxy_url = 'https://localhost:5000';
+  //proxy_url = 'https://clawbird.com:5000';
+} else if (process.env.NODE_ENV === 'production' && WSS !== true) {
   proxy_url = `http://${HOST_PROD}:${proxy_port}`;
-} else if (IS_PROD !== true) {
-  proxy_url = `http://localhost:${proxy_port}`;
+} else if (process.env.NODE_ENV !== 'production') {
+  proxy_url = `http://${HOST_PROD}:5000`;
 }
 // const target = PROXY || pkg.proxy;
 // console.log('proxy_url: ', proxy_url);
@@ -32,19 +34,26 @@ let options;
 if (WSS === true) {
   options = {
     // https://socket.io/docs/v4/client-options/#nodejs-specific-options
-    // self-sign
-    key: fs.readFileSync(path.resolve(__dirname, 'key-rsa.pem')), // change to correct SSL one on server without __dirname prefix
-    cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem')),  // change to correct SSL one on server without __dirname prefix
-    // client-certificate authentication
+    //
+    // Self-sign
+    key: fs.readFileSync(path.resolve(__dirname, 'key-rsa.pem')),
+    cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem')),
+    //
+    // Positive SSL
     // key: fs.readFileSync(path.resolve('/root/certs/clawbird.com/positivessl/clawbird.com.key')),
     // cert: fs.readFileSync(path.resolve('/root/certs/clawbird.com/positivessl/clawbird.com.combined.crt')),
+    //requestCert: true,
+    //ca: [
+    //  fs.readFileSync(path.resolve('/root/certs/clawbird.com/positivessl/clawbird.com.combined.crt')),
+    //],
+    //
+    // Let's Encrypt
     // key: fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/privkey.pem')),
     // cert: fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/fullchain.pem')),
-    requestCert: true,
-    // Necessary only if the server uses a self-signed certificate
-    // ca: [
-    //   fs.readFileSync(path.resolve('server-cert.pem')),
-    // ]
+    //requestCert: true,
+    //ca: [
+    //  fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/cert.pem')),
+    //],
   };
 }
 
@@ -65,19 +74,21 @@ const io = require("socket.io")(httpServer, {
   transports: ["websocket"], // set to use websocket only
   path: "/socket.io/", // explicitely set custom path (default)
   cors: {
-    origin: "https://clawbird.com",
+    origin: proxy_url,
     credentials: true,
   }
 }); // this loads socket.io and connects it to the server.
 const staticPath = path.join(__dirname, './', 'build');
 const corsWhitelist = [
+  'http://0.0.0.0:5000',
+  'https://0.0.0.0:443',
   `https://${HOST_PROD}:443`,
   `http://${HOST_PROD}:80`,
   `https://${HOST_PROD}:5000`,
   `http://${HOST_PROD}:4000`,
   `http://${HOST_PROD}:5000`,
-  `https://${HOST_PROD}:${PORT}`,
-  `http://${HOST_PROD}:${PORT}`,
+  'https://clawbird.com:443',
+  'https://clawbird.com:5000',
   'http://localhost:3000',
   'http://localhost:4000', // frontend
   'http://localhost:5000', // proxy
@@ -87,7 +98,11 @@ const corsWhitelist = [
   `http://${HOST_PROD}`, // http
   `https://${HOST_PROD}`, // https
   `http://${HOST_PROD}/assets/LemonMilkMedium.otf`,
-  `https://${HOST_PROD}/assets/LemonMilkMedium.otf`
+  `https://${HOST_PROD}/assets/LemonMilkMedium.otf`,
+  'http://clawbird.com', // http
+  'https://clawbird.com', // https
+  'http://clawbird.com/assets/LemonMilkMedium.otf',
+  'https://clawbird.com/assets/LemonMilkMedium.otf'
 ];
 // https://www.npmjs.com/package/cors#configuration-options
 const corsOptions = {
@@ -116,21 +131,20 @@ app.use((err, req, res, next) => {
 
 // https://www.npmjs.com/package/http-proxy-middleware
 // app.use('/api',
-//   createProxyMiddleware({ 
-//     target: proxy_url,
-//     changeOrigin: true,
-//     ws: true
-//   }
-// ));
+//  createProxyMiddleware({ 
+//    target: proxy_url,
+//    changeOrigin: true,
+//    ws: true
+//  }
+//));
 // https://www.npmjs.com/package/http-proxy-middleware#external-websocket-upgrade
-
-const wsProxy = createProxyMiddleware({ 
-  target: proxy_url,
-  changeOrigin: true,
-  ws: true,
-  logger: console,
+const wsProxy = createProxyMiddleware({
+	  target: proxy_url,
+	  changeOrigin: true,
+	  ws: true,
+	  logger: console,
 });
-app.use(wsProxy);
+app.use('/socket.io/', wsProxy);
 
 app.use(express.static(staticPath));
 
@@ -161,11 +175,10 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 
-// httpServer.listen(PORT, () => {
-//    // console.log(`CORS-enabled web server listening on port ${PORT}`);
-// });
-
 httpServer.listen(PORT, '0.0.0.0');
+//httpServer.listen(PORT, () => {
+//   // console.log(`CORS-enabled web server listening on port ${PORT}`);
+//});
 
 // https://github.com/chimurai/http-proxy-middleware/blob/master/examples/websocket/index.js
 httpServer.on('upgrade', wsProxy.upgrade); // optional: upgrade externally
@@ -328,7 +341,7 @@ io.on("connection", (socket) => {
         if (winner.id === socket.id && gameDataPlayersStarted[winner.id]['blocksCleared'] > 0) {
           gameDataPlayersStarted[winner.id]['chainAccountResult'] = gameDataPlayersStarted[winner.id].chainAccount;
           // console.log('winner: ', winner.id, moment.unix(winner.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
-
+        
           // TODO - get this to work
 
           // // fetch Oracle and Leaderboard contract address
