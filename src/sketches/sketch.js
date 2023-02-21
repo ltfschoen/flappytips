@@ -15,6 +15,7 @@ let socketEndpoint = (IS_PROD === true)
     // https://stackoverflow.com/questions/73662397/websockets-not-working-with-http-proxy-middleware
     // window.location.protocol
     // window.location.host
+    // ? `${window.location.protocol === 'http:' ? 'ws:' : 'wss:'}//${window.location.host}:${PORT}`
     ? `wss://${HOST_PROD}:${PORT}`
     : `ws://${HOST_PROD}:${PORT}`
   )

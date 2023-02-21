@@ -78,6 +78,14 @@ yarn run dev
 
 https://www.addictivetips.com/android/get-web-console-log-chrome-for-android/
 
+### Debugging Websockets
+
+To enable websockets debugging in server logs: 
+
+https://socket.io/docs/v4/logging-and-debugging/
+
+https://socket.io/docs/v4/client-installation/
+
 ### Maintenance
 
 ```
@@ -87,7 +95,244 @@ rm -rf node_modules
 npm install
 ```
 
-### Websockets
+### Websockets Socket.IO
+
+#### Troubleshooting
+
+* Client & Server paths must match
+  * Client
+    ```
+    const socketEndpoint = <ENDPOINT>;
+    const socket = io(socketEndpoint, {
+      transports: ["websocket"],
+      addTrailingSlash: true, // trailing slash of path
+      path: "/socket.io/", // explicit custom path (default)
+    });
+    ```
+
+  * Server
+    ```
+    const io = require("socket.io")(httpServer, {
+      transports: ["websocket"], // set to use websocket only
+      path: "/socket.io/", // explicitely set custom path (default)
+      ...
+    ```
+
+#### References
+
+* https://www.nginx.com/blog/nginx-nodejs-websockets-socketio/
+* https://www.linode.com/docs/guides/how-to-install-and-use-nginx-on-ubuntu-20-04/
+* https://medium.com/@adrianhsu/node-js-nginx-https-cloudflare-server-setup-google-app-domain-8020eb0e4181
+
+### Nginx
+
+#### Config
+
+* Full example /etc/nginx/nginx.conf
+	* https://www.linode.com/docs/guides/getting-started-with-nginx-part-4-tls-deployment-best-practices/#full-configuration-example
+* Diffie Hellman Prime https://www.linode.com/docs/guides/getting-started-with-nginx-part-4-tls-deployment-best-practices/#create-a-larger-diffie-hellman-prime
+* Keepalive https://www.linode.com/docs/guides/getting-started-with-nginx-part-4-tls-deployment-best-practices/#increase-keepalive-duration
+* Session Duration https://www.linode.com/docs/guides/getting-started-with-nginx-part-4-tls-deployment-best-practices/#increase-tls-session-duration
+* HTTP 2 Support - https://www.linode.com/docs/guides/getting-started-with-nginx-part-4-tls-deployment-best-practices/#enable-http2-support
+  * Verify HTTP 2 works https://tools.keycdn.com/http2-test
+* OCSP Stapling - https://www.linode.com/docs/guides/getting-started-with-nginx-part-4-tls-deployment-best-practices/#ocsp-stapling
+
+### HTTPS / SSL
+
+#### Option 1: Let's Encrypt / CertBot
+
+##### Community
+
+https://community.letsencrypt.org/
+
+##### Setup
+
+* https://letsencrypt.org/getting-started/
+	* Demonstrate control over website using ACME Protocol - https://tools.ietf.org/html/rfc8555
+		* Use the Certbot ACME Client - https://certbot.eff.org/
+
+* https://www.linode.com/docs/guides/enabling-https-using-certbot-with-nginx-on-ubuntu/
+* Mentions use of chain.pem as intermediate certificates https://eff-certbot.readthedocs.io/en/stable/using.html#where-are-my-certificates
+
+```
+sudo apt update
+sudo apt install snapd
+sudo snap install core
+sudo snap refresh core
+sudo apt remove certbot
+sudo snap install --classic certbot
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+```
+
+```
+sudo certbot --nginx \
+  -d clawbird.com \
+  -d www.clawbird.com
+```
+
+* Specify email address and other details
+
+* Output
+```
+$ cat /etc/letsencrypt/live/README
+
+`[cert name]/privkey.pem`  : the private key for your certificate.
+`[cert name]/fullchain.pem`: the certificate file used in most server software.
+`[cert name]/chain.pem`    : used for OCSP stapling in Nginx >=1.3.7.
+`[cert name]/cert.pem`     : will break many server configurations, and should not be used without reading further documentation (see link below).
+```
+
+```
+Successfully received certificate.
+Certificate is saved at: /etc/letsencrypt/live/www.clawbird.com/fullchain.pem
+Key is saved at:         /etc/letsencrypt/live/www.clawbird.com/privkey.pem
+This certificate expires on 2023-05-20.
+These files will be updated when the certificate renews.
+Certbot has set up a scheduled task to automatically renew this certificate in the background.
+
+Deploying certificate
+Successfully deployed certificate for www.clawbird.com to /etc/nginx/sites-enabled/flappytips
+Successfully deployed certificate for clawbird.com to /etc/nginx/sites-enabled/flappytips
+Congratulations! You have successfully enabled HTTPS on https://www.clawbird.com and https://clawbird.com
+```
+
+* Verify SSL works: https://www.ssllabs.com/ssltest/analyze.html?d=clawbird.com&latest
+
+* Renew certificate when required https://www.linode.com/docs/guides/enabling-https-using-certbot-with-nginx-on-ubuntu/
+
+* Diffie Hellman Prime - https://www.linode.com/docs/guides/getting-started-with-nginx-part-4-tls-deployment-best-practices/#create-a-larger-diffie-hellman-prime
+
+  ```
+  cd /etc/letsencrypt/live/www.clawbird.com/
+  openssl genpkey -genparam -algorithm DH -out /root/certs/clawbird.com/dhparam4096.pem -pkeyopt dh_paramgen_prime_len:4096
+
+  mv dhparam4096.pem /root/certs/clawbird.com 
+  ```
+
+	* Add this to SSL directives 
+		```
+		ssl_dhparam /root/certs/clawbird.com/dhparam4096.pem;
+		```
+
+* Add to /etc/nginx/nginx.conf
+  ```
+	keepalive_timeout 75;
+  ```
+
+* Add to /etc/nginx/sites-available/flappytips
+  ```
+	ssl_session_cache shared:SSL:10m;
+	ssl_session_timeout 10m;
+
+	ssl_stapling on;
+	ssl_stapling_verify on;
+	ssl_trusted_certificate /etc/letsencrypt/live/www.clawbird.com/fullchain.pem;
+  ```
+
+* Add to server:
+  ```
+  key: fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/privkey.pem')),
+  cert: fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/fullchain.pem')),
+  ```
+
+#### Option 2: PositiveSSL
+
+PositiveSSL activation and add to server
+
+* Namecheap Setup https://ap.www.namecheap.com/domains/ssl/productpage/1964069/
+* Submit data to CA https://www.namecheap.com/support/knowledgebase/article.aspx/794/67/how-do-i-activate-an-ssl-certificate
+* Confirm you control the domain https://www.namecheap.com/support/knowledgebase/article.aspx/9637/14/how-can-i-complete-the-domain-control-validation-dcv-for-my-ssl-certificate/
+* CSR Generation Guide https://www.namecheap.com/support/knowledgebase/article.aspx/467/67/how-do-i-generate-a-csr-code
+	* Other guides https://www.namecheap.com/support/knowledgebase/article.aspx/467/2290/how-to-generate-csr-certificate-signing-request-code/
+	* Steps https://edtechchris.com/2020/02/11/generate-csr-with-openssl-on-ubuntu/
+      ```
+      openssl req -new -newkey rsa:2048 -nodes -keyout clawbird.com.key -out clawbird.com.csr
+      <COUNTRY>
+      <FULL_STATE>
+      <CITY>
+      <COMPANY>
+      <OPTIONAL_DEPARTMENT> (i.e. IT)
+      clawbird.com
+      <EMAIL>
+      ```
+
+    * Enter challenge password (to be sent with certificate request)
+
+		* The above generates the clawbird.com.key and clawbird.com.csr files
+		```
+		cat clawbird.com.csr
+		```
+
+		* Backup the clawbird.com.key and clawbird.com.csr files
+
+			```
+			scp root@<IP>:/var/www/clawbird.com.csr ~/Documents
+			scp root@<IP>:/var/www/clawbird.com.key ~/Documents
+			```
+
+		* choose CNAME record for the DCV
+
+			* Follow steps here: https://www.youtube.com/watch?v=35yC4rConu8
+
+			* Add to Linode Domain: https://www.linode.com/docs/products/networking/dns-manager/get-started/#register-the-domain
+
+				Domain: clawbird.com
+				SOA Email Address: ___
+				Insert Default Records, choose the Linode to use
+				Add the same Host and Target records to a CNAME in Linode Domains with TTL of 60
+
+			* Add Custom DNS records at Linode to Namecheap for that domain 
+				* https://ap.www.namecheap.com/Domains/DomainControlPanel/clawbird.com/domain/
+
+				ns1.linode.com
+				ns2.linode.com
+				ns3.linode.com
+				ns4.linode.com
+				ns5.linode.com
+
+		* Verify at https://mxtoolbox.com/SuperTool.aspx?action=cname%3aclawbird.com&run=toolpage
+
+		* Wait for https://ap.www.namecheap.com/domains/ssl/productpage/1964069/clawbird.com/dashboard to stop displaying "PENDING", then check email for the SSL certificates
+
+    * Copy certs into /root/certs/clawbird.com
+      ```
+      mkdir -p /root/certs/clawbird.com
+
+      cp /var/www/clawbird.com.csr /root/certs/clawbird.com/positivessl
+      cp /var/www/clawbird.com.key /root/certs/clawbird.com/positivessl
+      ```
+
+    * When get certificate, download it, extract it, and copy it to server
+
+      ```
+      mv clawbird_com.crt clawbird.com.crt
+      mv clawbird_com.ca-bundle clawbird.com.ca-bundle
+      scp ~/Documents/clawbird_com/clawbird.com.crt root@<IP_ADDRESS>:/root/certs/clawbird.com/positivessl
+      scp ~/Documents/clawbird_com/clawbird_com.ca-bundle root@<IP_ADDRESS>:/root/certs/clawbird.com/positivessl
+      clawbird.com.ca-bundle
+      ```
+
+    * Combine the .ca-bundle with the .crt file https://www.namecheap.com/support/knowledgebase/article.aspx/9419/33/installing-an-ssl-certificate-on-nginx/
+
+      ```
+      cat clawbird.com.crt > your_domain_chain.crt ; echo >> your_domain_chain.crt ; cat clawbird_com.ca-bundle >> your_domain_chain.crt
+
+      mv your_domain_chain.crt clawbird.com.combined.crt
+      ```
+
+		* Check if SSL is working https://decoder.link/
+
+
+    * Lastly, update all Nginx config files, and update server.js with the link to the new certificate, then kill the old server on port 5000, re-enter the `screen -ls` rebuild with `yarn && yarn run start`, detach screen, and restart Nginx
+
+### Content Security Policy (CSP)
+
+https://content-security-policy.com/
+
+* Add to /etc/nginx/nginx.conf
+```
+add_header          Content-Security-Policy "default-src 'self' 'unsafe-eval'; upgrade-insecure-requests; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' platform.twitter.com syndication.twitter.com; script-src-elem 'self' https://platform.twitter.com/widgets.js https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.0.0/p5.js https://clawbird.com:4000/static/js/main.1d765367.js https://clawbird.com/static/js/main.1d765367.js https://platform.twitter.com/js/button.e7f9415a2e000feaab02c86dd5802747.js; connect-src 'self' platform.twitter.com syndication.twitter.com wss://rpc.polkadot.io/ https://ipapi.co/json/ wss://clawbird.com:443/socket.io/ wss://clawbird.com:5000/socket.io/ wss://zeitgeist-rpc.dwellir.com/ https://clawbird.com:4000/assets/LemonMilkMedium.otf https://clawbird.com/assets/LemonMilkMedium.otf; img-src 'self' data: https://clawbird.com:4000/favicon.ico https://clawbird.com/favicon.ico https://clawbird.com:4000/logo192.png https://clawbird.com/logo192.png platform.twitter.com syndication.twitter.com; frame-src 'self' https://platform.twitter.com/";
+```
 
 ### Deploy to Linode
 
@@ -109,10 +354,10 @@ openssl rsa -in key.pem -out key-rsa.pem
 
 * Install NVM https://www.linode.com/docs/guides/how-to-install-use-node-version-manager-nvm/
 
+* Install Nginx (default latest from apt is 1.18)
 ```
 nvm use v19.6.0
-sudo apt update
-sudo apt upgrade
+apt-get update && apt-get upgrade
 sudo apt install nginx
 
 mv ./flappytips /var/www
@@ -120,18 +365,67 @@ sudo vim /etc/nginx/nginx.conf
 sudo vim /etc/nginx/sites-available/flappytips
 sudo ln -s /etc/nginx/sites-available/flappytips /etc/nginx/sites-enabled
 sudo nginx -t
-nginx -s reload
-sudo systemctl restart nginx
+nginx -s reload && sudo systemctl restart nginx
 journalctl -xeu nginx.service
 ```
+
+  * Show Nginx version installed
+    ```
+    apt-get update && apt-get upgrade
+    apt install nginx
+
+    nginx is already the newest version (1.18.0-6ubuntu14.3)
+    ```
+
+* Update from Nginx 1.18 to Nginx 1.23.3. Note that at https://nginx.org/en/download.html it shows 1.23 (mainline version) and 1.18 (legacy), but installing using `apt` only installs 1.18.
+  * Important: Backup /etc/nginx/nginx.conf first since it will be overwritten
+
+  * Temporarily disable Nginx
+    ```
+    ps -auxww | grep nginx
+    sudo systemctl status nginx
+    sudo systemctl stop nginx
+    sudo systemctl disable nginx
+    ```
+  * Run the commands here https://nginx.org/en/linux_packages.html#Ubuntu
+  * Restore functionality of /etc/nginx/nginx.conf by adding lines like the following that were removed linking to the site in /etc/nginx/sites-available/flappytips
+    ```
+    include /etc/nginx/modules-enabled/*.conf;
+    ...
+    add_header          Content-Security-Policy "default-src 'self'; upgrade-insecure-requests;";
+    ...
+    include /etc/nginx/sites-enabled/*;
+    ```
+  * Verify version
+    ```
+    nginx -V
+
+    nginx version: nginx/1.23.3
+    ```
+  * Restart Nginx and reload config files
+    ```
+    sudo systemctl enable nginx
+    sudo systemctl start nginx
+    sudo systemctl restart nginx
+    sudo systemctl reload nginx
+    nginx -s reload
+    sudo systemctl status nginx
+    ```
+    * Alternatives
+      ```
+      sudo service nginx reload
+      sudo service nginx status
+      ```
 
 * https://www.linode.com/docs/guides/getting-started-with-nginx-part-3-enable-tls-for-https/
 
 /etc/nginx/sites-available/flappytips
 ```
 server {
-  ssl_certificate     /var/www/cert.pem;
-  ssl_certificate_key /var/www/key-rsa.pem;
+  # Self-signed certificate
+  # ssl_certificate     /var/www/cert.pem;
+  # ssl_certificate_key /var/www/key-rsa.pem;
+
   listen          443 ssl default_server;
   listen          [::]:443 ssl default_server;
   server_name     139.144.96.196;
@@ -143,13 +437,49 @@ server {
 }
 ```
 
+* Run web server using screen (`apt install screen`) 
+  * https://phoenixnap.com/kb/how-to-use-linux-screen-with-commands
+  * Start screen `screen`
+  * Show screens `screen -ls`
+  * Create screen if not exist CTRL-A + C
+  * Run server after making changes to code `yarn && yarn start`
+  * Attach to existing screen `screen -r <ID>`
+  * Detach from existing screen without losing it CTRL-A + D
+
+* Run after changing source code or Nginx configuration files:
 ```
-nginx -s reload
+nginx -s reload && sudo systemctl restart nginx
+```
+
+
+
+
+https://www.geeksforgeeks.org/screen-command-in-linux-with-examples/
+screen -S flappytips
+CTRL-A + D
+screen -ls
+screen -r 750610.flappytips2
+
+* Enable Firewall
+```
+ufw enable
+ufw status verbose
+ufw allow 'Nginx Full'
+ufw reload
 ```
 
 * Follow development environment commands
 
 * Run with screen https://linuxconfig.org/how-to-run-command-in-background-on-linux
+
+### Linode Troubleshooting
+
+If error address in use EADDRINUSE when try to restart server
+```
+lsof -i tcp:5000
+
+kill -9 <PID>
+```
 
 ### Deploy to Heroku
 
@@ -467,7 +797,7 @@ cargo +nightly contract generate-metadata
 
 https://paritytech.github.io/ink/
 
-### References
+### References (Blockchain)
 
 * Polkadot Europe Opening Ceremony - https://www.youtube.com/watch?v=Wyd1-9EIq4I
   * Hackathon website - https://www.polkadotglobalseries.com/
@@ -514,6 +844,7 @@ https://paritytech.github.io/ink/
     * https://github.com/paritytech/substrate-connect
 * Dev tools
   * Cheaper cloud development https://medium.com/commonwealth-labs/build-substrate-in-few-minutes-with-fraction-costs-26fce6aa5066
+
 ### Events
   * Dotsocial event - https://www.eventbrite.com/e/dotsocial-paris-tickets-516475230317?aff=AHBlogpost
   * Moonbeam Accelerator https://moonbeamaccelerator.com/
