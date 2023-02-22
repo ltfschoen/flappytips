@@ -8,7 +8,7 @@ const http = require("http");
 const https = require('https');
 const fs = require('fs');
 const moment = require('moment');
-const { HOST_PROD, IS_PROD, WSS } = require('./constants');
+const { HOST_PROD, IS_PROD, IS_REVERSE_PROXY, WSS } = require('./constants');
 // const {
 //   fetchOracleAndLeaderboardContracts, 
 //   submitGameWinnerToContract,
@@ -69,14 +69,21 @@ if (WSS === true) {
   httpServer = require('http').Server(app);
 }
 
-const io = require("socket.io")(httpServer, {
+let httpServerOptions;
+
+httpServerOptions = {
   transports: ["websocket"], // set to use websocket only
-  path: "/socket.io/", // explicitely set custom path (default)
   cors: {
     origin: proxy_url,
     credentials: WSS,
   }
-}); // this loads socket.io and connects it to the server.
+};
+
+if (IS_REVERSE_PROXY === false) {
+  httpServerOptions["path"] = "/socket.io/"; // explicitly set custom path (default)
+}
+
+const io = require("socket.io")(httpServer, httpServerOptions); // this loads socket.io and connects it to the server.
 const staticPath = path.join(__dirname, './', 'build');
 const corsWhitelist = [
   'http://0.0.0.0:5000',
@@ -128,23 +135,20 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({status: err.status, message: err.message})
 });
 
-// https://www.npmjs.com/package/http-proxy-middleware
-// app.use('/api',
-//  createProxyMiddleware({ 
-//    target: proxy_url,
-//    changeOrigin: true,
-//    ws: true
-//  }
-//));
+let wsProxy;
 
-// https://www.npmjs.com/package/http-proxy-middleware#external-websocket-upgrade
-// const wsProxy = createProxyMiddleware({
-//     target: proxy_url,
-//     changeOrigin: true,
-//     ws: true,
-//     logger: console,
-// });
-// app.use('/socket.io/', wsProxy);
+if (IS_REVERSE_PROXY === true) {
+  wsProxy = createProxyMiddleware({
+    target: proxy_url,
+    changeOrigin: true, // for vhosted sites, changes host header to match to target's host
+    ws: true, // enable websocket proxy
+    logger: console,
+  });
+
+  // https://www.npmjs.com/package/http-proxy-middleware#external-websocket-upgrade
+  // add the proxy to express
+  app.use('/socket.io/', wsProxy);
+}
 
 app.use(express.static(staticPath));
 
@@ -183,8 +187,11 @@ httpServer.listen(
 //   // console.log(`CORS-enabled web server listening on port ${PORT}`);
 //});
 
-// // https://github.com/chimurai/http-proxy-middleware/blob/master/examples/websocket/index.js
-// httpServer.on('upgrade', wsProxy.upgrade); // optional: upgrade externally
+if (IS_REVERSE_PROXY === true && wsProxy) {
+  // https://github.com/chimurai/http-proxy-middleware/blob/master/examples/websocket/index.js
+  // TODO - when uncommented it gives browser ws error "invalid frame header"
+  // httpServer.on('upgrade', wsProxy.upgrade); // optional: upgrade externally
+}
 
 // store the positions of each client in this object.
 // It would be safer to connect it to a database as well so the data doesn't get destroyed when the server restarts

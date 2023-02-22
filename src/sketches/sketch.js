@@ -32,6 +32,7 @@ const socket = io(socketEndpoint, {
   addTrailingSlash: true, // trailing slash of path
   path: "/socket.io/", // explicit custom path (default)
   withCredentials: WSS,
+  rejectUnauthorized: false // allow self-signed certs
 });
 
 console.log('socket in sketch', socket);
