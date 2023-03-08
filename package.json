@@ -37,8 +37,8 @@
     "react-scripts": "5.0.1",
     "react-twitter-embed": "^4.0.4",
     "regtest": "^0.0.3",
-    "socket.io": "^4.6.0",
-    "socket.io-client": "^4.6.0",
+    "socket.io": "^4.6.1",
+    "socket.io-client": "^4.6.1",
     "websocket-extensions": "^0.1.4"
   },
   "engines": {
@@ -47,10 +47,10 @@
     "yarn": "3.x"
   },
   "scripts": {
-    "dev:client": "PORT=4000 react-scripts start",
-    "dev:server": "yarn build && node server.js",
+    "dev:client": "DEBUG=* PORT=4000 react-scripts start",
+    "dev:server": "DEBUG=* yarn build && node server.js",
     "dev": "PORT=4000 corepack enable && corepack prepare yarn@stable --activate && yarn set version 3.4.1 && yarn && yarn build && concurrently --kill-others-on-fail \"cross-env yarn dev:server\" \"yarn dev:client\"",
-    "start": "PORT=5000 yarn dev:server",
+    "start": "WSS=true PORT=5000 yarn dev:server",
     "build": "react-scripts build",
     "heroku-postbuild": "corepack enable && corepack prepare yarn@stable --activate && yarn set version 3.4.1 && yarn && yarn run build",
     "production": "yarn build && node server.js"

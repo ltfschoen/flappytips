@@ -8,7 +8,7 @@ const http = require("http");
 const https = require('https');
 const fs = require('fs');
 const moment = require('moment');
-const { HOST_PROD, IS_PROD, WSS } = require('./constants');
+const { HOST_PROD, IS_PROD, IS_REVERSE_PROXY, WSS } = require('./constants');
 // const {
 //   fetchOracleAndLeaderboardContracts, 
 //   submitGameWinnerToContract,
@@ -17,22 +17,43 @@ const { HOST_PROD, IS_PROD, WSS } = require('./constants');
 
 const PORT = process.env.PORT || 5000;
 // https or http
-let proxy_port = (WSS !== true) ? 80 : 443;
+let proxy_port = PORT; //= (WSS !== true) ? 80 : 443;
 let proxy_url;
-if (IS_PROD === true && WSS === true) {
-  proxy_url = `https://${HOST_PROD}:${proxy_port}`;
-} else if (IS_PROD === true && WSS !== true) {
+if (process.env.NODE_ENV === 'production' && WSS === true) {
+  proxy_url = `https://clawbird.com:5000`;
+} else if (process.env.NODE_ENV === 'production' && WSS !== true) {
   proxy_url = `http://${HOST_PROD}:${proxy_port}`;
-} else if (IS_PROD !== true) {
-  proxy_url = `http://localhost:${proxy_port}`;
+} else if (process.env.NODE_ENV !== 'production' && WSS === true) {
+  proxy_url = `https://localhost:5000`;
+} else if (process.env.NODE_ENV !== 'production' && WSS !== true) {
+  proxy_url = `http://localhost:5000`;
 }
 // const target = PROXY || pkg.proxy;
 // console.log('proxy_url: ', proxy_url);
 let options;
 if (WSS === true) {
   options = {
+    // https://socket.io/docs/v4/client-options/#nodejs-specific-options
+    //
+    // Self-sign
     key: fs.readFileSync(path.resolve(__dirname, 'key-rsa.pem')),
-    cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem'))
+    cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem')),
+    //
+    // Positive SSL
+    // key: fs.readFileSync(path.resolve('/root/certs/clawbird.com/positivessl/clawbird.com.key')),
+    // cert: fs.readFileSync(path.resolve('/root/certs/clawbird.com/positivessl/clawbird.com.combined.crt')),
+    //requestCert: true,
+    //ca: [
+    //  fs.readFileSync(path.resolve('/root/certs/clawbird.com/positivessl/clawbird.com.combined.crt')),
+    //],
+    //
+    // Let's Encrypt
+    // key: fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/privkey.pem')),
+    // cert: fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/fullchain.pem')),
+    //requestCert: true,
+    //ca: [
+    //  fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/cert.pem')),
+    //],
   };
 }
 
@@ -48,27 +69,46 @@ if (WSS === true) {
   httpServer = require('http').Server(app);
 }
 
+let httpServerOptions;
 
-const io = require("socket.io")(httpServer, {
-  transports: ["websocket"] // set to use websocket only
-}); // this loads socket.io and connects it to the server.
+httpServerOptions = {
+  transports: ["websocket"], // set to use websocket only
+  cors: {
+    origin: proxy_url,
+    credentials: WSS,
+  }
+};
+
+if (IS_REVERSE_PROXY === false) {
+  httpServerOptions["path"] = "/socket.io/"; // explicitly set custom path (default)
+}
+
+const io = require("socket.io")(httpServer, httpServerOptions); // this loads socket.io and connects it to the server.
 const staticPath = path.join(__dirname, './', 'build');
 const corsWhitelist = [
+  'http://0.0.0.0:5000',
+  'https://0.0.0.0:443',
   `https://${HOST_PROD}:443`,
   `http://${HOST_PROD}:80`,
   `https://${HOST_PROD}:5000`,
   `http://${HOST_PROD}:4000`,
   `http://${HOST_PROD}:5000`,
-  `https://${HOST_PROD}:${PORT}`,
-  `http://${HOST_PROD}:${PORT}`,
+  'https://clawbird.com:443',
+  'https://clawbird.com:5000',
   'http://localhost:3000',
   'http://localhost:4000', // frontend
   'http://localhost:5000', // proxy
   `http://localhost:${PORT}`, // proxy
+  'https://localhost:5000',
+  'https://localhost:443',
   `http://${HOST_PROD}`, // http
   `https://${HOST_PROD}`, // https
   `http://${HOST_PROD}/assets/LemonMilkMedium.otf`,
-  `https://${HOST_PROD}/assets/LemonMilkMedium.otf`
+  `https://${HOST_PROD}/assets/LemonMilkMedium.otf`,
+  'http://clawbird.com', // http
+  'https://clawbird.com', // https
+  'http://clawbird.com/assets/LemonMilkMedium.otf',
+  'https://clawbird.com/assets/LemonMilkMedium.otf'
 ];
 // https://www.npmjs.com/package/cors#configuration-options
 const corsOptions = {
@@ -94,16 +134,23 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use((err, req, res, next) => {
   res.status(err.status || 500).json({status: err.status, message: err.message})
 });
-app.use(express.static(staticPath));
 
-// https://www.npmjs.com/package/http-proxy-middleware
-app.use('/api',
-  createProxyMiddleware({ 
+let wsProxy;
+
+if (IS_REVERSE_PROXY === true) {
+  wsProxy = createProxyMiddleware({
     target: proxy_url,
-    changeOrigin: true,
-    ws: true
-  }
-));
+    changeOrigin: true, // for vhosted sites, changes host header to match to target's host
+    ws: true, // enable websocket proxy
+    logger: console,
+  });
+
+  // https://www.npmjs.com/package/http-proxy-middleware#external-websocket-upgrade
+  // add the proxy to express
+  app.use('/socket.io/', wsProxy);
+}
+
+app.use(express.static(staticPath));
 
 app.options('*', cors())
 app.get('/api/test', cors(corsOptions),
@@ -132,9 +179,19 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 
-httpServer.listen(PORT, () => {
-   // console.log(`CORS-enabled web server listening on port ${PORT}`);
-});
+httpServer.listen(
+  PORT,
+  IS_PROD ? HOST_PROD : '0.0.0.0',
+);
+//httpServer.listen(PORT, () => {
+//   // console.log(`CORS-enabled web server listening on port ${PORT}`);
+//});
+
+if (IS_REVERSE_PROXY === true && wsProxy) {
+  // https://github.com/chimurai/http-proxy-middleware/blob/master/examples/websocket/index.js
+  // TODO - when uncommented it gives browser ws error "invalid frame header"
+  // httpServer.on('upgrade', wsProxy.upgrade); // optional: upgrade externally
+}
 
 // store the positions of each client in this object.
 // It would be safer to connect it to a database as well so the data doesn't get destroyed when the server restarts
@@ -294,7 +351,7 @@ io.on("connection", (socket) => {
         if (winner.id === socket.id && gameDataPlayersStarted[winner.id]['blocksCleared'] > 0) {
           gameDataPlayersStarted[winner.id]['chainAccountResult'] = gameDataPlayersStarted[winner.id].chainAccount;
           // console.log('winner: ', winner.id, moment.unix(winner.obstaclesHitAt).format("YYYY-MM-DD HH:mm"));
-
+        
           // TODO - get this to work
 
           // // fetch Oracle and Leaderboard contract address
