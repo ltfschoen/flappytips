@@ -24,15 +24,7 @@ const COLOURS = {
   blue: '#4169e1'
 };
 
-// below also need updating in in ./constants/index.js for server
-const HOST_PROD = '139.144.96.196';
-const IS_PROD = process.env.NODE_ENV === 'production';
-const WSS = IS_PROD; 
-
 export {
   COLOURS,
   ENDPOINTS,
-  HOST_PROD,
-  IS_PROD,
-  WSS
 }

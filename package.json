@@ -50,10 +50,10 @@
     "dev:client": "DEBUG=* PORT=4000 react-scripts start",
     "dev:server": "DEBUG=* yarn build && node server.js",
     "dev": "PORT=4000 corepack enable && corepack prepare yarn@stable --activate && yarn set version 3.4.1 && yarn && yarn build && concurrently --kill-others-on-fail \"cross-env yarn dev:server\" \"yarn dev:client\"",
-    "start": "WSS=true PORT=5000 yarn dev:server",
+    "start": "REACT_APP_WSS=true REACT_APP_SERVER_PORT=5000 yarn dev:server",
     "build": "react-scripts build",
     "heroku-postbuild": "corepack enable && corepack prepare yarn@stable --activate && yarn set version 3.4.1 && yarn && yarn run build",
-    "production": "yarn build && node server.js"
+    "prod": "DEBUG=* NODE_ENV=production yarn build && node server.js"
   },
   "browserslist": {
     "production": [

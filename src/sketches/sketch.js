@@ -2,36 +2,40 @@ import io from 'socket.io-client';
 import moment from 'moment';
 import Bird from './Bird';
 import Obstacle from './Obstacle';
-import { COLOURS, HOST_PROD, IS_PROD, WSS } from '../constants';
+import { COLOURS } from '../constants';
 
-const PORT = process.env.PORT || 5000;
-// console.log('PORT', PORT);
-// console.log('process.env.PORT', process.env.PORT);
+const {
+  NODE_ENV,
+  REACT_APP_HOST_PROD,
+  REACT_APP_IS_REVERSE_PROXY,
+  REACT_APP_SERVER_PORT,
+  REACT_APP_WSS,
+} = process.env;
+
+// console.log('sketch env: ', NODE_ENV, REACT_APP_HOST_PROD, REACT_APP_IS_REVERSE_PROXY, REACT_APP_WSS, REACT_APP_SERVER_PORT);
+
 // get socket which only uses websockets as a means of communication
 // ws://localhost:5000/socket.io/?EIO=4&transport=websocket
 
-let socketEndpoint = process.env.NODE_ENV === 'production'
+let socketEndpoint = NODE_ENV === 'production'
   ? (
-    WSS === true
+    REACT_APP_WSS === 'true'
     // https://stackoverflow.com/questions/73662397/websockets-not-working-with-http-proxy-middleware
-    //? `wss://0.0.0.0:${PORT}`
+    //? `wss://0.0.0.0:${REACT_APP_SERVER_PORT}`
     //? 'wss://localhost:5000'
-    //? `wss://${HOST_PROD}:${PORT}`
-    ? `${window.location.protocol === 'http:' ? 'ws:' : 'wss:'}//${window.location.host}:${PORT}`
-    : `ws://${window.location.host}:${PORT}`
+    //? `wss://${REACT_APP_HOST_PROD}:${REACT_APP_SERVER_PORT}`
+    ? `${window.location.protocol === 'http:' ? 'ws:' : 'wss:'}//${window.location.host}:${REACT_APP_SERVER_PORT}`
+    : `ws://${window.location.host}:${REACT_APP_SERVER_PORT}`
   )
-  //: `ws://localhost:${PORT}`;
-  : `${window.location.protocol === 'http:' ? 'ws:' : 'wss:'}//localhost:${PORT}`;
-console.log('PORT', PORT);
-console.log('WSS', WSS);
+  //: `ws://localhost:${REACT_APP_SERVER_PORT}`;
+  : `${window.location.protocol === 'http:' ? 'ws:' : 'wss:'}//localhost:${REACT_APP_SERVER_PORT}`;
 console.log('socketEndpoint', socketEndpoint);
-console.log('window.location.host', window.location.host);
 
 const socket = io(socketEndpoint, {
   transports: ["websocket"],
   addTrailingSlash: true, // trailing slash of path
   path: "/socket.io/", // explicit custom path (default)
-  withCredentials: WSS,
+  withCredentials: REACT_APP_WSS === 'true',
   rejectUnauthorized: false // allow self-signed certs
 });
 

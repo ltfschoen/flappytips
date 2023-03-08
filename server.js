@@ -8,36 +8,44 @@ const http = require("http");
 const https = require('https');
 const fs = require('fs');
 const moment = require('moment');
-const { HOST_PROD, IS_PROD, IS_REVERSE_PROXY, WSS } = require('./constants');
+
+const {
+  NODE_ENV,
+  REACT_APP_HOST_PROD,
+  REACT_APP_IS_REVERSE_PROXY,
+  REACT_APP_SERVER_PORT,
+  REACT_APP_WSS,
+} = process.env;
+
 // const {
 //   fetchOracleAndLeaderboardContracts, 
 //   submitGameWinnerToContract,
 //   submitOracleOutcomeToZeitgeist
 // } = require('./scripts/fetchOracleAndLeaderboardContracts.js');
 
-const PORT = process.env.PORT || 5000;
+console.log('server env: ', REACT_APP_HOST_PROD, REACT_APP_IS_REVERSE_PROXY, REACT_APP_WSS, REACT_APP_SERVER_PORT);
 // https or http
-let proxy_port = PORT; //= (WSS !== true) ? 80 : 443;
+let proxy_port = REACT_APP_SERVER_PORT; //= (REACT_APP_WSS !== true) ? 80 : 443;
 let proxy_url;
-if (process.env.NODE_ENV === 'production' && WSS === true) {
+if (process.env.NODE_ENV === 'production' && REACT_APP_WSS === 'true') {
   proxy_url = `https://clawbird.com:5000`;
-} else if (process.env.NODE_ENV === 'production' && WSS !== true) {
-  proxy_url = `http://${HOST_PROD}:${proxy_port}`;
-} else if (process.env.NODE_ENV !== 'production' && WSS === true) {
+} else if (process.env.NODE_ENV === 'production' && REACT_APP_WSS !== 'true') {
+  proxy_url = `http://${REACT_APP_HOST_PROD}:${proxy_port}`;
+} else if (process.env.NODE_ENV !== 'production' && REACT_APP_WSS === 'true') {
   proxy_url = `https://localhost:5000`;
-} else if (process.env.NODE_ENV !== 'production' && WSS !== true) {
+} else if (process.env.NODE_ENV !== 'production' && REACT_APP_WSS !== 'true') {
   proxy_url = `http://localhost:5000`;
 }
 // const target = PROXY || pkg.proxy;
-// console.log('proxy_url: ', proxy_url);
+console.log('proxy_url: ', proxy_url);
 let options;
-if (WSS === true) {
+if (REACT_APP_WSS === 'true') {
   options = {
     // https://socket.io/docs/v4/client-options/#nodejs-specific-options
     //
     // Self-sign
-    key: fs.readFileSync(path.resolve(__dirname, 'key-rsa.pem')),
-    cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem')),
+    // key: fs.readFileSync(path.resolve(__dirname, 'key-rsa.pem')),
+    // cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem')),
     //
     // Positive SSL
     // key: fs.readFileSync(path.resolve('/root/certs/clawbird.com/positivessl/clawbird.com.key')),
@@ -48,8 +56,8 @@ if (WSS === true) {
     //],
     //
     // Let's Encrypt
-    // key: fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/privkey.pem')),
-    // cert: fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/fullchain.pem')),
+    key: fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/privkey.pem')),
+    cert: fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/fullchain.pem')),
     //requestCert: true,
     //ca: [
     //  fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/cert.pem')),
@@ -60,7 +68,7 @@ if (WSS === true) {
 const app = express();
 
 let httpServer;
-if (WSS === true) {
+if (REACT_APP_WSS === 'true') {
   // https
   httpServer = https.createServer(options, app);
 } else {
@@ -75,11 +83,11 @@ httpServerOptions = {
   transports: ["websocket"], // set to use websocket only
   cors: {
     origin: proxy_url,
-    credentials: WSS,
+    credentials: REACT_APP_WSS,
   }
 };
 
-if (IS_REVERSE_PROXY === false) {
+if (REACT_APP_IS_REVERSE_PROXY === 'false') {
   httpServerOptions["path"] = "/socket.io/"; // explicitly set custom path (default)
 }
 
@@ -88,23 +96,23 @@ const staticPath = path.join(__dirname, './', 'build');
 const corsWhitelist = [
   'http://0.0.0.0:5000',
   'https://0.0.0.0:443',
-  `https://${HOST_PROD}:443`,
-  `http://${HOST_PROD}:80`,
-  `https://${HOST_PROD}:5000`,
-  `http://${HOST_PROD}:4000`,
-  `http://${HOST_PROD}:5000`,
+  `https://${REACT_APP_HOST_PROD}:443`,
+  `http://${REACT_APP_HOST_PROD}:80`,
+  `https://${REACT_APP_HOST_PROD}:5000`,
+  `http://${REACT_APP_HOST_PROD}:4000`,
+  `http://${REACT_APP_HOST_PROD}:5000`,
   'https://clawbird.com:443',
   'https://clawbird.com:5000',
   'http://localhost:3000',
   'http://localhost:4000', // frontend
   'http://localhost:5000', // proxy
-  `http://localhost:${PORT}`, // proxy
+  `http://localhost:${REACT_APP_SERVER_PORT}`, // proxy
   'https://localhost:5000',
   'https://localhost:443',
-  `http://${HOST_PROD}`, // http
-  `https://${HOST_PROD}`, // https
-  `http://${HOST_PROD}/assets/LemonMilkMedium.otf`,
-  `https://${HOST_PROD}/assets/LemonMilkMedium.otf`,
+  `http://${REACT_APP_HOST_PROD}`, // http
+  `https://${REACT_APP_HOST_PROD}`, // https
+  `http://${REACT_APP_HOST_PROD}/assets/LemonMilkMedium.otf`,
+  `https://${REACT_APP_HOST_PROD}/assets/LemonMilkMedium.otf`,
   'http://clawbird.com', // http
   'https://clawbird.com', // https
   'http://clawbird.com/assets/LemonMilkMedium.otf',
@@ -137,7 +145,7 @@ app.use((err, req, res, next) => {
 
 let wsProxy;
 
-if (IS_REVERSE_PROXY === true) {
+if (REACT_APP_IS_REVERSE_PROXY === 'true') {
   wsProxy = createProxyMiddleware({
     target: proxy_url,
     changeOrigin: true, // for vhosted sites, changes host header to match to target's host
@@ -180,14 +188,14 @@ app.get('*', (req, res) => {
 });
 
 httpServer.listen(
-  PORT,
-  IS_PROD ? HOST_PROD : '0.0.0.0',
+  REACT_APP_SERVER_PORT,
+  NODE_ENV === 'production' ? REACT_APP_HOST_PROD : '0.0.0.0',
 );
-//httpServer.listen(PORT, () => {
-//   // console.log(`CORS-enabled web server listening on port ${PORT}`);
+//httpServer.listen(REACT_APP_SERVER_PORT, () => {
+//   // console.log(`CORS-enabled web server listening on port ${REACT_APP_SERVER_PORT}`);
 //});
 
-if (IS_REVERSE_PROXY === true && wsProxy) {
+if (REACT_APP_IS_REVERSE_PROXY === 'true' && wsProxy) {
   // https://github.com/chimurai/http-proxy-middleware/blob/master/examples/websocket/index.js
   // TODO - when uncommented it gives browser ws error "invalid frame header"
   // httpServer.on('upgrade', wsProxy.upgrade); // optional: upgrade externally

@@ -40,7 +40,7 @@ server {
     listen                  443 ssl; #default_server; # http2
     listen                  [::]:443 ssl; # default_server; # http2
     server_name             www.clawbird.com clawbird.com; # managed by Certbot
-    root                    /var/www/build;
+    root                    /var/www/flappytips/build;
     index                   index.html;
     # Only forward the Socket.IO requests to path /socket.io/
     # location /socket.io/ {

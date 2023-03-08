@@ -277,8 +277,8 @@ PositiveSSL activation and add to server
 		* Backup the clawbird.com.key and clawbird.com.csr files
 
 			```
-			scp root@<IP>:/var/www/clawbird.com.csr ~/Documents
-			scp root@<IP>:/var/www/clawbird.com.key ~/Documents
+			scp root@<IP>:/var/www/flappytips/clawbird.com.csr ~/Documents
+			scp root@<IP>:/var/www/flappytips/clawbird.com.key ~/Documents
 			```
 
 		* choose CNAME record for the DCV
@@ -309,8 +309,8 @@ PositiveSSL activation and add to server
       ```
       mkdir -p /root/certs/clawbird.com
 
-      cp /var/www/clawbird.com.csr /root/certs/clawbird.com/positivessl
-      cp /var/www/clawbird.com.key /root/certs/clawbird.com/positivessl
+      cp /var/www/flappytips/clawbird.com.csr /root/certs/clawbird.com/positivessl
+      cp /var/www/flappytips/clawbird.com.key /root/certs/clawbird.com/positivessl
       ```
 
     * When get certificate, download it, extract it, and copy it to server
@@ -362,8 +362,8 @@ Deploy React App with Linode https://www.youtube.com/watch?v=FTyby51m0hQ
 ```
 ssh x@x.x.x.x
 git clone git@github.com:ltfschoen/flappytips.git
-git fetch origin flappydot:flappydot
-git checkout flappydot
+git fetch origin master
+git checkout master
 ```
 
 * Check that HTTPS and WWS example credentials that were setup using this guide are still valid guidehttps://medium.com/developer-rants/implementing-https-and-wss-support-in-express-with-typescript-of-course-f36006c77bab
@@ -381,7 +381,7 @@ nvm use v19.6.0
 apt-get update && apt-get upgrade
 sudo apt install nginx
 
-mv ./flappytips /var/www
+mv ./flappytips /var/www/flappytips
 sudo vim /etc/nginx/nginx.conf
 sudo vim /etc/nginx/sites-available/flappytips
 sudo ln -s /etc/nginx/sites-available/flappytips /etc/nginx/sites-enabled
@@ -425,15 +425,16 @@ journalctl -xeu nginx.service
     ```
   * Restart Nginx and reload config files
     ```
+    sudo systemctl stop nginx
     sudo systemctl enable nginx
     sudo systemctl start nginx
-    sudo systemctl restart nginx
     sudo systemctl reload nginx
     nginx -s reload
     sudo systemctl status nginx
     ```
     * Alternatives
       ```
+      sudo systemctl restart nginx
       sudo service nginx reload
       sudo service nginx status
       ```
@@ -444,13 +445,13 @@ journalctl -xeu nginx.service
 ```
 server {
   # Self-signed certificate
-  # ssl_certificate     /var/www/cert.pem;
-  # ssl_certificate_key /var/www/key-rsa.pem;
+  # ssl_certificate     /var/www/flappytips/cert.pem;
+  # ssl_certificate_key /var/www/flappytips/key-rsa.pem;
 
   listen          443 ssl default_server;
   listen          [::]:443 ssl default_server;
   server_name     139.144.96.196;
-  root            /var/www/build;
+  root            /var/www/flappytips/build;
   index           index.html;
   location / {
                   try_files $uri /index.html =404;
@@ -461,10 +462,14 @@ server {
 * Run web server using screen (`apt install screen`) 
   * https://phoenixnap.com/kb/how-to-use-linux-screen-with-commands
   * https://www.geeksforgeeks.org/screen-command-in-linux-with-examples/
+  * Setup .env file for production
+    ```
+    . ./scripts/env-prod.sh
+    ```
+    * Note: Must be sourced to set variables in calling environment
   * Start screen `screen -S flappytips`
   * Show screens `screen -ls`
   * Create screen if not exist CTRL-A + C
-  * Run server after making changes to code `yarn && yarn start`
   * Attach to existing screen `screen -r <ID>`
   * Detach from existing screen without losing it CTRL-A + D
 
