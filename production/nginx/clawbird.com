@@ -23,20 +23,27 @@ server {
 
 # Virtual Host Configuration
 server {
+    # development only self-signed certificates
+    # ssl_certificate /var/www/flappytips/cert.pem;
+    # ssl_certificate_key /var/www/flappytips/key-rsa.pem;
+    # ssl_trusted_certificate /var/www/flappytips/cert.pem;
+
     # ssl_certificate /root/certs/clawbird.com/positivessl/clawbird.com.combined.crt;
     # ssl_certificate_key /root/certs/clawbird.com/positivessl/clawbird.com.key;
+    # ssl_dhparam /root/certs/clawbird.com/dhparam4096.pem;
+    # ssl_trusted_certificate /root/certs/clawbird.com/positivessl/clawbird.com.combined.crt;
+
     ssl_certificate /etc/letsencrypt/live/www.clawbird.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/www.clawbird.com/privkey.pem;
     include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+    ssl_trusted_certificate /etc/letsencrypt/live/www.clawbird.com/fullchain.pem;
 
-    # ssl_dhparam /root/certs/clawbird.com/dhparam4096.pem;
     # ssl_session_cache shared:SSL:1m; # 10m is default
     # ssl_session_timeout 1m; # 10m is default
     # ssl_stapling on;
     # ssl_stapling_verify on;
-    ssl_trusted_certificate /etc/letsencrypt/live/www.clawbird.com/fullchain.pem;
-    # ssl_trusted_certificate /root/certs/clawbird.com/positivessl/clawbird.com.combined.crt;
+
     listen                  443 ssl; #default_server; # http2
     listen                  [::]:443 ssl; # default_server; # http2
     server_name             www.clawbird.com clawbird.com; # managed by Certbot

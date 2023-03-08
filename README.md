@@ -51,9 +51,17 @@
 Clone the repository. Checkout the PR with FlappyTips 2 features.
 ```
 git clone https://github.com/ltfschoen/flappytips
-git fetch origin flappydot:flappydot
-git checkout flappydot
+cd flappytips
+git checkout master
 ```
+
+Inject environment variables
+```
+. ./scripts/env-dev.sh
+```
+
+If using Nginx, update /etc/nginx/sites-available/flappytips and ./server.js to use **self-signed** certificates instead of Let's Encrypt or PositiveSSL
+* Note: See example in ./production/nginx/clawbird.com
 
 Install Yarn 3.x and Node.js, and then run the following in terminal:
 ```
@@ -67,6 +75,7 @@ yarn add node-gyp &&
 yarn add fs &&
 DEBUG=* yarn run dev
 ```
+Note: `yarn dev` does not work in production, use `yarn start` or `yarn prod`
  
 * Follow the "Setup" in the "Play" section of this README file, but instead go to http://localhost:4000
 * Click the polkadot-js/extension browser icon and allow it to interact with FlappyTips 2
@@ -497,6 +506,12 @@ If error address in use EADDRINUSE when try to restart server
 lsof -i tcp:5000
 
 kill -9 <PID>
+```
+
+If the error says `ENOSPC: System limit for number of file watchers reached`:
+```
+echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
 ```
 
 ### Deploy to Heroku
