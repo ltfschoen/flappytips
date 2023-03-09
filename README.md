@@ -363,7 +363,7 @@ https://content-security-policy.com/
 add_header          Content-Security-Policy "default-src 'self' 'unsafe-eval'; upgrade-insecure-requests; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' platform.twitter.com syndication.twitter.com; script-src-elem 'self' https://platform.twitter.com/widgets.js https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.0.0/p5.js https://clawbird.com:4000/static/js/main.1d765367.js https://clawbird.com/static/js/main.1d765367.js https://platform.twitter.com/js/button.e7f9415a2e000feaab02c86dd5802747.js; connect-src 'self' platform.twitter.com syndication.twitter.com wss://rpc.polkadot.io/ https://ipapi.co/json/ wss://clawbird.com:443/socket.io/ wss://clawbird.com:5000/socket.io/ wss://zeitgeist-rpc.dwellir.com/ https://clawbird.com:4000/assets/LemonMilkMedium.otf https://clawbird.com/assets/LemonMilkMedium.otf; img-src 'self' data: https://clawbird.com:4000/favicon.ico https://clawbird.com/favicon.ico https://clawbird.com:4000/logo192.png https://clawbird.com/logo192.png platform.twitter.com syndication.twitter.com; frame-src 'self' https://platform.twitter.com/";
 ```
 
-### Deploy to Linode
+### Deploy to Linode (Production Environment)
 
 Deploy React App with Linode https://www.youtube.com/watch?v=FTyby51m0hQ
 
@@ -411,7 +411,7 @@ journalctl -xeu nginx.service
 
   * Temporarily disable Nginx
     ```
-    ps -auxww | grep nginx
+    ps -aux | grep nginx
     sudo systemctl status nginx
     sudo systemctl stop nginx
     sudo systemctl disable nginx
@@ -476,6 +476,10 @@ server {
     ```
     * Note: Must be sourced to set variables in calling environment
   * Start screen `screen -S flappytips`
+  * Run
+    ```bash
+    yarn && yarn prod
+    ```
   * Show screens `screen -ls`
   * Create screen if not exist CTRL-A + C
   * Attach to existing screen `screen -r <ID>`
