@@ -48,16 +48,16 @@ if (REACT_APP_WSS === 'true') {
     // cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem')),
     //
     // Positive SSL
-    // key: fs.readFileSync(path.resolve('/root/certs/clawbird.com/positivessl/clawbird.com.key')),
-    // cert: fs.readFileSync(path.resolve('/root/certs/clawbird.com/positivessl/clawbird.com.combined.crt')),
+    key: fs.readFileSync(path.resolve('/root/certs/clawbird.com/positivessl/clawbird.com.key')),
+    cert: fs.readFileSync(path.resolve('/root/certs/clawbird.com/positivessl/clawbird.com.combined.crt')),
     //requestCert: true,
     //ca: [
     //  fs.readFileSync(path.resolve('/root/certs/clawbird.com/positivessl/clawbird.com.combined.crt')),
     //],
     //
     // Let's Encrypt
-    key: fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/privkey.pem')),
-    cert: fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/fullchain.pem')),
+    // key: fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/privkey.pem')),
+    // cert: fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/fullchain.pem')),
     //requestCert: true,
     //ca: [
     //  fs.readFileSync(path.resolve('/etc/letsencrypt/live/www.clawbird.com/cert.pem')),
