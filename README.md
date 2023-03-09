@@ -55,24 +55,23 @@ cd flappytips
 git checkout master
 ```
 
-Inject environment variables
-```
-. ./scripts/env-dev.sh
-```
-
 If using Nginx, update /etc/nginx/sites-available/flappytips and ./server.js to use **self-signed** certificates instead of Let's Encrypt or PositiveSSL
 * Note: See example in ./production/nginx/clawbird.com
+* Note: Inject environment variables from .env.development using `. ./scripts/env-dev.sh`
 
 Install Yarn 3.x and Node.js, and then run the following in terminal:
 ```
-nvm use 19.6.0
-npm i -g yarn
-corepack enable && corepack prepare yarn@stable --activate && yarn set version 3.4.1 \
-yarn \
+printf '\e[?2004l' &&
+nvm use 19.6.0 &&
+npm i -g yarn &&
+corepack enable && corepack prepare yarn@stable --activate &&
+yarn set version 3.4.1 &&
+yarn &&
 npm install -g nodemon &&
 npm install -g concurrently &&
 yarn add node-gyp &&
 yarn add fs &&
+. ./scripts/env-dev.sh &&
 DEBUG=* yarn run dev
 ```
 Note: `yarn dev` does not work in production, use `yarn start` or `yarn prod`
@@ -585,6 +584,9 @@ heroku ps:scale web=0:Eco
 ps -ef | grep node
 kill -9 <PROCESS_ID>
 ```
+
+* If you get `00~` in terminal commands then reset terminal to turn paste bracketing off again
+  * `printf '\e[?2004l'`
 
 ## Additional Notes
 

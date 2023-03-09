@@ -83,7 +83,7 @@ httpServerOptions = {
   transports: ["websocket"], // set to use websocket only
   cors: {
     origin: proxy_url,
-    credentials: REACT_APP_WSS,
+    credentials: REACT_APP_WSS === 'true',
   }
 };
 

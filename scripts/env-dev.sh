@@ -10,6 +10,6 @@ cp .env.development .env
 # https://stackoverflow.com/a/20909045/3208553
 unset $(grep -v '^#' .env | sed -E 's/(.*)=.*/\1/' | xargs)
 # Add them to environment again
-export $(grep -v '^#' .env | xargs -d '\n')
+export $(grep -v '^#' .env | xargs)
 
 npx browserslist --update-db
