@@ -12,4 +12,4 @@ unset $(grep -v '^#' .env | sed -E 's/(.*)=.*/\1/' | xargs)
 # Add them to environment again
 export $(grep -v '^#' .env | xargs)
 
-npx browserslist --update-db
+# npx browserslist --update-db

@@ -71,7 +71,7 @@ npm install -g nodemon &&
 npm install -g concurrently &&
 yarn add node-gyp &&
 yarn add fs &&
-. ./scripts/env-dev.sh &&
+. ./scripts/env_dev.sh &&
 DEBUG=* yarn run dev
 ```
 Note: `yarn dev` does not work in production, use `yarn start` or `yarn prod`
@@ -472,7 +472,7 @@ server {
   * https://www.geeksforgeeks.org/screen-command-in-linux-with-examples/
   * Setup .env file for production
     ```
-    . ./scripts/env-prod.sh
+    . ./scripts/env_prod.sh
     ```
     * Note: Must be sourced to set variables in calling environment
   * Start screen `screen -S flappytips`
