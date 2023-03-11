@@ -1,4 +1,5 @@
 require('dotenv').config()
+const BN = require('bn.js');
 const { spawn } = require('child_process');
 const { waitUntil } = require('./utils/waitUntil');
 const { REACT_APP_ZEITGEIST_SDK_NETWORK } = process.env;
@@ -11,8 +12,22 @@ const { REACT_APP_ZEITGEIST_SDK_NETWORK } = process.env;
 
     if (REACT_APP_ZEITGEIST_SDK_NETWORK === 'testnet') {
         sdk = await create(batterystation());
-    } else if (REACT_APP_ZEITGEIST_SDK_NETWORK === 'testnet') {
+        console.log('sdk: ', sdk);
+
+        const { data: { free } } = await sdk.api.query.system.account(
+            "dE1qN74MfnkZdc2PDiwfeUW27D3JsRwP8GcgirtmAwDyCSMfp",
+        );
+        const [chain] = await Promise.all([
+            sdk.api.registry.chainDecimals,
+        ]);
+        
+        console.log('current balance: ', new BN(free, 10).div(new BN(chain[0].toString(), 10).pow(new BN(10, 10))));
+        console.log(free.toString(10));
+
+
+    } else if (REACT_APP_ZEITGEIST_SDK_NETWORK === 'mainnet') {
         sdk = await create(mainnet());
+        console.log('sdk: ', sdk);
     // https://docs.zeitgeist.pm/docs/build/sdk/v2/getting-started#local-dev-node
     } else if (REACT_APP_ZEITGEIST_SDK_NETWORK === 'local') {
 
