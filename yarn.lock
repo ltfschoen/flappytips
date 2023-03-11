@@ -8135,7 +8135,6 @@ __metadata:
     http-proxy-middleware: ^2.0.6
     internet-available: ^1.0.0
     jquery: ^3.6.3
-    lodash-es: 4.17.15
     moment: ^2.29.4
     node-gyp: ^9.3.1
     p5: ^1.5.0
@@ -10884,13 +10883,6 @@ __metadata:
   dependencies:
     p-locate: ^5.0.0
   checksum: 72eb661788a0368c099a184c59d2fee760b3831c9c1c33955e8a19ae4a21b4116e53fa736dc086cdeb9fce9f7cc508f2f92d2d3aae516f133e16a2bb59a39f5a
-  languageName: node
-  linkType: hard
-
-"lodash-es@npm:4.17.15":
-  version: 4.17.15
-  resolution: "lodash-es@npm:4.17.15"
-  checksum: dd76e36efca24f8294cdd99563c3bcaff8061732b04af8721313fe9a87e1f8e578ff466cfbcc103d1cb4db067d7d4bd143e3be390d957e22e0cb5d195b3847ed
   languageName: node
   linkType: hard
 
