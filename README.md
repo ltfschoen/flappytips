@@ -103,6 +103,16 @@ https://socket.io/docs/v4/client-installation/
 To debug Websockets frames in browser: https://stackoverflow.com/a/30770934/3208553
 It may be necessary to drag down an expand the window to view each frame.
 
+### Zeitgeist
+
+#### Testnet (Battery Station)
+
+* Docs - https://docs.zeitgeist.pm/docs/basic/battery-station
+* Faucet for ZBS tokens #testnet-faucet
+* View ZBS token balance by importing account in browser using Polkadot.js Extension with https://app.zeitgeist.pm/settings > RPC Node Endpoint > Battery Station
+* GraphQL - https://processor.bsr.zeitgeist.pm/graphql
+* Polkadot.js Apps (Battery Station) - https://polkadot.js.org/apps/?rpc=wss://bsr.zeitgeist.pm#/
+
 ### Maintenance
 
 ```
