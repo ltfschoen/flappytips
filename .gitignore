@@ -8,11 +8,12 @@
 # testing
 /coverage
 
-# production
-#/build
+# front-end production `react-scripts build`
 build/*
 # exception to the rule for Heroku use
 !build/.gitkeep
+# server babel with es6
+dist-server/*
 
 # misc
 .DS_Store

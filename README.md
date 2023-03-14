@@ -55,14 +55,14 @@ cd flappytips
 git checkout master
 ```
 
-If using Nginx, update /etc/nginx/sites-available/flappytips and ./server.js to use **self-signed** certificates instead of Let's Encrypt or PositiveSSL
+If using Nginx, update /etc/nginx/sites-available/flappytips and ./server/app.js to use **self-signed** certificates instead of Let's Encrypt or PositiveSSL
 * Note: See example in ./production/nginx/clawbird.com
 * Note: Inject environment variables from .env.development using `. ./scripts/env-dev.sh`
 
 Install Yarn 3.x and Node.js, and then run the following in terminal:
 ```
 printf '\e[?2004l' &&
-nvm use 19.6.0 &&
+nvm use 19.7.0 &&
 npm i -g yarn &&
 corepack enable && corepack prepare yarn@stable --activate &&
 yarn set version 3.4.1 &&
@@ -122,6 +122,12 @@ rm -rf node_modules
 npm install
 ```
 
+### Tests
+
+```
+yarn run test
+```
+
 ### Websockets Socket.IO
 
 #### Troubleshooting
@@ -150,6 +156,7 @@ npm install
 * https://www.nginx.com/blog/nginx-nodejs-websockets-socketio/
 * https://www.linode.com/docs/guides/how-to-install-and-use-nginx-on-ubuntu-20-04/
 * https://medium.com/@adrianhsu/node-js-nginx-https-cloudflare-server-setup-google-app-domain-8020eb0e4181
+* Convert CommonJS to ES6 - https://www.freecodecamp.org/news/how-to-enable-es6-and-beyond-syntax-with-node-and-express-68d3e11fe1ab/
 
 ### Nginx
 
