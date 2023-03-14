@@ -1,8 +1,8 @@
-import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
-import { CodePromise } from '@polkadot/api-contract';
+const { ApiPromise, Keyring, WsProvider } = require('@polkadot/api');
+const { CodePromise } = require('@polkadot/api-contract');
 // FIXME - import contract built .wasm and metadata.json
-import metadata from './ink/contracts/leaderboard/leaderboard.json';
-import wasm from './ink/contracts/leaderboard/leaderboard.wasm';
+const metadata = require('./ink/contracts/leaderboard/leaderboard.json');
+const wasm = require('./ink/contracts/leaderboard/leaderboard.wasm');
 
 // Alice will deploy oracle and leaderboard contract on behalf of players
 // using treasury funds

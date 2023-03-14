@@ -1,6 +1,6 @@
-import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
-import { BlueprintPromise } from '@polkadot/api-contract';
-import metadata from './ink/contracts/leaderboard/leaderboard.json';
+const { ApiPromise, Keyring, WsProvider } = require('@polkadot/api');
+const { BlueprintPromise } = require('@polkadot/api-contract');
+const metadata = require('./ink/contracts/leaderboard/leaderboard.json');
 
 const ALICE = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
 const codeHash = ""; // code hash where Oracle and Leaderboard contract deployed
@@ -36,6 +36,6 @@ async function fetchOracleAndLeaderboardContracts () {
     return address;
 }
 
-export default {
+module.exports = {
     fetchOracleAndLeaderboardContracts: fetchOracleAndLeaderboardContracts().catch(console.error).finally(() => process.exit())
 };

@@ -1,6 +1,6 @@
-import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
-import { ContractPromise } from '@polkadot/api-contract';
-import metadata from './ink/contracts/leaderboard/leaderboard.json';
+const { ApiPromise, Keyring, WsProvider } = require('@polkadot/api');
+const { ContractPromise } = require('@polkadot/api-contract');
+const metadata = require('./ink/contracts/leaderboard/leaderboard.json');
 
 const ALICE = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
 
@@ -41,6 +41,6 @@ async function submitGameWinnerToContract (address, winnerAccountId, winnerBlock
         });
 }
 
-export default {
+module.exports = {
     submitGameWinnerToContract: submitGameWinnerToContract().catch(console.error).finally(() => process.exit())
 };

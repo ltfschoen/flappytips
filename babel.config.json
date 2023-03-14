@@ -18,7 +18,9 @@
                     "./server"
                 ],
                 "alias": {
-                    "_game/index": "./server/game/index.js"
+                    "_game/index": "./server/game/index.js",
+                    "_utils/waitUntil": "./server/utils/waitUntil.js",
+                    "_api/getZeitgeistSDK": "./server/api/getZeitgeistSDK.js"
                 }
             }
         ]

@@ -1,3 +1,7 @@
+import moment from 'moment';
+// import getZeitgeistSDK from "_api/getZeitgeistSDK"; // babel alias
+const sdk = require("_api/getZeitgeistSDK"); // babel alias
+
 // store the positions of each client in this object.
 // It would be safer to connect it to a database as well so the data doesn't get destroyed when the server restarts
 // but we'll just use an object for simplicity.
@@ -26,7 +30,7 @@ function initializeGameDataPlayer(socketId) {
 
 function game(io) {
     // Socket configuration
-    io.on("connection", (socket) => {
+    io.on("connection", async (socket) => {
         // each time someone visits the site and connect to socket.io this function gets called.
         // it includes the socket object from which you can get the id, useful for identifying each client
         // console.log(`${socket.id} connected`);
@@ -39,6 +43,8 @@ function game(io) {
 
         // client can send a message each time the clients position changes
         socket.on("updateGameDataPlayers", async (data) => {
+            console.log('sdk server: ', sdk);
+
             if (!data.chainAccount || !data.chain) {
                 // ignore connections that haven't chosen an account id to play with 
                 return;

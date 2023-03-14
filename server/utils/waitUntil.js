@@ -1,4 +1,5 @@
-const waitUntil = (condition, checkInterval=5000) => {
+// const waitUntil = (condition, checkInterval=5000) => {
+function waitUntil(condition, checkInterval=5000) {
     return new Promise(resolve => {
         let interval = setInterval(() => {
             console.log('Waiting...');
@@ -9,6 +10,6 @@ const waitUntil = (condition, checkInterval=5000) => {
     });
 }
 
-module.exports = {
+export {
     waitUntil
 }
