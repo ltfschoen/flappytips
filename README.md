@@ -112,6 +112,12 @@ rm -rf node_modules
 npm install
 ```
 
+### Tests
+
+```
+yarn run test
+```
+
 ### Websockets Socket.IO
 
 #### Troubleshooting
@@ -140,6 +146,7 @@ npm install
 * https://www.nginx.com/blog/nginx-nodejs-websockets-socketio/
 * https://www.linode.com/docs/guides/how-to-install-and-use-nginx-on-ubuntu-20-04/
 * https://medium.com/@adrianhsu/node-js-nginx-https-cloudflare-server-setup-google-app-domain-8020eb0e4181
+* Convert CommonJS to ES6 - https://www.freecodecamp.org/news/how-to-enable-es6-and-beyond-syntax-with-node-and-express-68d3e11fe1ab/
 
 ### Nginx
 

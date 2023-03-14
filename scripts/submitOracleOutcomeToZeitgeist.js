@@ -1,7 +1,7 @@
-const { ApiPromise, Keyring, WsProvider } = require('@polkadot/api');
-const { CodePromise, ContractPromise } = require('@polkadot/api-contract');
-let SDK, { util } = require("@zeitgeistpm/sdk");
-const metadata = require('./ink/contracts/leaderboard/leaderboard.json');
+import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
+import { CodePromise, ContractPromise } from '@polkadot/api-contract';
+import SDK, { util } from '@zeitgeistpm/sdk';
+import metadata from './ink/contracts/leaderboard/leaderboard.json';
 
 // Alice will deploy oracle and leaderboard contract on behalf of players
 // using treasury funds

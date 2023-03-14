@@ -1,0 +1,13 @@
+{
+    "verbose": true,
+    "moduleNameMapper": {
+        "\\.(css)$": "identity-obj-proxy"
+    },
+    "transform": {
+        "^.+\\.(js|jsx)$": "<rootDir>/babelTransform.js"
+    },
+    "testEnvironment": "node",
+    "globals": {
+        "window": {}
+    }
+}
