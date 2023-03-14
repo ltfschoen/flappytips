@@ -1,14 +1,14 @@
 require('dotenv').config()
-const BN = require('bn.js');
-const { spawn } = require('child_process');
-const { waitUntil } = require('./utils/waitUntil');
+import BN from 'bn.js';
+import { spawn } from 'child_process';
+import { waitUntil } from './utils/waitUntil';
+import { batterystation, create, createStorage, mainnet } from "@zeitgeistpm/sdk";
+import { IPFS } from "@zeitgeistpm/web3.storage";
+
 const { REACT_APP_ZEITGEIST_SDK_NETWORK } = process.env;
 
-(async () => {
-    // https://docs.zeitgeist.pm/docs/build/sdk/v2/getting-started#fulldefault
-    // must import @zeitgeistpm dependencies using `import`, not `require`
-    const { batterystation, create, createStorage, mainnet } = await import("@zeitgeistpm/sdk");
-    const { IPFS } = await import("@zeitgeistpm/web3.storage");
+async function createMarketOnZeitgeist () {
+    let sdk;
 
     if (REACT_APP_ZEITGEIST_SDK_NETWORK === 'testnet') {
         sdk = await create(batterystation());
@@ -23,14 +23,11 @@ const { REACT_APP_ZEITGEIST_SDK_NETWORK } = process.env;
         
         console.log('current balance: ', new BN(free, 10).div(new BN(chain[0].toString(), 10).pow(new BN(10, 10))));
         console.log(free.toString(10));
-
-
     } else if (REACT_APP_ZEITGEIST_SDK_NETWORK === 'mainnet') {
         sdk = await create(mainnet());
         console.log('sdk: ', sdk);
     // https://docs.zeitgeist.pm/docs/build/sdk/v2/getting-started#local-dev-node
     } else if (REACT_APP_ZEITGEIST_SDK_NETWORK === 'local') {
-
         console.log('spawning Zeitgeist local Docker container');
         const child = spawn('bash', [__dirname + '/zeitgeist_docker_local.sh'])
         let localNodeStarted = false;
@@ -76,4 +73,5 @@ const { REACT_APP_ZEITGEIST_SDK_NETWORK } = process.env;
         console.error('Unsupported Zeitgeist network');
         return;
     }
-})().catch(console.error).finally(() => process.exit());
+}
+createMarketOnZeitgeist().catch(console.error).finally(() => process.exit());

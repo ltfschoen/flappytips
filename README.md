@@ -62,7 +62,7 @@ If using Nginx, update /etc/nginx/sites-available/flappytips and ./server/app.js
 Install Yarn 3.x and Node.js, and then run the following in terminal:
 ```
 printf '\e[?2004l' &&
-nvm use 19.6.0 &&
+nvm use 19.7.0 &&
 npm i -g yarn &&
 corepack enable && corepack prepare yarn@stable --activate &&
 yarn set version 3.4.1 &&
