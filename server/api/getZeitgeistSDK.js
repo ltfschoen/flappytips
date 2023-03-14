@@ -4,8 +4,7 @@ const { spawn } = require('child_process');
 const { waitUntil } = require('_utils/waitUntil'); // babel alias
 const { REACT_APP_ZEITGEIST_SDK_NETWORK } = process.env;
 
-let sdk;
-(async ()  => {
+(async () => {
     // https://docs.zeitgeist.pm/docs/build/sdk/v2/getting-started#fulldefault
     // must import @zeitgeistpm dependencies using `import`, not `require`
     const { batterystation, create, createStorage, mainnet } = await import("@zeitgeistpm/sdk");
@@ -78,9 +77,9 @@ let sdk;
         console.error('Unsupported Zeitgeist network');
         return;
     }
-});
+})();
 
-export default sdk;
+// export default sdk;
 
 // FIXME - below gives lodash-es error
 
