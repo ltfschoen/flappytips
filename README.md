@@ -71,7 +71,7 @@ npm install -g nodemon &&
 npm install -g concurrently &&
 yarn add node-gyp &&
 yarn add fs &&
-. ./scripts/env-dev.sh &&
+. ./scripts/env_dev.sh &&
 DEBUG=* yarn run dev
 ```
 Note: `yarn dev` does not work in production, use `yarn start` or `yarn prod`
@@ -102,6 +102,16 @@ https://socket.io/docs/v4/client-installation/
 
 To debug Websockets frames in browser: https://stackoverflow.com/a/30770934/3208553
 It may be necessary to drag down an expand the window to view each frame.
+
+### Zeitgeist
+
+#### Testnet (Battery Station)
+
+* Docs - https://docs.zeitgeist.pm/docs/basic/battery-station
+* Faucet for ZBS tokens #testnet-faucet
+* View ZBS token balance by importing account in browser using Polkadot.js Extension with https://app.zeitgeist.pm/settings > RPC Node Endpoint > Battery Station
+* GraphQL - https://processor.bsr.zeitgeist.pm/graphql
+* Polkadot.js Apps (Battery Station) - https://polkadot.js.org/apps/?rpc=wss://bsr.zeitgeist.pm#/
 
 ### Maintenance
 
@@ -479,7 +489,7 @@ server {
   * https://www.geeksforgeeks.org/screen-command-in-linux-with-examples/
   * Setup .env file for production
     ```
-    . ./scripts/env-prod.sh
+    . ./scripts/env_prod.sh
     ```
     * Note: Must be sourced to set variables in calling environment
   * Start screen `screen -S flappytips`
