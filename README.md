@@ -55,7 +55,7 @@ cd flappytips
 git checkout master
 ```
 
-If using Nginx, update /etc/nginx/sites-available/flappytips and ./server.js to use **self-signed** certificates instead of Let's Encrypt or PositiveSSL
+If using Nginx, update /etc/nginx/sites-available/flappytips and ./server/app.js to use **self-signed** certificates instead of Let's Encrypt or PositiveSSL
 * Note: See example in ./production/nginx/clawbird.com
 * Note: Inject environment variables from .env.development using `. ./scripts/env-dev.sh`
 
