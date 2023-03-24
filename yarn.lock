@@ -4796,14 +4796,25 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@zeitgeistpm/indexer@npm:^2.13.0":
-  version: 2.13.0
-  resolution: "@zeitgeistpm/indexer@npm:2.13.0"
+"@zeitgeistpm/augment-api@npm:^2.11.3":
+  version: 2.11.3
+  resolution: "@zeitgeistpm/augment-api@npm:2.11.3"
+  peerDependencies:
+    "@polkadot/api-base": "*"
+    "@polkadot/rpc-core": "*"
+    "@polkadot/types": "*"
+  checksum: 517909c9c8ea9ac35cc8e627baf9a37d29a5dbbaaeb2160e22e4dec397fc2059f199cb0bc82ad89ae9b2506047b9da648939f5138c14b6e36e936514dfc3d8bd
+  languageName: node
+  linkType: hard
+
+"@zeitgeistpm/indexer@npm:^2.14.3":
+  version: 2.14.3
+  resolution: "@zeitgeistpm/indexer@npm:2.14.3"
   dependencies:
     graphql: ^16.6.0
     graphql-request: ^5.0.0
     graphql-tag: ^2.12.6
-  checksum: 164a8739356ae20be8807c591c47351e83bbcdd284f46309a60737a660c06b363914078b681aab9267044e2f41ee8156eae0326457093e8ae01d96e6575e27b0
+  checksum: f52b39b394b989974664980558d97dd05a3522efaae1b0561493b1a3126a049b82333bb58f05877f610c8faf34bc59ea6965a535a8823c35af2c356801d3bb76
   languageName: node
   linkType: hard
 
@@ -4821,14 +4832,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@zeitgeistpm/sdk@npm:^2.21.5":
-  version: 2.21.5
-  resolution: "@zeitgeistpm/sdk@npm:2.21.5"
+"@zeitgeistpm/sdk@npm:^2.22.3":
+  version: 2.22.3
+  resolution: "@zeitgeistpm/sdk@npm:2.22.3"
   dependencies:
-    "@zeitgeistpm/augment-api": ^2.10.0
-    "@zeitgeistpm/indexer": ^2.13.0
+    "@zeitgeistpm/augment-api": ^2.11.3
+    "@zeitgeistpm/indexer": ^2.14.3
     "@zeitgeistpm/rpc": ^2.7.0
-    "@zeitgeistpm/utility": ^2.12.0
+    "@zeitgeistpm/utility": ^2.13.0
     "@zeitgeistpm/web3.storage": ^2.7.1
     cids: ^1.1.9
     decimal.js: ^10.4.3
@@ -4842,11 +4853,11 @@ __metadata:
     "@polkadot/api": "*"
     "@polkadot/types": "*"
     "@polkadot/util": "*"
-  checksum: 9bf26c9cba5290e5e312415a24e6341ee857a8bf9202405afcda56b3ad06b7fe2765b47d550351c339eb48a9ac1dbf126bdd9710b10dd52cf28ba895f8ea83bd
+  checksum: ab3ec91194334ba7e49386e8efa0156ce839dc2e73dd5634e5fd85d346ec91dcc410b2166a1dabcbff1000b83461224db74060bab49c72d1e13b7b6137963894
   languageName: node
   linkType: hard
 
-"@zeitgeistpm/utility@npm:^2.11.0, @zeitgeistpm/utility@npm:^2.12.0":
+"@zeitgeistpm/utility@npm:^2.11.0":
   version: 2.12.0
   resolution: "@zeitgeistpm/utility@npm:2.12.0"
   dependencies:
@@ -4859,6 +4870,22 @@ __metadata:
     "@polkadot/types": "*"
     "@polkadot/util": "*"
   checksum: e777182642788dcac5256a6bdf31360beed5779241295f9a6fd542af134972e52969970243025f11e78e882c4f6415c0ddf0bf29bc4551878098cabc28205688
+  languageName: node
+  linkType: hard
+
+"@zeitgeistpm/utility@npm:^2.13.0":
+  version: 2.13.0
+  resolution: "@zeitgeistpm/utility@npm:2.13.0"
+  dependencies:
+    decimal.js: ^10.4.3
+    lodash.omit: ^4.5.0
+    ms: ^2.1.3
+    rxjs: ^7.2.0
+  peerDependencies:
+    "@polkadot/api": "*"
+    "@polkadot/types": "*"
+    "@polkadot/util": "*"
+  checksum: 3db2778544ce5a83a6f72cbf512b03eec7afd103f9c94ea9b1fefdc4cfce6e4c91262d9862f6d61c042c0817d8a17d6ff71fdc5f97e4139e375270245fabbc5c
   languageName: node
   linkType: hard
 
@@ -5444,6 +5471,17 @@ __metadata:
     "@babel/core": ^7.0.0
     webpack: ">=2"
   checksum: d48bcf9e030e598656ad3ff5fb85967db2eaaf38af5b4a4b99d25618a2057f9f100e6b231af2a46c1913206db506115ca7a8cbdf52c9c73d767070dae4352ab5
+  languageName: node
+  linkType: hard
+
+"babel-plugin-cjs-esm-interop@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "babel-plugin-cjs-esm-interop@npm:3.0.0"
+  dependencies:
+    "@babel/helper-module-imports": ^7.18.6
+  peerDependencies:
+    "@babel/core": ^7.0.0
+  checksum: f17ebe82cad57c799569beafcf9ec28957cd2223a2b92bf9435a81702014e2feeb00e06c53ebfc94f47422f593612acf050bd50be85b9a643dda5febfaf817f6
   languageName: node
   linkType: hard
 
@@ -8492,9 +8530,10 @@ __metadata:
     "@testing-library/jest-dom": ^5.16.5
     "@testing-library/react": ^13.4.0
     "@testing-library/user-event": ^14.4.3
-    "@zeitgeistpm/sdk": ^2.21.5
+    "@zeitgeistpm/sdk": ^2.22.3
     axios: ^1.3.2
     babel-jest: ^29.5.0
+    babel-plugin-cjs-esm-interop: ^3.0.0
     babel-plugin-module-resolver: ^5.0.0
     bn.js: ^5.2.1
     body-parser: ^1.20.1

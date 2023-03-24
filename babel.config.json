@@ -3,6 +3,7 @@
         [
             "@babel/preset-env",
             {
+                "modules": "auto",
                 "targets": {
                     "node": "current"
                 }
@@ -10,6 +11,10 @@
         ],
         "@babel/preset-react"
     ],
+    "sourceType": "module",
+    // "ignore": [
+    //     "/node_modules/"
+    // ],
     "plugins": [
         [
             "module-resolver",
@@ -23,6 +28,10 @@
                     "_api/getZeitgeistSDK": "./server/api/getZeitgeistSDK.js"
                 }
             }
+        ],
+        [
+            "babel-plugin-cjs-esm-interop",
+            { "format": "cjs" }
         ]
     ]
 }
