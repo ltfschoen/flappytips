@@ -60,6 +60,8 @@ If using Nginx, update /etc/nginx/sites-available/flappytips and ./server/app.js
 * Note: Inject environment variables from .env.development using `. ./scripts/env-dev.sh`
 
 Install Yarn 3.x and Node.js, and then run the following in terminal:
+
+Client
 ```
 printf '\e[?2004l' &&
 nvm use 19.7.0 &&
@@ -72,9 +74,12 @@ npm install -g concurrently &&
 yarn add node-gyp &&
 yarn add fs &&
 . ./scripts/env_dev.sh &&
-DEBUG=* yarn run dev
+yarn run setup &&
+cd server &&
+(yarn run build-server && yarn run run-server &
+cd ../ && DEBUG=* yarn run dev)
 ```
-Note: `yarn dev` does not work in production, use `yarn start` or `yarn prod`
+Note: `yarn dev` does not work in production, use `yarn start` or `yarn prod` (also in server/ folder)
  
 * Follow the "Setup" in the "Play" section of this README file, but instead go to http://localhost:4000
 * Click the polkadot-js/extension browser icon and allow it to interact with FlappyTips 2
@@ -608,6 +613,41 @@ kill -9 <PROCESS_ID>
 
 * If you get `00~` in terminal commands then reset terminal to turn paste bracketing off again
   * `printf '\e[?2004l'`
+
+```
+Usage Error: The nearest package directory (/Users/luke/code/github/ltfschoen/flappytips2/server) doesn't seem to be part of the project declared in /Users/luke/code/github/ltfschoen/flappytips2.
+
+- If /Users/luke/code/github/ltfschoen/flappytips2 isn't intended to be a project, remove any yarn.lock and/or package.json file there.
+- If /Users/luke/code/github/ltfschoen/flappytips2 is intended to be a project, it might be that you forgot to list server in its workspace configuration.
+- Finally, if /Users/luke/code/github/ltfschoen/flappytips2 is fine and you intend server to be treated as a completely separate project (not even a workspace), create an empty yarn.lock file in it.
+
+$ yarn run [--inspect] [--inspect-brk] [-T,--top-level] [-B,--binaries-only] <scriptName> ...
+```
+
+```
+/Users/luke/code/github/ltfschoen/flappytips2/node_modules/@zeitgeistpm/sdk/dist/model/swaps/pool.js:9
+var lodashEs = require('lodash-es');
+               ^
+
+Error [ERR_REQUIRE_ESM]: require() of ES Module /Users/luke/code/github/ltfschoen/flappytips2/node_modules/lodash-es/lodash.js from /Users/luke/code/github/ltfschoen/flappytips2/node_modules/@zeitgeistpm/sdk/dist/model/swaps/pool.js not supported.
+Instead change the require of lodash.js in /Users/luke/code/github/ltfschoen/flappytips2/node_modules/@zeitgeistpm/sdk/dist/model/swaps/pool.js to a dynamic import() which is available in all CommonJS modules.
+    at Object.<anonymous> (/Users/luke/code/github/ltfschoen/flappytips2/node_modules/@zeitgeistpm/sdk/dist/model/swaps/pool.js:9:16)
+    at Object.<anonymous> (/Users/luke/code/github/ltfschoen/flappytips2/node_modules/@zeitgeistpm/sdk/dist/model/markets/functions/create/index.js:7:12)
+    at Object.<anonymous> (/Users/luke/code/github/ltfschoen/flappytips2/node_modules/@zeitgeistpm/sdk/dist/model/markets/index.js:5:15)
+    at Object.<anonymous> (/Users/luke/code/github/ltfschoen/flappytips2/node_modules/@zeitgeistpm/sdk/dist/model/index.js:3:13)
+    at Object.<anonymous> (/Users/luke/code/github/ltfschoen/flappytips2/node_modules/@zeitgeistpm/sdk/dist/types.js:5:15)
+    at Object.<anonymous> (/Users/luke/code/github/ltfschoen/flappytips2/node_modules/@zeitgeistpm/sdk/dist/index.js:3:13)
+    at /Users/luke/code/github/ltfschoen/flappytips2/server/dist-server/api/getZeitgeistSDK.js:25:66
+    at async /Users/luke/code/github/ltfschoen/flappytips2/server/dist-server/api/getZeitgeistSDK.js:25:7 {
+  code: 'ERR_REQUIRE_ESM'
+}
+
+Node.js v19.7.0
+```
+
+```
+https://github.com/microsoft/playwright/issues/17075
+```
 
 ## Additional Notes
 

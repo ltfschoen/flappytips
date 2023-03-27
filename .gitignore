@@ -13,7 +13,7 @@ build/*
 # exception to the rule for Heroku use
 !build/.gitkeep
 # server babel with es6
-dist-server/*
+server/dist-server/*
 
 # misc
 .DS_Store

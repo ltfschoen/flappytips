@@ -3,13 +3,13 @@
 #   the target environment.
 #
 
-# cat >dist-server/package.json <<!EOF
+# cat >./dist-server/package.json <<!EOF
 # {
 #     "type": "commonjs"
 # }
 # !EOF
 
-# cat >dist-server/package.json <<!EOF
+# cat >./dist-server/package.json <<!EOF
 # {
 #     "type": "module"
 # }
